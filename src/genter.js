@@ -358,8 +358,10 @@ export function createGenter({ composioApiKey, openrouterApiKey, aiGatewayToken,
   function resultMatch(r, vector, terms) {
     const lines = r.items ?? [];
     const byItem = (r.itemEmbeddings ?? []).map((e, i) => [lines[i], cosine(vector.slice(0, e.length), e)]);
-    // Past requests this anchor answered count like its summary: a clumsy new question finds a similar old one.
-    const past = (r.queryEmbeddings ?? []).map((q) => cosine(vector.slice(0, q.e.length), q.e));
+    // Past requests this anchor answered: a clumsy new question finds a similar old one. They count ASKED_DISCOUNT less than
+    // their closeness, so only nearly the same words reach the fast path through them; another question on the same topic
+    // (0.75-0.8) is still offered, and the agent decides.
+    const past = (r.queryEmbeddings ?? []).map((q) => cosine(vector.slice(0, q.e.length), q.e) - ASKED_DISCOUNT);
     let score = Math.max(r.summaryEmbedding ? cosine(vector, r.summaryEmbedding) : 0, ...past);
     const said = (text) => terms.some((t) => String(text ?? "").toLowerCase().includes(t));
     const close = byItem.filter(([l, s]) => l && s >= ITEM_FIT).sort((a, b) => b[1] - a[1]);
@@ -1179,6 +1181,8 @@ const ITEM_DIMS = 256;
 // a few short ones up to 0.35.
 const ITEM_FIT = 0.33;
 const ITEM_STRONG = 0.45;
+// How much less a request an anchor answered before counts than its closeness to the new one (specs retrieval asked-discount).
+export const ASKED_DISCOUNT = 0.1;
 // The requests an anchor answered, as vectors: the one already computed when it was searched, cut like items (256 dims,
 // int8), at most MAX_QUERIES, each with how often it came. A near-duplicate (cosine >= QUERY_DUP) only raises the count
 // of the stored one; when full, the least frequent and then the oldest goes. No backfill: they pile up from now on.

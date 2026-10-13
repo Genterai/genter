@@ -492,6 +492,32 @@ describe("A task of several parts on an anchor of one: the tools of the other pa
     assert.equal(asked[0].tools, undefined); // the briefing's search stays anchor-first
   });
 
+  it("H1 [spec:search-agent/handed-before] anchors the chat already got are briefed apart as asked again, never as a strong fit, and candidate tools come", async () => {
+    const legacy = { id: "rcp_templates", tool: "GITHUB_GET_REPOSITORY_CONTENT", args: { owner: "o", repo: "r", path: ".docs-legacy/templates.md" }, title: "templates.md", summary: "Templates of judges and criteria", status: "fresh", score: 0.77 };
+    const other = { ...commits, score: 0.3 };
+    const genter = fakeGenter({ connected: ["github"] });
+    const asked = [];
+    genter.search = async (input) => (asked.push(input), [legacy, other]);
+    model = fakeModel([(body) => (assert.equal(body.model, "strong"), answer("rcp_templates"))]);
+    await agentWith(genter, { model: "fast", strongModel: "strong" }).start({ task: "the data model of a judge's input", mode: "recipes", handed: ["rcp_templates"] });
+    const brief = briefingOf(model.requests[0]);
+    const [saved, again] = [brief.split("Saved anchors matching")[1].split("\n\n")[0], brief.split("Asked again:")[1] ?? ""];
+    assert.doesNotMatch(saved, /rcp_templates/);
+    assert.match(saved, /rec_commits/);
+    assert.match(again, /may not hold what is asked/);
+    assert.match(again, /rcp_templates/);
+    assert.equal(asked[0].tools, true);
+  });
+
+  it("H2 [spec:search-agent/handed-before-strong] without handed anchors the same strong fit runs on the fast model and the briefing has no asked-again line", async () => {
+    const legacy = { id: "rcp_templates", tool: "GITHUB_GET_REPOSITORY_CONTENT", args: { owner: "o", repo: "r", path: "t.md" }, summary: "Templates", status: "fresh", score: 0.77 };
+    const genter = fakeGenter({ connected: ["github"] });
+    genter.search = async () => [legacy];
+    model = fakeModel([(body) => (assert.equal(body.model, "fast"), answer("rcp_templates"))]);
+    await agentWith(genter, { model: "fast", strongModel: "strong" }).start({ task: "judges' input", mode: "recipes" });
+    assert.doesNotMatch(briefingOf(model.requests[0]), /Asked again/);
+  });
+
   it("P2 read_file with a commit's ref and a path reads that path in the commit's repository; '' and the app's name are no account", async () => {
     const genter = fakeGenter({ connected: ["github"], recipes: [commits], results: { GITHUB_LIST_COMMITS: [{ sha: "c1" }], GITHUB_GET_REPOSITORY_CONTENT: file } });
     model = fakeModel([
@@ -989,6 +1015,15 @@ describe("MCP raw anchors text", () => {
     assert.equal(input.safeParse({ question: "q", conversation_id: "x".repeat(201) }).success, false);
     assert.match(agentTools().GENTER_FIND.description, /conversation_id/);
     assert.match(agentInstructions, /conversation_id/);
+  });
+
+  it("[spec:mcp/find-takes] [spec:mcp/fresh] fresh is an optional boolean of GENTER_FIND, and the description and instructions say when to pass it", () => {
+    const { input, description } = agentTools().GENTER_FIND;
+    assert.equal(input.parse({ question: "q", fresh: true }).fresh, true);
+    assert.equal(input.parse({ question: "q" }).fresh, undefined);
+    assert.equal(input.safeParse({ question: "q", fresh: "yes" }).success, false);
+    assert.match(description, /`fresh: true`/);
+    assert.match(agentInstructions, /fresh: true/);
   });
 
   it("skills picked by the goal come in their own section after the data, listed apart from the anchors", () => {
