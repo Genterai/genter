@@ -92,6 +92,7 @@ do all of that yourself from the data it returns. Never ask Genter to change, re
   Leave it out when you only look something up.
   Ask only for what to find (who, what, when, which app), never for what to do with it: for "rewrite the intro of our README", find "the README of <repo>" and rewrite it yourself.
   When an answer missed what the user meant, ask again with fresh: true (and the same conversation_id): Genter searches anew past what this chat already got.
+  Under the results, "Other saved anchors that may hold it" lists places that fit less, each with its fit (0 to 1) and a "run" line: make that call to look inside one.
 - GENTER_CONTINUE_TASK: answer a run's question, continue after the user connected an app, or narrow or widen the same search.
 - GENTER_CONNECT: connect the user's apps (or a website, or an MCP server by its address) and see what is connected: it returns a link for each app to connect.
 Call them whenever the user mentions or implies an app, an account or their own data. Never say you have no access before trying.
@@ -154,7 +155,9 @@ export function agentTools({ actions = false } = {}) {
         "Pass the same `conversation_id` (an id you make up once per chat, new in a new chat) in every call of a chat so a section is not repeated. " +
         "Example: {question: \"Evallens features\", goal: \"writing the quickstart page of the Evallens docs\", conversation_id: \"k3x9a2fq\"}. Both are optional.\n" +
         "When an answer missed (the user says it is not what they meant, or asks again for something it did not hold), call it again with `fresh: true`: " +
-        "the anchors that answered at once are skipped and a fresh search looks past what this chat already got.",
+        "the anchors that answered at once are skipped and a fresh search looks past what this chat already got.\n" +
+        "Under the results, \"Other saved anchors that may hold it\" lists places that fit less, each with its fit (0 to 1), what it held, and a `run` line: " +
+        "make that call to look inside one before saying the data is not there.",
       input: z.object({
         question: z.string().describe("What to find, in plain words, with any known names, dates or apps. Only what to find, never what to do with it"),
         goal: z.string().optional().describe("Optional. The exact step the data is for, not the area: \"writing the quickstart page of the Evallens docs\", not \"documentation\". Brings the section of the user's skills and guides about that step in a separate section; leave it out when you only look something up"),
@@ -319,10 +322,31 @@ export function recipesResultText(out, { write = false, instructions } = {}) {
   };
   // A result that is one source (a file, a page) is here in full: only the items of a list get a "read" line.
   const listed = refs.length ? `References:\n${refs.map((r) => referenceText(r, write, { read: r.via !== "call" })).join("\n")}` : "";
-  return [note, ...blocks, ...skillBlocks, listed, JSON.stringify(meta)].filter(Boolean).join("\n\n");
+  return [note, ...blocks, ...skillBlocks, listed, relatedText(out.related), JSON.stringify(meta)].filter(Boolean).join("\n\n");
 }
 
-// Anchor 1: rcp_… · GMAIL_FETCH_EMAILS {"query":"from:anna"} — Emails from Anna (account work) · saved path
+// The other saved anchors that may hold what was asked (MCP GENTER_FIND), not run: out.related, [{ id, tool, args?, title?,
+// short?, score }], best first. Each line says how close it is, what it held when last read, and the call that runs it alone.
+export const RUN_ANCHOR = "Run the anchor";
+export const runAnchorQuestion = (id) => `${RUN_ANCHOR} ${id}`;
+// The anchor id a question asks to run (runAnchorQuestion), else null.
+export const anchorToRun = (question) => String(question ?? "").trim().match(/^Run the anchor (rcp_[\w-]+)$/)?.[1] ?? null;
+export function relatedText(related = []) {
+  if (!related?.length) return "";
+  const lines = related.map((r) =>
+    [
+      `- fit ${Number(r.score).toFixed(2)} · ${[r.id, r.tool].filter(Boolean).join(" · ")}${Object.keys(r.args ?? {}).length ? ` ${JSON.stringify(r.args)}` : ""}${r.title ? ` — ${r.title}` : ""}`,
+      r.short && `    held  ${r.short}`,
+      `    run   GENTER_FIND ${JSON.stringify({ question: runAnchorQuestion(r.id) })}`,
+    ]
+      .filter(Boolean)
+      .join("\n"),
+  );
+  return `Other saved anchors that may hold it (not run; fit is how close each is to the question, 0 to 1; "held" is what it returned when last read, not now):\n${lines.join("\n")}`;
+}
+
+// Anchor 1: rcp_… · GMAIL_FETCH_EMAILS {"query":"from:anna"} — Emails from Anna (account work) · saved path · fit 0.82
+// " · fit": how close an anchor matched by score is to the question (0 to 1); none for one the agent ran or a read.
 // " · saved now": the anchor was saved by this call (a path remembered for next time); " · saved path": saved before, run
 // live now. A result kept as no anchor (no id) has neither; skills' lines leave it out (saved: false).
 // Anchor Drift (drift.js): a bracketed fact is added ONLY when the anchor's source deviates (old while others around it are
@@ -330,7 +354,8 @@ export function recipesResultText(out, { write = false, instructions } = {}) {
 export const savedMark = (r) => (r.id ? (r.created ? " · saved now" : " · saved path") : "");
 export const recipeLine = (r, i, others = [], { saved = true } = {}) => {
   const facts = driftFacts(r.signals, others);
-  return `Anchor ${i}: ${[r.id, r.tool].filter(Boolean).join(" · ")}${Object.keys(r.args ?? {}).length ? ` ${JSON.stringify(r.args)}` : ""}${r.title ? ` — ${r.title}` : ""}${r.account ? ` (account ${r.account})` : ""}${saved ? savedMark(r) : ""}${facts.length ? ` [${facts.join("; ")}]` : ""}`;
+  const fit = saved && r.id && Number.isFinite(r.score) ? ` · fit ${r.score.toFixed(2)}` : "";
+  return `Anchor ${i}: ${[r.id, r.tool].filter(Boolean).join(" · ")}${Object.keys(r.args ?? {}).length ? ` ${JSON.stringify(r.args)}` : ""}${r.title ? ` — ${r.title}` : ""}${r.account ? ` (account ${r.account})` : ""}${saved ? savedMark(r) : ""}${fit}${facts.length ? ` [${facts.join("; ")}]` : ""}`;
 };
 
 // GENTER_CONNECT's result: the person's connections and, for each app asked, its link (or why there is none), then the JSON

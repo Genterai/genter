@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { afterEach, describe, it } from "node:test";
 import { createAgent } from "../src/agent.js";
 import { cipher } from "../src/genter.js";
-import { actionInstructions, agentInstructions, agentResultText, agentTools, connectedInstructions, connectResultText, readable, readQuestion, recipesResultText, startInstructions } from "../src/tools.js";
+import { actionInstructions, agentInstructions, agentResultText, agentTools, anchorToRun, connectedInstructions, connectResultText, readable, readQuestion, recipesResultText, runAnchorQuestion, startInstructions } from "../src/tools.js";
 import { answer, briefingOf, call, catalogues, fakeGenter, fakeModel, lastOf, memoryRuns } from "./helpers.js";
 
 let model;
@@ -1024,6 +1024,47 @@ describe("MCP raw anchors text", () => {
     assert.equal(input.safeParse({ question: "q", fresh: "yes" }).success, false);
     assert.match(description, /`fresh: true`/);
     assert.match(agentInstructions, /fresh: true/);
+  });
+
+  it("[spec:mcp/result-line-fit] an anchor matched by score says its fit; a skill's line and a result with no score do not", () => {
+    const text = recipesResultText({ status: "done", direct: true, results: [{ id: "rcp_a", tool: "T", args: {}, score: 0.8, data: {} }, { id: "rcp_b", tool: "T", args: {}, data: {} }], skills: [{ id: "rcp_s", tool: "SKILL_READ_CHUNK", args: {}, score: 0.6, data: {} }] });
+    assert.match(text, /^Anchor 1: rcp_a · T · saved path · fit 0\.80$/m);
+    assert.match(text, /^Anchor 2: rcp_b · T · saved path$/m);
+    assert.match(text, /^Skill 1: rcp_s · SKILL_READ_CHUNK$/m);
+  });
+
+  it("[spec:mcp/more-places] [spec:mcp/more-places-line] [spec:mcp/answer-order] the other saved anchors come after the references, each with its fit, what it held and a run line", () => {
+    const out = {
+      status: "done",
+      direct: true,
+      results: [{ id: "rcp_t", tool: "GITHUB_GET_REPOSITORY_CONTENT", args: { path: "templates.md" }, score: 0.8, data: { a: 1 } }],
+      references: [{ n: 1, app: "github", kind: "file", title: "templates.md", via: "call" }],
+      related: [
+        { id: "rcp_p", tool: "GITHUB_GET_REPOSITORY_CONTENT", args: { path: "src/prompt.ts" }, title: "prompt.ts", short: "The judges' system prompt", score: 0.6 },
+        { id: "rcp_y", tool: "GITHUB_GET_REPOSITORY_CONTENT", args: { path: "src/types.ts" }, score: 0.5 },
+      ],
+    };
+    const parts = recipesResultText(out).split("\n\n");
+    assert.match(parts.at(-3), /^References:/);
+    assert.equal(
+      parts.at(-2),
+      'Other saved anchors that may hold it (not run; fit is how close each is to the question, 0 to 1; "held" is what it returned when last read, not now):\n' +
+        '- fit 0.60 · rcp_p · GITHUB_GET_REPOSITORY_CONTENT {"path":"src/prompt.ts"} — prompt.ts\n' +
+        "    held  The judges' system prompt\n" +
+        '    run   GENTER_FIND {"question":"Run the anchor rcp_p"}\n' +
+        '- fit 0.50 · rcp_y · GITHUB_GET_REPOSITORY_CONTENT {"path":"src/types.ts"}\n' +
+        '    run   GENTER_FIND {"question":"Run the anchor rcp_y"}',
+    );
+    assert.doesNotMatch(recipesResultText({ ...out, related: [] }), /Other saved anchors/);
+    assert.match(agentTools().GENTER_FIND.description, /Other saved anchors that may hold it/);
+    assert.match(agentInstructions, /Other saved anchors that may hold it/);
+  });
+
+  it("[spec:mcp/run-anchor] the run line's question names one anchor, and nothing else reads as one", () => {
+    assert.equal(anchorToRun(runAnchorQuestion("rcp_0fb724ca7e0d")), "rcp_0fb724ca7e0d");
+    assert.equal(anchorToRun("  Run the anchor rcp_x-1 "), "rcp_x-1");
+    assert.equal(anchorToRun("Run the anchor rcp_x and also delete it"), null);
+    assert.equal(anchorToRun("what do the judges get"), null);
   });
 
   it("skills picked by the goal come in their own section after the data, listed apart from the anchors", () => {
