@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { afterEach, describe, it } from "node:test";
-import { addQuery, appsMeant, cipher, createGenter } from "../src/genter.js";
+import { ASKED_DISCOUNT, addQuery, appsMeant, cipher, createGenter } from "../src/genter.js";
 
 // The real createGenter on a Composio stand-in: tool calls are answered over fetch, so execute runs its own code
 // (the agent tests replace genter as a whole and never reach it).
@@ -548,8 +548,28 @@ describe("queryEmbeddings", () => {
     await out.pending;
     const recipe = (await genter.search({ query: "clumsy way to ask it" })).find((r) => r.id === out.id);
     assert.ok(recipe, "found through the stored request");
-    assert.ok(recipe.score >= 0.9);
+    assert.ok(recipe.score >= 0.85, "nearly the same words still reach the fast path (0.75)");
     assert.equal(recipe.queryEmbeddings, undefined);
+  });
+
+  it("Q7 [spec:retrieval/asked-discount] a request kept on an anchor counts 0.1 less than its closeness: another question on the topic stays under the fast path", async () => {
+    // "other question" meets the old one at 0.8: offered (0.7), not the fast path's 0.75.
+    const at = (c) => [c, Math.sqrt(1 - c * c), 0];
+    fakeComposio(
+      { items: [{ title: "x" }] },
+      {
+        chat: (prompt) => (/Translate it for searching/.test(prompt) ? { en: "", terms: [] } : { title: "Open pull requests", short: "PRs.", summary: "Three open pull requests.", items: [] }),
+        vector: (t) => (t.startsWith("old question") ? [1, 0, 0] : t.startsWith("other question") ? at(0.8) : [0, 0, 1]),
+      },
+    );
+    const genter = createGenter({ composioApiKey: "k", openrouterApiKey: "o", userId: "u", secret: "s", store: memoryStore() });
+    await genter.search({ query: "old question about waiting reviews" });
+    const out = await genter.execute({ ...call, task: "old question about waiting reviews" });
+    await out.pending;
+    const recipe = (await genter.search({ query: "other question on reviews" })).find((r) => r.id === out.id);
+    assert.ok(recipe, "still offered");
+    assert.ok(recipe.score > 0.65 && recipe.score < 0.75, `score ${recipe.score}`);
+    assert.equal(ASKED_DISCOUNT, 0.1);
   });
 
   it("Q2 the same request again raises the count; the vector is cut to 256 dims and survives the store", async () => {
@@ -573,7 +593,7 @@ describe("queryEmbeddings", () => {
     assert.deepEqual(await genter.recipes.asked({ ids: [answerCall.id, "rcp_missing"], task: "old question about waiting reviews" }), { filed: 1 });
     const found = (await genter.search({ query: "clumsy way to ask it" })).filter((r) => r.id);
     assert.deepEqual(found.map((r) => r.id), [answerCall.id]);
-    assert.ok(found[0].score >= 0.9);
+    assert.ok(found[0].score >= 0.85);
     assert.deepEqual(await genter.recipes.asked({ ids: [answerCall.id], task: "  " }), { filed: 0 });
   });
 

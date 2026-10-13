@@ -503,14 +503,17 @@ export function createAgent({
     // Start a task. Anchors, candidate tools and connections are fetched in parallel before the first LLM call.
     // target (write): a reference to write at, with its write tools; the briefing ends with it.
     // reads: the most items a prepare run may read with read_each and read_many together (the plan's room); none: no limit.
-    async start({ task, mode = "run", account, target, reads }) {
+    // handed: ids of anchors this chat already got for another question (MCP asked again): the person asks again, so they may
+    // not hold it. They are briefed apart, never as a strong fit, and may still be executed by id.
+    async start({ task, mode = "run", account, target, reads, handed = [] }) {
       if (readOnly && target) throw new Error(READ_ONLY_ERROR);
       if (readOnly && !READ_ONLY_MODES.includes(mode)) mode = "find";
       onEvent({ type: "step", tool: "search_recipes", input: { query: task } });
       const searched = Date.now();
       const connecting = genter.login().then((l) => l.connected ?? []).catch(() => []);
       let [found, connected, english] = await Promise.all([
-        connecting.then((c) => genter.search({ query: task, limit: 8, apps: c.map((x) => x.toolkit), connected: true })).catch(() => []),
+        // Asked again: candidate tools come too, as when no anchor fits strongly (the ones that fit were handed already).
+        connecting.then((c) => genter.search({ query: task, limit: 8, apps: c.map((x) => x.toolkit), connected: true, ...(handed.length && { tools: true }) })).catch(() => []),
         connecting,
         genter.translate ? genter.translate(task) : null, // shared with search, so no second model call
       ]);
@@ -520,6 +523,8 @@ export function createAgent({
       const ofNamed = (r) => !named.length || !r.tool || named.some((t) => r.tool.startsWith(`${t.toUpperCase()}_`));
       found = found.filter(ofNamed);
       const recipes = found.filter((r) => r.id);
+      const before = new Set(handed);
+      const again = recipes.filter((r) => before.has(r.id));
       onEvent({ type: "recipes", recipes: recipes.map(({ id, tool, title, short, summary, score, status, updated_at, checked_at, args }) => ({ id, tool, title, short, summary, score, status, updated_at, checked_at, args })) });
       const run = {
         id: randomUUID(),
@@ -534,7 +539,7 @@ export function createAgent({
         created_at: new Date().toISOString(),
         apps: [...new Set(connected.map((c) => c.toolkit))],
         // No valid anchor that clearly fits: this task is new, the strong model works it out (and leaves anchors).
-        strong: !recipes.some((r) => r.score >= STRONG_RECIPE),
+        strong: !recipes.some((r) => r.score >= STRONG_RECIPE && !before.has(r.id)),
         named, // apps the task is about
         recipes: Object.fromEntries(recipes.map((r) => [r.id, r.tool])),
         recipeArgs: Object.fromEntries(recipes.filter((r) => r.args).map((r) => [r.id, r.args])),
@@ -544,7 +549,7 @@ export function createAgent({
         timing: { search_ms },
       };
       const refer = (r) => register(run, r);
-      const brief = briefing({ task, mode, account, found, connected, canExecute, english, named, recipeRef: (r) => recipeRef(run, r) });
+      const brief = briefing({ task, mode, account, found: found.filter((r) => !before.has(r.id)), again, connected, canExecute, english, named, recipeRef: (r) => recipeRef(run, r) });
       const write = target && writeNote({ ...target, n: refer(target) }, task);
       run.messages = [{ role: "user", content: write ? `${brief}\n\n${write}` : brief }];
       return loop(run);
@@ -1230,7 +1235,7 @@ const LISTING_EVERY = 25; // successful reads of a read_each between two handove
 const ROOM_USED = "the plan's room for items kept whole is used up, so no more items are read";
 const STRONG_RECIPE = 0.45; // an anchor this close to the task is known ground: the fast model is enough
 
-function briefing({ task, mode, account, found, connected, canExecute, english, named = [], recipeRef = () => undefined }) {
+function briefing({ task, mode, account, found, again = [], connected, canExecute, english, named = [], recipeRef = () => undefined }) {
   const recipes = found.filter((r) => r.id).map((r) => compactFound(r, recipeRef(r)));
   const tools = found.filter((r) => !r.id).map((r) => compactFound(r));
   const apps = connected.map((c) => `${c.toolkit}${c.alias ? ` (${c.alias}${c.default ? ", default" : ""})` : ""}${c.status && c.status !== "ACTIVE" ? ` [${c.status}]` : ""}`);
@@ -1244,6 +1249,10 @@ function briefing({ task, mode, account, found, connected, canExecute, english, 
     `Connected apps: ${apps.join(", ") || "none"}`,
     named.length && `The task is about ${named.join(", ")}: read the user's data there with its tools (search_tools "${named[0]} ..." if none below fits), not other apps.`,
     `Saved anchors matching the task (each is a call that worked before; last_result is what it returned then, not what is there now):\n${recipes.length ? JSON.stringify(recipes) : "none"}`,
+    again.length &&
+      "Asked again: earlier in this chat the user got these anchors for another question and now asks this, so they may not hold what is asked. " +
+        "Execute one again only if its last_result holds exactly what the task asks for; otherwise look elsewhere (other folders and files, other apps, other search terms):\n" +
+        JSON.stringify(again.map((r) => compactFound(r, recipeRef(r)))),
     tools.length && `Candidate app tools:\n${JSON.stringify(tools)}`,
   ]
     .filter(Boolean)

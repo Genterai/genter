@@ -91,6 +91,7 @@ do all of that yourself from the data it returns. Never ask Genter to change, re
   a goal is matched by meaning to sections of skills, so a vague one finds none or only a skill's introduction. On the next step (another page, another part), pass its goal.
   Leave it out when you only look something up.
   Ask only for what to find (who, what, when, which app), never for what to do with it: for "rewrite the intro of our README", find "the README of <repo>" and rewrite it yourself.
+  When an answer missed what the user meant, ask again with fresh: true (and the same conversation_id): Genter searches anew past what this chat already got.
 - GENTER_CONTINUE_TASK: answer a run's question, continue after the user connected an app, or narrow or widen the same search.
 - GENTER_CONNECT: connect the user's apps (or a website, or an MCP server by its address) and see what is connected: it returns a link for each app to connect.
 Call them whenever the user mentions or implies an app, an account or their own data. Never say you have no access before trying.
@@ -151,13 +152,16 @@ export function agentTools({ actions = false } = {}) {
         "\"writing the quickstart page of the Evallens docs\", \"the landing page of the docs\", \"the changelog entry for v2\", not \"documentation\" or \"writing docs\". " +
         "A goal is matched by meaning to sections of skills: a vague one finds none, or only a skill's introduction. On the next step (another page, another part), pass its goal. " +
         "Pass the same `conversation_id` (an id you make up once per chat, new in a new chat) in every call of a chat so a section is not repeated. " +
-        "Example: {question: \"Evallens features\", goal: \"writing the quickstart page of the Evallens docs\", conversation_id: \"k3x9a2fq\"}. Both are optional.",
+        "Example: {question: \"Evallens features\", goal: \"writing the quickstart page of the Evallens docs\", conversation_id: \"k3x9a2fq\"}. Both are optional.\n" +
+        "When an answer missed (the user says it is not what they meant, or asks again for something it did not hold), call it again with `fresh: true`: " +
+        "the anchors that answered at once are skipped and a fresh search looks past what this chat already got.",
       input: z.object({
         question: z.string().describe("What to find, in plain words, with any known names, dates or apps. Only what to find, never what to do with it"),
         goal: z.string().optional().describe("Optional. The exact step the data is for, not the area: \"writing the quickstart page of the Evallens docs\", not \"documentation\". Brings the section of the user's skills and guides about that step in a separate section; leave it out when you only look something up"),
         conversation_id: z.string().max(200).optional().describe("Optional. One short id for this chat, the same in every call of this chat and new in a new chat (e.g. a random 8-character string you make up once). Keeps a section of a skill from being shown twice in a chat"),
         model: z.string().max(100).optional().describe("Optional. Your model name, for the call log only"),
         account,
+        fresh: z.boolean().optional().describe("Optional. true when an earlier answer in this chat missed what the user wants: skips the saved anchors that answer at once and searches anew"),
       }),
       annotations: { title: "Find in your apps", readOnlyHint: true, openWorldHint: true },
     },
