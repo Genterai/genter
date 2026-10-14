@@ -1,0 +1,5 @@
+{
+  "tags": ["rl", "spec"],
+  "tests": ["test/**"],
+  "coverage": "warn"
+}

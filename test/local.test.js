@@ -296,7 +296,7 @@ describe("the genter command", () => {
     return { run, done: () => rmSync(base, { recursive: true, force: true }) };
   }
 
-  it("[spec:local-search/ac-no-keys] [spec:cli/no-packages] asks with no key and no package", () => {
+  it("[spec:local-search/ac-no-keys] [spec:cli/no-packages] [rl:cli/output-local] asks with no key and no package", () => {
     const pkg = installed();
     try {
       const out = pkg.run("ask", "which", "day", "does", "production", "ship?");

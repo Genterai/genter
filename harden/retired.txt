@@ -1,0 +1,1 @@
+# area/id of red lines that were removed, one per line; an id is never reused.

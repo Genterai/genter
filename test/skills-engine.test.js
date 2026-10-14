@@ -181,7 +181,7 @@ describe("files and scripts", () => {
     assert.match(rec.summary, /Executable code \(Genter does not run it\)/);
   });
 
-  it("S5b nothing in the engine can run a script", () => {
+  it("S5b [rl:security/never-run] nothing in the engine can run a script", () => {
     for (const file of ["src/skills.js", "src/genter.js"]) {
       const code = readFileSync(new URL(`../${file}`, import.meta.url), "utf8");
       assert.ok(!/child_process|node:vm|\beval\(|new Function\(|worker_threads/.test(code), `${file} must not execute code`);
