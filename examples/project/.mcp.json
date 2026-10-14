@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "genter": {
+      "command": "npx",
+      "args": ["-y", "genter-cli@0.3", "mcp", "."],
+      "env": {
+        "GENTER_SEMANTIC": "1",
+        "OPENAI_API_KEY": "${OPENAI_API_KEY:-}",
+        "OPENROUTER_API_KEY": "${OPENROUTER_API_KEY:-}",
+        "AI_GATEWAY_API_KEY": "${AI_GATEWAY_API_KEY:-}",
+        "GENTER_TOKEN": "${GENTER_TOKEN:-}"
+      }
+    }
+  }
+}
