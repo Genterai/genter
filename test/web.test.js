@@ -85,7 +85,7 @@ describe("Websites", () => {
     assert.deepEqual(page.links, ["/menu", "/guide/next"]);
   });
 
-  it("W4 addresses: https added to a bare host, private networks refused", () => {
+  it("W4 [rl:security/public-only] addresses: https added to a bare host, private networks refused", () => {
     assert.equal(siteUrl("docs.example.com"), "https://docs.example.com/");
     assert.throws(() => siteUrl("intranet"), /not a website/);
     assert.ok(underSite("https://www.docs.dev/guide/a", "docs.dev/guide/"));

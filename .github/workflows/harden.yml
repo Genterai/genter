@@ -1,0 +1,23 @@
+name: harden
+# The red lines and briefs in harden/ agree with the tests and the code, and a PR that changes code an area names
+# carries a "Brief:" line (https://github.com/Genterai/harden; harden/README.md).
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v6
+        with: { node-version: 22 }
+      - run: npm install -g github:Genterai/harden#d1414a6f47d09768a43c0d069ba88c66ce37d386
+      - if: github.event_name == 'pull_request'
+        run: harden check --base origin/${{ github.base_ref }}
+      - if: github.event_name != 'pull_request'
+        run: harden check

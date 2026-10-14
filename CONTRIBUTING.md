@@ -7,10 +7,12 @@ Issues and pull requests are welcome.
 
 - **A bug or an idea:** open an issue here. For a bug, say what you ran, what you expected and what happened, with
   `genter --version`, `node --version` and your OS.
-- **Behaviour comes from specs.** Everything a person, an API or an MCP client can observe is written down first in
-  [Genterai/specs](https://github.com/Genterai/specs). Every spec lists the code it describes in its `code:` header,
-  so `grep -rl "genter-cli:src/local.js" specs --include=*.md` finds the specs of a file.
-- **A new behaviour** that no statement covers starts as a pull request (or an issue) in Genterai/specs, then the code.
+- **What must stay true comes first.** Everything a person, an API or an MCP client relies on is a red line in
+  [`harden/redlines/`](harden/redlines), one file per area; every area names its code under `Sources:`, so
+  `grep -rl "src/local.js" harden/redlines` finds the red lines of a file. How a change gets in:
+  [harden/README.md](harden/README.md).
+- **A change of behaviour** starts as a brief in `harden/briefs/` (`harden new "<title>"`, with
+  `npm install -g github:Genterai/harden`), then the code.
 
 ## Set up
 
@@ -38,18 +40,18 @@ Node 20 or later. `npm ci` also installs `@composio/core` and `zod`, which only 
 ## Tests
 
 - A change comes with tests in `test/*.test.js`.
-- A test that checks a spec statement carries its full id in its name: `[spec:local-search/reads-again]`.
+- A test that checks a red line carries its id in its name: `[rl:local-search/reads-again]` (older `[spec:…]` tags
+  still count). `harden check` must pass.
 - CI runs lint and the tests on Node 20 and 22 for every pull request.
 
 ## Pull requests
 
 - One change per pull request, said in "What and why".
-- The description ends with one line that the `spec-check` workflow reads:
+- A pull request that changes code an area names carries one line that the `harden` workflow reads:
 
   ```
-  Specs: implements <spec-id/statement-id>, ...
-  Specs: updated <link to the Genterai/specs pull request>
-  Specs: none - <why no behaviour changes>
+  Brief: harden/briefs/<file>.md
+  Brief: none - <why no behaviour changes>
   ```
 
 - **Releases:** raise `version` in `package.json` (semver) in the pull request. Merging it into `main` publishes it to
