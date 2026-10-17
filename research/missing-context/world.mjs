@@ -3,6 +3,7 @@
 // top: contract outcomes (A), the API key incident and the Datadog talks (B), the eu-west alert drift (C), the two
 // accounts that are leaving (D) and the small critical edits (F). No noise stream (E).
 import { buildStream } from "../change-gate/build.mjs";
+import { accountsOf } from "../change-gate/detect.mjs";
 import { sections } from "../change-gate/lib.mjs";
 
 export const DAY0 = Date.UTC(2026, 7, 31); // Monday
@@ -15,6 +16,14 @@ export function world() {
   const base = buildStream("A", 1);
   const items = new Map(base.items.map((x) => [x.id, x]));
   for (const test of ["B", "C", "D", "F"]) for (const x of buildStream(test, 1).items) if (x.gold) items.set(x.id, x);
+  // The routine generator kept writing "renewal still under review" and "QBR on Tuesday" for accounts after their
+  // planted outcome. Such routine items are dropped after the outcome, so the world does not contradict itself.
+  const outcomes = { "Acme Logistics": "A1-0", Globex: "A2-0", "Umbrella Retail": "A3-0", "Contoso Health": "D1-0", Fabrikam: "D2-0" };
+  const conflicting = /^(renewal-routine|customer-meetings|usage-reports|call-notes|sales-chatter|deal-updates)-/;
+  for (const [account, id] of Object.entries(outcomes)) {
+    const at = items.get(id).t;
+    for (const [k, x] of items) if (!x.gold && x.t > at && conflicting.test(x.id) && accountsOf(x.text).includes(account)) items.delete(k);
+  }
   const all = [...items.values()].filter((x) => x.t < NOW).sort((a, b) => a.t - b.t);
 
   // Documents: the corpus sections, then every edit in time order. Each section keeps its history of edits.

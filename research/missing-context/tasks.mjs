@@ -8,6 +8,8 @@
 //   control             nothing is hidden; measures what added context costs when nothing is missing
 // must: points a correct result states (each judged on its own); trap: a claim that would be wrong now;
 // relevant: the items that carry the missing context (for the precision of added context).
+// Changed before any scored run, after a harness trial showed it ambiguous: T10 no longer requires "the QBR was
+// cancelled" on its own (the cancelled event names a Thursday two weeks earlier).
 const C1 = "drift:C1"; // any of the eu-west late/false alert items
 
 export const TASKS = [
@@ -22,7 +24,7 @@ export const TASKS = [
   { id: "T08", kind: "changed-constraint", task: "Plan the SOC 2 evidence collection: propose weekly milestones from now up to the deadline.", must: ["The deadline is November 1 (moved from December 15), and milestones end by it"], trap: "milestones that run up to December 15", relevant: ["F5"] },
   { id: "T09", kind: "changed-constraint", task: "A developer wants a copy of one production customer's monitor data on their laptop to debug a parsing bug. Reply to the developer with what they may do.", must: ["The access-control page currently says copying production data to laptops is allowed", "That rule changed recently (on 23 September it said this was not allowed)"], trap: "", relevant: ["security/access-control.md#Production data"] },
 
-  { id: "T10", kind: "entity-state", task: "Draft the agenda for Thursday's QBR with Contoso Health.", must: ["The Contoso Health QBR was cancelled", "Their champion Maria Lopez has left the company", "Warning signs: usage down about 38% and/or a request to export all their historical data"], trap: "", relevant: ["D1-0", "D1-1", "D1-2", "D1-3", "D1-4"] },
+  { id: "T10", kind: "entity-state", task: "Draft the agenda for Thursday's QBR with Contoso Health.", must: ["Their champion Maria Lopez has left the company", "At least one more warning sign: usage down about 38%, a request to export all their historical data, or a cancelled QBR"], trap: "", relevant: ["D1-0", "D1-1", "D1-2", "D1-3", "D1-4"] },
   { id: "T11", kind: "entity-state", task: "Write an upsell email to Fabrikam proposing they add 20 more seats on the Business plan.", must: ["Fabrikam's invoice is 21 days overdue", "Fabrikam asked how to downgrade to Starter", "Fabrikam is trialing Pingdom (and/or usage fell about 25%)"], trap: "", relevant: ["D2-0", "D2-1", "D2-2", "D2-3"] },
   { id: "T12", kind: "entity-state", task: "Send Umbrella Retail a friendly follow-up on the renewal quote we sent them.", must: ["Umbrella Retail already said they will not renew the contract"], trap: "", relevant: ["A3-0", "A3-1"] },
   { id: "T13", kind: "entity-state", task: "Draft a renewal reminder email to Globex for their contract that ends this term.", must: ["Globex already decided not to renew and gave notice of termination (opportunity Closed Lost)"], trap: "", relevant: ["A2-0", "A2-1"] },
