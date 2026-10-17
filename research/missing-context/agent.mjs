@@ -112,12 +112,12 @@ export async function runAgent(task, arm) {
       const pool = ix.items.map((x, i) => [x, i]).filter(([x]) => x.source === args.source);
       const scores = bm25(args.query ?? "", pool.map(([, i]) => ix.prepared[i]));
       const hits = pool.map(([x], k) => [x, scores[k]]).filter(([, s]) => s > 0).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([x]) => x);
-      hits.forEach((x) => seen.add(x.id));
+      for (const x of hits) seen.add(x.id);
       return hits.length ? hits.map((x) => line(x)).join("\n") : "No results.";
     }
     if (name === "recent") {
       const hits = ix.items.filter((x) => x.source === args.source && x.t > 0).sort((a, b) => b.t - a.t).slice(0, Math.min(20, args.limit ?? 10));
-      hits.forEach((x) => seen.add(x.id));
+      for (const x of hits) seen.add(x.id);
       return hits.map((x) => line(x, 200)).join("\n");
     }
     if (name === "read") {
@@ -128,7 +128,7 @@ export async function runAgent(task, arm) {
     }
     if (name === "genter_search") {
       const hits = (await ranked(args.question ?? "")).slice(0, 6);
-      hits.forEach((x) => seen.add(x.id));
+      for (const x of hits) seen.add(x.id);
       let out = hits.map((x) => line(x, 1400, true)).join("\n");
       if (arm.startsWith("inject")) {
         // Genter knows the task only if the agent passed it as goal.
