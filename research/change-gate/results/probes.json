@@ -1,0 +1,278 @@
+{
+ "pairs": {
+  "256": {
+   "polarity": {
+    "rewording": 0.886,
+    "opposite": 0.811,
+    "oppositeCloser": "1/6"
+   },
+   "negation": {
+    "rewording": 0.905,
+    "opposite": 0.887,
+    "oppositeCloser": "2/6"
+   },
+   "number": {
+    "rewording": 0.88,
+    "opposite": 0.927,
+    "oppositeCloser": "5/6"
+   },
+   "date": {
+    "rewording": 0.857,
+    "opposite": 0.938,
+    "oppositeCloser": "3/4"
+   },
+   "order": {
+    "rewording": 0.853,
+    "opposite": 0.906,
+    "oppositeCloser": "4/4"
+   },
+   "contradiction": {
+    "rewording": 0.887,
+    "opposite": 0.765,
+    "oppositeCloser": "0/4"
+   }
+  },
+  "1536": {
+   "polarity": {
+    "rewording": 0.878,
+    "opposite": 0.79,
+    "oppositeCloser": "1/6"
+   },
+   "negation": {
+    "rewording": 0.891,
+    "opposite": 0.877,
+    "oppositeCloser": "3/6"
+   },
+   "number": {
+    "rewording": 0.865,
+    "opposite": 0.92,
+    "oppositeCloser": "5/6"
+   },
+   "date": {
+    "rewording": 0.86,
+    "opposite": 0.926,
+    "oppositeCloser": "3/4"
+   },
+   "order": {
+    "rewording": 0.841,
+    "opposite": 0.892,
+    "oppositeCloser": "4/4"
+   },
+   "contradiction": {
+    "rewording": 0.873,
+    "opposite": 0.737,
+    "oppositeCloser": "0/4"
+   }
+  }
+ },
+ "sectionDeltas": {
+  "256": {
+   "byKind": {
+    "critical": {
+     "n": 4,
+     "median": 0.0094,
+     "max": 0.0097
+    },
+    "harmless": {
+     "n": 53,
+     "median": 0.0166,
+     "max": 0.1846
+    },
+    "harmless-number": {
+     "n": 14,
+     "median": 0.0388,
+     "max": 0.1332
+    },
+    "cosmetic": {
+     "n": 40,
+     "median": 0.0754,
+     "max": 0.2287
+    }
+   },
+   "critical": [
+    {
+     "id": "F1",
+     "delta": 0.0003,
+     "shareOfHarmlessMovingMore": 0.97
+    },
+    {
+     "id": "F2",
+     "delta": 0.0045,
+     "shareOfHarmlessMovingMore": 0.91
+    },
+    {
+     "id": "F3",
+     "delta": 0.0094,
+     "shareOfHarmlessMovingMore": 0.8
+    },
+    {
+     "id": "F4",
+     "delta": 0.0097,
+     "shareOfHarmlessMovingMore": 0.79
+    }
+   ]
+  },
+  "1536": {
+   "byKind": {
+    "critical": {
+     "n": 4,
+     "median": 0.0105,
+     "max": 0.0112
+    },
+    "harmless": {
+     "n": 53,
+     "median": 0.0191,
+     "max": 0.2032
+    },
+    "harmless-number": {
+     "n": 14,
+     "median": 0.0467,
+     "max": 0.1367
+    },
+    "cosmetic": {
+     "n": 40,
+     "median": 0.0805,
+     "max": 0.2337
+    }
+   },
+   "critical": [
+    {
+     "id": "F1",
+     "delta": -0.0001,
+     "shareOfHarmlessMovingMore": 0.99
+    },
+    {
+     "id": "F2",
+     "delta": 0.0051,
+     "shareOfHarmlessMovingMore": 0.91
+    },
+    {
+     "id": "F3",
+     "delta": 0.0105,
+     "shareOfHarmlessMovingMore": 0.81
+    },
+    {
+     "id": "F4",
+     "delta": 0.0112,
+     "shareOfHarmlessMovingMore": 0.77
+    }
+   ]
+  }
+ },
+ "anchorDeltas": {
+  "byKind": {
+   "critical": {
+    "n": 4,
+    "median": 0.065,
+    "max": 0.0691
+   },
+   "harmless": {
+    "n": 8,
+    "median": 0.0623,
+    "max": 0.2187
+   },
+   "harmless-number": {
+    "n": 6,
+    "median": 0.0562,
+    "max": 0.1663
+   },
+   "cosmetic": {
+    "n": 6,
+    "median": 0.1151,
+    "max": 0.1369
+   }
+  },
+  "critical": [
+   {
+    "id": "F1",
+    "delta": 0.0541,
+    "shareOfHarmlessMovingMore": 0.6
+   },
+   {
+    "id": "F2",
+    "delta": 0.065,
+    "shareOfHarmlessMovingMore": 0.45
+   },
+   {
+    "id": "F3",
+    "delta": 0.0691,
+    "shareOfHarmlessMovingMore": 0.45
+   },
+   {
+    "id": "F4",
+    "delta": 0.0403,
+    "shareOfHarmlessMovingMore": 0.65
+   }
+  ],
+  "said": [
+   {
+    "id": "F1",
+    "added": [
+     "3"
+    ],
+    "removed": [
+     "35"
+    ],
+    "addedInDescriptionAfter": [
+     "3"
+    ],
+    "removedInDescriptionBefore": [
+     "35"
+    ],
+    "before": "The document outlines backup strategies for production services. It lists Postgres clusters with nightly base backups and WAL archiving retained for 35 days, ClickHouse raw results backed up to S3 with weekly full and daily incremental copies kept for 8 weeks, S3 buckets using versioning and cross‑region replication retained for 90 days, Redis which is not directly backed up but can be rebuilt from Postgres, and a staging environment that is reset nightly. The table provides the data type, backup method, schedule, and retention period for each item.",
+    "after": "The document outlines backup strategies for production systems, including Postgres, ClickHouse, S3 buckets, Redis, and staging environments. It specifies the backup method, schedule, and how long each backup is retained. Postgres uses nightly base backups with WAL archiving kept for 3 days, ClickHouse uses weekly full and daily incremental backups to S3 retained for 8 weeks, S3 buckets use versioning with 90‑day retention, Redis has no direct backup and relies on Postgres, and staging is reset nightly."
+   },
+   {
+    "id": "F2",
+    "added": [],
+    "removed": [
+     "not"
+    ],
+    "addedInDescriptionAfter": [],
+    "removedInDescriptionBefore": [
+     "not"
+    ],
+    "before": "The document outlines the access control rules for production customer data. It specifies that data may only be accessed to operate the service or assist a requesting customer, and that all access is logged. It explicitly forbids copying production data to laptops, staging environments, or third‑party tools. This serves as a reference for compliance and security teams.",
+    "after": "The document outlines the access control rules for production customer data. It states that data may only be accessed to operate the service or assist a requesting customer, and that all access is logged. It also permits copying production data to laptops, staging environments, or third‑party tools. This information is useful for compliance and security reviews."
+   },
+   {
+    "id": "F3",
+    "added": [
+     "not"
+    ],
+    "removed": [
+     "never"
+    ],
+    "addedInDescriptionAfter": [],
+    "removedInDescriptionBefore": [],
+    "before": "The document explains how to perform a rollback of the \"beacon-api-prod-euc1\" application in a production environment. It provides Argo CD commands to revert to a previous revision and view the application history, and notes that image tags in the \"beacon-deploy\" must also be reverted to prevent automatic forward roll. After a rollback, an incident should be opened if customers were impacted.",
+    "after": "The document outlines the process for rolling back a production deployment using Argo CD for the \"beacon-api-prod-euc1\" application. It states that rollbacks are prohibited without approval and provides the commands to view history and perform a rollback. After rolling back, image tags in the \"beacon-deploy\" must be reverted, otherwise Argo CD will automatically roll forward on the next sync. If customers are impacted, an incident should be opened."
+   },
+   {
+    "id": "F4",
+    "added": [
+     "6"
+    ],
+    "removed": [
+     "60"
+    ],
+    "addedInDescriptionAfter": [
+     "6"
+    ],
+    "removedInDescriptionBefore": [
+     "60"
+    ],
+    "before": "The document outlines the company's pricing and plans, specifically the procedure for changing prices. It states that existing customers must receive a 60‑day notice by email, and new prices take effect at the next renewal after the notice period. Grandfathering decisions are made jointly by the CEO and the Head of Product.",
+    "after": "The document outlines the pricing and plans policy, specifying that existing customers must receive a six‑day notice by email before any price change takes effect. New prices become active at the next renewal after the notice period. Grandfathering decisions are made jointly by the CEO and the Head of Product. This information can be referenced for future pricing updates."
+   }
+  ]
+ },
+ "usage": {
+  "calls": 48,
+  "prompt_tokens": 31269,
+  "completion_tokens": 17595,
+  "cost": 0.0119244,
+  "embed_tokens": 6224,
+  "embed_cost": 0
+ }
+}

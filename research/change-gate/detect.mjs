@@ -242,7 +242,45 @@ export function makeDetectors(P = PARAMS) {
     } });
   }
 
+  // Added after the first run (post hoc), when the declared detectors above turned out to need a novel item first:
+  // a cluster forming among items that are each unremarkable. For a new item, the share of recent items (48 h) in
+  // its neighbourhood against the share of the reference (14 days before), Poisson tail, volume-normalised.
+  {
+    const bursts = [];
+    D.push({ name: "neighbourhood-burst", posthoc: true, onItem: (x, c) => {
+      const tau = c.tau();
+      const recent = c.since(x.t - 48);
+      const ref = c.between(x.t - 48 - 24 * P.refDays, x.t - 48);
+      if (ref.length < 50 || recent.length < 5) return [];
+      const near = recent.filter((y) => dot(y.vec, x.vec) >= tau);
+      if (near.length < P.clusterMin - 1) return [];
+      const refNear = ref.filter((y) => dot(y.vec, x.vec) >= tau).length;
+      const lambda = ((refNear + 0.5) / ref.length) * (recent.length + 1);
+      const k = near.length + 1;
+      if (poissonTail(k, lambda) > 1e-4) return [];
+      const known = bursts.find((b) => b.t > x.t - 72 && dot(b.centroid, x.vec) >= tau);
+      if (known && k < known.k * 2) return [];
+      const members = [...near, x];
+      bursts.push({ t: x.t, k, centroid: mean(members.map((m) => m.vec)) });
+      return [{ evidence: members.map((m) => m.id) }];
+    } });
+  }
+
+  // Also post hoc: kNN novelty against the item's own source only (the literature's advice for mixed streams).
+  D.push({ name: "knn-novelty-source", posthoc: true, onItem: (x) => (x.pSource <= P.alphaItem ? [{ evidence: [x.id], score: x.ncmSource }] : []) });
+
   return D;
+}
+
+function poissonTail(k, lambda) {
+  // P(X >= k), X ~ Poisson(lambda)
+  let term = Math.exp(-lambda);
+  let cdf = term;
+  for (let i = 1; i < k; i++) {
+    term *= lambda / i;
+    cdf += term;
+  }
+  return Math.max(0, 1 - cdf);
 }
 
 // A hybrid declared before the first run: one per hour when any of its parts fires, the evidence of all of them.
@@ -256,6 +294,7 @@ export function replay(stream, vectors, P = PARAMS) {
   for (const s of stream.initial) known.set(s.id, { id: s.id, vec: vectors.get(s.text), t: -1, kind: "doc" });
   const seen = []; // arrived items with features, in order
   const ncmHistory = [];
+  const ncmBySource = {};
   const nn1History = [];
   let tauCache = null;
   const ctx = {
@@ -289,7 +328,15 @@ export function replay(stream, vectors, P = PARAMS) {
       sims.sort((a, b) => b - a);
       const top = sims.slice(0, P.k);
       const ncm = 1 - top.reduce((a, b) => a + b, 0) / top.length;
-      const x = { ...it, vec, oldVec: it.old ? vectors.get(it.old) : null, ncm, p: conformalP(ncmHistory, ncm), accounts: accountsOf(it.text) };
+      const src = it.kind === "edit" ? "docs" : it.source;
+      const own = [];
+      for (const [id, k] of known) if (id !== it.section && (k.source ?? "docs") === src) own.push(dot(vec, k.vec));
+      own.sort((a, b) => b - a);
+      const ownTop = own.slice(0, P.k);
+      const ncmSource = ownTop.length ? 1 - ownTop.reduce((a, b) => a + b, 0) / ownTop.length : 1;
+      const hist = (ncmBySource[src] ??= []);
+      const x = { ...it, vec, oldVec: it.old ? vectors.get(it.old) : null, ncm, p: conformalP(ncmHistory, ncm), ncmSource, pSource: conformalP(hist, ncmSource), accounts: accountsOf(it.text) };
+      hist.push(ncmSource);
       ncmHistory.push(ncm);
       nn1History.push(top[0]);
       tauCache = null;
@@ -300,7 +347,7 @@ export function replay(stream, vectors, P = PARAMS) {
         for (const a of d.onItem(x, ctx)) alarms[d.name].push({ ...a, t: h + 1 });
         ms[d.name] += performance.now() - t1;
       }
-      known.set(it.kind === "edit" ? it.section : it.id, { id: it.id, vec, t: it.t });
+      known.set(it.kind === "edit" ? it.section : it.id, { id: it.id, vec, t: it.t, source: src });
       seen.push(x);
       batch.push(x);
     }
