@@ -1,0 +1,83 @@
+{
+ "always-on/passive": {
+  "eventsReachedRightAgent": "26/39",
+  "inEventWindow": 0.59,
+  "medianLatencyH": 6,
+  "p90LatencyH": 72,
+  "noiseSignalsPerAgentWeek": 1.47,
+  "extraAgentWakesPerAgentWeek": 0,
+  "inboxCallsPerAgentWeek": 0
+ },
+ "always-on/inbox": {
+  "eventsReachedRightAgent": "26/39",
+  "inEventWindow": 0.59,
+  "medianLatencyH": 4,
+  "p90LatencyH": 71,
+  "noiseSignalsPerAgentWeek": 1.47,
+  "extraAgentWakesPerAgentWeek": 0,
+  "inboxCallsPerAgentWeek": 60
+ },
+ "always-on/push": {
+  "eventsReachedRightAgent": "26/39",
+  "inEventWindow": 0.67,
+  "medianLatencyH": 3,
+  "p90LatencyH": 26,
+  "noiseSignalsPerAgentWeek": 1.47,
+  "extraAgentWakesPerAgentWeek": 1.62,
+  "inboxCallsPerAgentWeek": 0
+ },
+ "daily/passive": {
+  "eventsReachedRightAgent": "26/39",
+  "inEventWindow": 0.28,
+  "medianLatencyH": 72,
+  "p90LatencyH": 189,
+  "noiseSignalsPerAgentWeek": 1.47,
+  "extraAgentWakesPerAgentWeek": 0,
+  "inboxCallsPerAgentWeek": 0
+ },
+ "daily/inbox": {
+  "eventsReachedRightAgent": "26/39",
+  "inEventWindow": 0.56,
+  "medianLatencyH": 24,
+  "p90LatencyH": 72,
+  "noiseSignalsPerAgentWeek": 1.47,
+  "extraAgentWakesPerAgentWeek": 0,
+  "inboxCallsPerAgentWeek": 5
+ },
+ "daily/push": {
+  "eventsReachedRightAgent": "26/39",
+  "inEventWindow": 0.67,
+  "medianLatencyH": 3,
+  "p90LatencyH": 26,
+  "noiseSignalsPerAgentWeek": 1.47,
+  "extraAgentWakesPerAgentWeek": 1.62,
+  "inboxCallsPerAgentWeek": 0
+ },
+ "on-demand/passive": {
+  "eventsReachedRightAgent": "24/39",
+  "inEventWindow": 0.13,
+  "medianLatencyH": 122,
+  "p90LatencyH": 319.6,
+  "noiseSignalsPerAgentWeek": 1.47,
+  "extraAgentWakesPerAgentWeek": 0,
+  "inboxCallsPerAgentWeek": 0
+ },
+ "on-demand/inbox": {
+  "eventsReachedRightAgent": "26/39",
+  "inEventWindow": 0.26,
+  "medianLatencyH": 70.9,
+  "p90LatencyH": 146.9,
+  "noiseSignalsPerAgentWeek": 1.47,
+  "extraAgentWakesPerAgentWeek": 0,
+  "inboxCallsPerAgentWeek": 2.8
+ },
+ "on-demand/push": {
+  "eventsReachedRightAgent": "26/39",
+  "inEventWindow": 0.67,
+  "medianLatencyH": 3,
+  "p90LatencyH": 26,
+  "noiseSignalsPerAgentWeek": 1.47,
+  "extraAgentWakesPerAgentWeek": 1.62,
+  "inboxCallsPerAgentWeek": 0
+ }
+}

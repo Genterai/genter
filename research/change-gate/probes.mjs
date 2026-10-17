@@ -77,12 +77,6 @@ async function pairs() {
   return out;
 }
 
-const diffLines = (a, b) => {
-  const A = a.split("\n");
-  const B = b.split("\n");
-  return { removed: A.filter((l) => !B.includes(l)), added: B.filter((l) => !A.includes(l)) };
-};
-
 function edits() {
   const secs = sections();
   const { harmless, cosmetic } = readData("doc-edits.json");

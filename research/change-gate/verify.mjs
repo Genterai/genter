@@ -8,9 +8,10 @@
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { buildStream, TESTS } from "./build.mjs";
-import { HERE, chat, dot, embedAll, parseJson, pool, readData, shrink, usage } from "./lib.mjs";
+import { HERE, chat, dot, embedAll, parseJson, pool, shrink, usage } from "./lib.mjs";
 import { score } from "./run.mjs";
 import { SUBSCRIBERS } from "./subscribers.mjs";
+import { accountsOf } from "./detect.mjs";
 
 const MODEL = process.env.VERIFY_MODEL || "openai/gpt-oss-120b";
 const GATE = ["neighbourhood-burst", "mmd-calibrated", "lexical-diff", "entity-sources"];
@@ -18,6 +19,9 @@ const MAX_ITEMS = 40;
 const arg = (k) => process.argv.includes(k) && process.argv[process.argv.indexOf(k) + 1];
 const SEEDS = (arg("--seeds") || "1,2,3").split(",").map(Number);
 const VARIANT = arg("--variant") || "neutral";
+// Added after the first verification run (post hoc): context by entity as well as by meaning. Under each item, the
+// recent items of other sources that name the same customer account (accountsOf, the same matcher entity-sources uses).
+const CONTEXT = arg("--context") || "meaning";
 
 export const SYSTEM = `You are the verification stage of Genter, an infrastructure layer that indexes an organisation's sources (Slack, email, CRM, support tickets, calendar, documents) and hands verifiable context signals to other agents. Genter is not an expert or an advisor: it never recommends, advises, decides, plans or tells anyone what to do. Other agents interpret signals and decide.
 
@@ -59,6 +63,11 @@ function render(stream, vectors, evidenceIds, at) {
       .map((y) => [y, dot(v, vectors.get(y.text))])
       .sort((a, b) => b[1] - a[1])
       .slice(0, 3);
+    if (CONTEXT === "entity") {
+      const names = accountsOf(x.text);
+      const same = before.filter((y) => y.t < x.t && y.t > x.t - 24 * 14 && y.id !== x.id && y.source !== x.source && names.some((a) => accountsOf(y.text).includes(a))).slice(-5);
+      for (const y of same) if (!ctx.some(([z]) => z.id === y.id)) ctx.push([y, 0]);
+    }
     const body = x.kind === "edit" ? (({ removed, added }) => `edit of ${x.section}\n  removed: ${clip(removed.join(" / "), 400)}\n  added: ${clip(added.join(" / "), 400)}`)(diff(x.old, x.text)) : clip(x.text, 400);
     return `[${x.id}] (${x.source}, ${day(x.t)}) ${body}\n${ctx.map(([y]) => `    known before: (${y.source ?? "docs"}, ${day(y.t)}) ${clip(y.text.replace(/\n/g, " "), 220)}`).join("\n")}`;
   });
@@ -135,5 +144,5 @@ for (const test of (arg("--tests") || TESTS.join(",")).split(",")) for (const se
     console.error(test, seed, arm, done.length, "calls", results.at(-1).after.events.map((e) => `${e.id}:${e.strict ? "+" : "-"}`).join(" "), "fp", results.at(-1).after.fp, "$", results.at(-1).cost.toFixed(4));
   }
 }
-writeFileSync(join(HERE, "results", `verified-${VARIANT}.json`), JSON.stringify(results));
+writeFileSync(join(HERE, "results", `verified-${VARIANT}${CONTEXT === "entity" ? "-entity" : ""}.json`), JSON.stringify(results));
 console.error("usage", usage);

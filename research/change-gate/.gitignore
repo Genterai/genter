@@ -1,1 +1,3 @@
 .cache/
+results/raw-*.json
+results/verified-*.json

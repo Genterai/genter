@@ -112,7 +112,7 @@ function mmd(X, Y, rand, perms = 100) {
 export function makeDetectors(P = PARAMS) {
   const D = [];
 
-  D.push({ name: "every-batch", onHour: (h, c) => (c.batch.length ? [{ evidence: c.batch.map((x) => x.id) }] : []) });
+  D.push({ name: "every-batch", onHour: (_h, c) => (c.batch.length ? [{ evidence: c.batch.map((x) => x.id) }] : []) });
 
   D.push({ name: "daily-digest", onHour: (h, c) => {
     if (h % 24 !== 18) return [];

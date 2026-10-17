@@ -92,7 +92,7 @@ export function buildStream(test, seed) {
     const cos = shuffle(cosmetic.filter((e) => !critical.has(e.section)), rand).slice(0, 40);
     // A cosmetic re-save replaces whatever the section held, so a section edited earlier in the stream is skipped.
     const edited = new Set(items.filter((x) => x.kind === "edit").map((x) => x.section));
-    cos.filter((e) => !edited.has(e.section)).forEach((e, i) => items.push({ id: `cosmetic:${e.section}`, t: at(22, 14) + i * 0.02, source: "docs", kind: "edit", section: e.section, old: e.old, text: e.text, noise: "E-reindex" }));
+    for (const [i, e] of cos.filter((x) => !edited.has(x.section)).entries()) items.push({ id: `cosmetic:${e.section}`, t: at(22, 14) + i * 0.02, source: "docs", kind: "edit", section: e.section, old: e.old, text: e.text, noise: "E-reindex" });
     for (let i = 0; i < 60; i++) {
       const v = `2.${41 + Math.floor(i / 6)}.${i % 6}`;
       const svc = ["beacon-api", "probe-runner", "alert-router", "dashboard"][i % 4];
@@ -103,7 +103,7 @@ export function buildStream(test, seed) {
       const x = ru.pop();
       items.push({ id: `${x.id}@${d}`, t: at(d, hourIn(d)), source: x.source, kind: "message", text: x.text, noise: "E-lang" });
     }
-    readData("backfill.json").forEach((x, i) => items.push({ id: x.id, t: at(39, 11) + i * 0.005, source: "notion", kind: "message", text: x.text, noise: "E-backfill" }));
+    for (const [i, x] of readData("backfill.json").entries()) items.push({ id: x.id, t: at(39, 11) + i * 0.005, source: "notion", kind: "message", text: x.text, noise: "E-backfill" });
   }
   if (test === "F") {
     const current = new Map(initial.map((s) => [s.id, s.text]));
