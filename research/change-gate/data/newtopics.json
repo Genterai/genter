@@ -1,0 +1,122 @@
+[
+ {
+  "id": "B1-0",
+  "event": "B1",
+  "source": "slack",
+  "text": "Alert: A Beacon API key with admin scope was found in a public GitHub repo of an engineer's side project. Immediate action required."
+ },
+ {
+  "id": "B1-1",
+  "event": "B1",
+  "source": "slack",
+  "text": "Incident #452: Admin-scope API key leak detected. Key has been rotated. Audit logs under review. No misuse detected so far."
+ },
+ {
+  "id": "B1-2",
+  "event": "B1",
+  "source": "slack",
+  "text": "Please check your projects and confirm no other keys were exposed. Rotate any keys if suspicious."
+ },
+ {
+  "id": "B1-3",
+  "event": "B1",
+  "source": "email",
+  "text": "Subject: Security Notification - Beacon API Key Incident\nDear Acme Logistics Team,\nWe identified a committed admin API key for Beacon in a public repo. The key has been rotated. Currently no signs of misuse. Please reach out for concerns.\nKind regards,\nNorthwind Labs Security Team"
+ },
+ {
+  "id": "B1-4",
+  "event": "B1",
+  "source": "email",
+  "text": "Subject: Important Security Update from Northwind Labs\nDear Globex,\nAs part of maintaining your security, we want to inform you that an admin-level API key was inadvertently exposed in a public repository linked to one of our engineers. The key has been rotated and we found no evidence of misuse.\nThank you for your understanding.\nNorthwind Labs"
+ },
+ {
+  "id": "B1-5",
+  "event": "B1",
+  "source": "tickets",
+  "text": "Question: Can you confirm if our data was compromised due to the API key leak? Waiting for reassurance."
+ },
+ {
+  "id": "B1-6",
+  "event": "B1",
+  "source": "tickets",
+  "text": "I saw your email about the key leak, please advise what additional steps we should take on our side."
+ },
+ {
+  "id": "B1-7",
+  "event": "B1",
+  "source": "email",
+  "text": "Subject: Security Incident Update - Beacon Service\nHello Initech,\nFollowing the discovery of an API key exposure, we have completed a thorough audit and found no unauthorized activity. All compromised keys have been rotated.\nRegards,\nNorthwind Labs Support"
+ },
+ {
+  "id": "B1-8",
+  "event": "B1",
+  "source": "tickets",
+  "text": "Is there a way to get detailed logs or reports about this incident on our account?"
+ },
+ {
+  "id": "B1-9",
+  "event": "B1",
+  "source": "slack",
+  "text": "Audit logs reviewed for all affected customers. No suspicious activity found. Monitoring continues."
+ },
+ {
+  "id": "B1-10",
+  "event": "B1",
+  "source": "email",
+  "text": "Subject: Northwind Labs Security Incident Follow-Up\nDear Wayne Freight,\nWe are committed to transparency and vigilance. The leaked admin key used solely for Beacon has been safely rotated. No evidence of unauthorized usage detected.\nSincerely,\nSecurity Team"
+ },
+ {
+  "id": "B1-11",
+  "event": "B1",
+  "source": "calendar",
+  "text": "Event: Post-Incident Review Meeting\nDate: 2024-06-10\nTime: 10:00 - 11:00 AM\nAttendees: Security, Engineering, Support, Customer Success\nAgenda: Incident recap, root cause, remediation effectiveness, customer impact, preventive measures."
+ },
+ {
+  "id": "B1-12",
+  "event": "B1",
+  "source": "tickets",
+  "text": "Thanks for the update. Please confirm if multi-factor authentication coverage was reviewed as part of the incident response."
+ },
+ {
+  "id": "B1-13",
+  "event": "B1",
+  "source": "slack",
+  "text": "Reminder: All engineers must verify no secrets are in version control beyond this incident. Continuous scanning enabled."
+ },
+ {
+  "id": "B2-0",
+  "event": "B2",
+  "source": "email",
+  "text": "Hi Datadog Partnerships Team, we at Northwind Labs are interested in exploring a partnership to list our Beacon uptime-monitoring service on the Datadog marketplace. Could we schedule a call to discuss next steps? Best, Northwind Labs"
+ },
+ {
+  "id": "B2-1",
+  "event": "B2",
+  "source": "calendar",
+  "text": "Event: Introductory Call with Datadog Partnerships Team | Date: 2024-06-10 10:00 AM CEST | Attendees: Northwind Labs, Datadog Partner Team"
+ },
+ {
+  "id": "B2-2",
+  "event": "B2",
+  "source": "slack",
+  "text": "#partnerships @everyone Exciting news! We have scheduled our first call with Datadog to discuss listing Beacon on their marketplace. Please be ready to contribute insights or questions."
+ },
+ {
+  "id": "B2-3",
+  "event": "B2",
+  "source": "email",
+  "text": "Thank you for the introductory call. We are excited about the potential listing of Beacon on the Datadog marketplace. Please see attached partnership documents and next-step proposals. Looking forward to your feedback."
+ },
+ {
+  "id": "B2-4",
+  "event": "B2",
+  "source": "crm",
+  "text": "Added note: Initiated talks with Datadog partner team to list Beacon service on their marketplace. Introductory call completed on 2024-06-10. Awaiting follow-up on partnership terms."
+ },
+ {
+  "id": "B2-5",
+  "event": "B2",
+  "source": "slack",
+  "text": "#partnerships Update: Datadog team responded positively to our proposal. Next steps involve legal and technical integrations. Let's prepare documentation and technical specs."
+ }
+]

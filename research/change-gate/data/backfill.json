@@ -1,0 +1,722 @@
+[
+ {
+  "id": "notion-0",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "2023 Q3 Sprint Retrospective\nIn our Q3 sprint retrospective, the team noted significant improvements in deployment speed thanks to the new CI/CD pipeline. However, we identified ongoing challenges with alert noise from Beacon's monitoring thresholds. Action items include refining alert filters and improving documentation for on-call engineers. Customer feedback remains positive overall, highlighting Beacon's reliability improvements."
+ },
+ {
+  "id": "notion-1",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "2023 September Offsite Agenda\nDay 1: Company Vision Review, Team Building Activities, Roundtable on Beacon’s Feature Roadmap\nDay 2: Workshop on Customer Support Best Practices, Hackathon Kickoff, Evening Social Event\nDay 3: Hackathon Presentations, Retrospective, Planning for Q4 Initiatives\nLocation: Rotterdam, Local Conference Center"
+ },
+ {
+  "id": "notion-2",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Onboarding Checklist for New Engineers (2023)\n- Complete company HR paperwork\n- Set up workstation with required software\n- Access Beacon’s code repositories and internal wiki\n- Schedule introductory calls with team leads\n- Review product architecture and current sprint backlog\n- Join weekly demo and stand-up"
+ },
+ {
+  "id": "notion-3",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Lunch Rota Q1 2024\nWeek 1: Wayne Freight Team\nWeek 2: Umbrella Retail Support\nWeek 3: Stark Media and Hooli Cloud Developers\nWeek 4: Initech and Soylent Foods Sales\nTeam leads coordinate lunch orders by Friday each week."
+ },
+ {
+  "id": "notion-4",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Old How-To: Adding a New Uptime Check in Beacon (2023)\n1. Log into the Beacon dashboard.\n2. Navigate to 'Monitors' and select 'Add New Check.'\n3. Choose the check type (HTTP, TCP, Ping).\n4. Enter the URL or IP and set desired thresholds.\n5. Save and verify the check appears in your dashboard."
+ },
+ {
+  "id": "notion-5",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Meeting Notes: Product Strategy (Nov 2023)\nDiscussion centered on expanding Beacon’s monitoring capabilities into serverless environments. Contoso Health and Fabrikam provided insights on compliance requirements. Next steps include prototyping serverless probes and scheduling a customer pilot by Q2 2024."
+ },
+ {
+  "id": "notion-6",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "2023 December Team Retrospective\nAchievements include a 15% reduction in false-positive alerts and onboarding three new customers. Challenges highlighted were delays in customer feature requests and underperformance of the billing module. Suggestions for improvement involved cross-team workshops and additional testing resources."
+ },
+ {
+  "id": "notion-7",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Offsite 2023 Lunch Menu Ideas\n- Dutch cheese and herring platters\n- Rotterdam street food including kibbeling and stroopwafels\n- Vegetarian and gluten-free options\n- Coffee, tea, and local craft beers for socials"
+ },
+ {
+  "id": "notion-8",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Support Team Weekly Sync Notes (Feb 2024)\nReviewed recent incidents with Hooli Cloud and Vandelay Imports. Agreed to update FAQ articles and escalate unresolved tickets faster. Discussed beta rollout feedback and plan training sessions for new features."
+ },
+ {
+  "id": "notion-9",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Legacy How-To: Exporting Beacon Reports (2023)\nNavigate to Reports > Export. Select the timeframe and report type. Click 'Download CSV' or 'PDF.' Use exported data for client presentations or internal reviews."
+ },
+ {
+  "id": "notion-10",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Project Kickoff Notes: Beacon Mobile App (Oct 2023)\nObjective: Deliver a mobile companion app to view uptime data on the go. Initial feature set: real-time alerts, status dashboards, incident timelines. Tentative release target: Q4 2024. Assigned product owner and engineering leads."
+ },
+ {
+  "id": "notion-11",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Lunch Rota Q4 2023\nWeek 1: Stark Media Developers\nWeek 2: Fabrikam Sales Team\nWeek 3: Acme Logistics Support\nWeek 4: Tyrell Bio and Initech Collaboration Team"
+ },
+ {
+  "id": "notion-12",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Old Meeting Notes: Security Review (July 2023)\nAudit found no major vulnerabilities but recommended rotating API keys quarterly. Discussed adoption of multi-factor authentication for all staff. Planned security awareness training scheduled for August."
+ },
+ {
+  "id": "notion-13",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Past Retrospective: Customer Support (Jan 2024)\nSuccesses: Reduced average ticket resolution time by 20%. Pain points: Incomplete product documentation causing repeated inquiries. Action: Initiate documentation sprint and recruit a technical writer."
+ },
+ {
+  "id": "notion-14",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "2023 Q2 OKRs Review\nObjective: Improve Beacon’s uptime accuracy to 99.99%. Key Results: Decreased false positives by 10%, integrated anomaly detection algorithms, onboarded five new enterprise clients. Outcome: All targets met with plans to increase client base."
+ },
+ {
+  "id": "notion-15",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Old Onboarding: Sales Team New Hire Guide (2023)\nIncludes overview of customer segments like Acme Logistics and Soylent Foods, CRM tool training, pricing model explanation, and introduction to Beacon’s value proposition. Sales shadowing recommended during first two weeks."
+ },
+ {
+  "id": "notion-16",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Product Team Retrospective (Dec 2023)\nCompleted the redesign of the Beacon alert dashboard. User feedback indicates improved usability but requests for more customization. Plan to incorporate these enhancements in next sprint cycle."
+ },
+ {
+  "id": "notion-17",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Historical Meeting Notes: Beacon API Discussion (Sept 2023)\nDecided to version the API moving forward to ensure backward compatibility. Added endpoints for detailed incident metadata. Initial documentation to be drafted by engineering team."
+ },
+ {
+  "id": "notion-18",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Lunch Rota Q3 2023\nWeek 1: Tyrell Bio and Contoso Health\nWeek 2: Umbrella Retail and Vandelay Imports\nWeek 3: Globex and Wayne Freight\nWeek 4: Hooli Cloud and Soylent Foods"
+ },
+ {
+  "id": "notion-19",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Old How-To: Restarting Beacon Monitoring Agents (2023)\nSSH into the server running the agent. Run 'systemctl restart beacon-agent.service'. Check service status with 'systemctl status beacon-agent.service'. Confirm connectivity from central dashboard."
+ },
+ {
+  "id": "notion-20",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Offsite Retrospective Notes (2023)\nThe offsite was praised for fostering cross-functional collaboration. Key takeaway: improving internal documentation and communication channels. Proposed quarterly offsites to maintain momentum."
+ },
+ {
+  "id": "notion-21",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "2024 January Meeting Notes: Performance Upgrade\nTeam reviewed upcoming hardware upgrades for Beacon hosting servers. Expected to reduce latency and improve check frequency. Budget approved; deployment scheduled for March 2024."
+ },
+ {
+  "id": "notion-22",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Legacy Onboarding Steps for Engineers (2023)\nComplete security training and access provisioning. Clone core repositories and run local test environments. Attend sprint planning and retrospectives. Pair with mentor for first 30 days."
+ },
+ {
+  "id": "notion-23",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Past Customer Feedback Summary (2023)\nClients praised Beacon's reliability and easy onboarding. Common requests include more customizable alerts and integration with Slack and Microsoft Teams. Product roadmap updated accordingly."
+ },
+ {
+  "id": "notion-24",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Old Internal Wiki Page: Beacon Release Process (2023)\nNew releases require passing all CI tests and peer code review. Release manager to coordinate deployment during low-traffic hours. Post-release monitoring critical for 72 hours."
+ },
+ {
+  "id": "notion-25",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "2023 November Sales Team Kickoff\nFocused on sector-specific selling points for logistics and healthcare clients. Reviewed pipeline with emphasis on Stark Media and Umbrella Retail opportunities. Training on new CRM features included."
+ },
+ {
+  "id": "notion-26",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Lunch Rota February 2024\nWeek 1: Contoso Health and Fabrikam\nWeek 2: Wayne Freight Team\nWeek 3: Acme Logistics and Globex\nWeek 4: Stark Media and Hooli Cloud"
+ },
+ {
+  "id": "notion-27",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Old Meeting Notes: Incident Review (Oct 2023)\nDiscussed recent downtime affecting Soylent Foods’ monitors due to DNS issues. Improved DNS fallback mechanisms recommended. Customer notification templates updated for greater clarity."
+ },
+ {
+  "id": "notion-28",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "2023 Q1 Retrospective Summary\nKey wins: successful onboarding of Vandelay Imports, reduced alert noise. Challenges: workload balancing during engineering handoffs. Proposed solutions: introduce weekly syncs and resource pool for urgent spikes."
+ },
+ {
+  "id": "notion-29",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Historical How-To: Creating User Groups in Beacon (2023)\nAccess the admin panel, select 'User Management,' then 'Groups.' Click 'Create New Group,' assign users, and set permission levels. Use groups for managing alert distributions efficiently."
+ },
+ {
+  "id": "notion-30",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Old Offsite Agenda (2024)\nDay 1: Company Goals & Metrics Review, Team Building Games\nDay 2: Customer Case Studies, Brainstorming New Features\nDay 3: Roadmap Alignment, Feedback & Retrospective, Social Dinner\nLocation: Beachside Resort, Zeeland"
+ },
+ {
+  "id": "notion-31",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Past Lunch Rota Q2 2023\nWeek 1: Initech and Tyrell Bio\nWeek 2: Wayne Freight and Fabrikam\nWeek 3: Stark Media and Hooli Cloud\nWeek 4: Globex and Acme Logistics"
+ },
+ {
+  "id": "notion-32",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Historical Product Meeting Notes (Aug 2023)\nDiscussed adding automated anomaly detection for uptime spikes. Contoso Health and Vandelay Imports provided alpha test feedback. Timeline adjusted for final release to Q1 2024."
+ },
+ {
+  "id": "notion-33",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Support Ticket Handling Guide (2023)\nPrioritize based on customer SLAs and impact. Use internal triage system to assign tickets promptly. Document resolution steps before closing. Follow up with customers within 24 hours."
+ },
+ {
+  "id": "notion-34",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Legacy Engineering Retrospective (Nov 2023)\nAchievements: integrated alert noise reduction algorithms. Challenges included some regression bugs in nightly builds. Plan: increase test coverage and refactor legacy codebase."
+ },
+ {
+  "id": "notion-35",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Old Meeting Notes: Marketing Strategy (Dec 2023)\nCampaigns targeting logistics and healthcare sectors showed promising leads. Consider case studies featuring Acme Logistics and Contoso Health. Upcoming conference participation scheduled for Q2 2024."
+ },
+ {
+  "id": "notion-36",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Past Onboarding Schedule for Support Team (2023)\nDay 1: Introduction and tools setup\nDay 2: Product deep dive and FAQs\nDay 3: Shadow support calls\nWeek 1: Lead daily standups and complete documentation exercises\nOngoing: Monthly check-ins with mentor."
+ },
+ {
+  "id": "notion-37",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "2023 Q2 Sprint Retrospective\nHeld on July 5, 2023, the team reviewed priorities from the last sprint, noting improvements in issue response times but highlighting ongoing challenges in cross-team communication. Action items included scheduling more frequent sync-ups between Dev and Sales and updating the internal KB for better clarity on support processes."
+ },
+ {
+  "id": "notion-38",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "2023-11-15 All-Hands Meeting Notes\nCEO summarized Q3 financial performance with a positive outlook on Beacon’s new features rollout. Announced plans for expanding the Rotterdam office and hiring additional developers. Marketing shared user growth stats and the success of the recent webinar series."
+ },
+ {
+  "id": "notion-39",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "August 2023 Offsite Agenda\n1. Company vision update and goals for 2024\n2. Workshop on customer feedback integration\n3. Team-building activities including a cycling tour\n4. Breakout sessions on product innovation\n5. Dinner and social networking"
+ },
+ {
+  "id": "notion-40",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Beacon Uptime Monitoring - Setup Guide (Outdated)\nThis guide walks through initial Beacon account creation, adding your first host, and configuring basic notifications via email. Note: Integration with Slack is under development and not covered here."
+ },
+ {
+  "id": "notion-41",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Lunch Rota - July 2023\nWeek 1: Team A\nWeek 2: Team B\nWeek 3: Team C\nWeek 4: Team D\nPlease swap within your teams if unavailable and update the shared calendar accordingly."
+ },
+ {
+  "id": "notion-42",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Customer Support Onboarding Checklist (2023)\n- Complete product training sessions\n- Shadow senior support agents for one week\n- Learn the ticketing system workflow\n- Review escalation protocols\n- Pass the knowledge quiz"
+ },
+ {
+  "id": "notion-43",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "2024-01-10 Product Team Retrospective\nDiscussion focused on recent bugs affecting Globex clients and improvements in deployment procedures. Decided to automate more pre-release tests and increase UAT participation from Sales."
+ },
+ {
+  "id": "notion-44",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Marketing Campaign Review - Spring 2023\nCampaigns targeting logistics and retail sectors resulted in a 15% increase in lead generation. Campaign for Soylent Foods underperformed; lessons learned include needing better segmentation and adjusted messaging."
+ },
+ {
+  "id": "notion-45",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "DevOps Deployment How-To (Old)\nSteps to manually deploy Beacon updates via SSH on staging and production servers. Reminder to back up configs and monitor system logs post-deployment. This process was replaced by CI/CD automation in December 2023."
+ },
+ {
+  "id": "notion-46",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Internal Wiki Maintenance Schedule\nPerformed quarterly cleanup scheduled for September 2023. Deprecated pages archived; outdated API docs removed. Editors assigned to review product FAQs monthly."
+ },
+ {
+  "id": "notion-47",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "February 2024 Engineering All-Hands\nAnnouncement of new microservices architecture initiative. Teams encouraged to contribute to the shared design document. Plans to run a hackathon focused on improving Beacon’s analytics dashboard."
+ },
+ {
+  "id": "notion-48",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "2023 Company Values Reminder\nIntegrity, Customer Obsession, Continuous Improvement, Team Collaboration. These values guide daily work and decision-making at Northwind Labs. Refer to HR for detailed examples and behaviors."
+ },
+ {
+  "id": "notion-49",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Sales Team Weekly Check-In Notes (2023-10-20)\nDiscussed pipeline status, focusing on Initech and Vandelay Imports. Shared updates on pricing negotiations and feedback from Umbrella Retail. Agreed to schedule a joint demo session with Product Team."
+ },
+ {
+  "id": "notion-50",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Beacon API Integration Guide (Old Version)\nProvides endpoints for uptime data retrieval and alert setup. Authentication via API key detailed here. Note: The API has since been deprecated and replaced with the v2 endpoints documented elsewhere."
+ },
+ {
+  "id": "notion-51",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Intern Onboarding Schedule (Summer 2023)\nDay 1: Company orientation and IT setup\nDay 2: Product overview and training\nDay 3: Team introductions and shadowing\nWeeks 2-4: Assigned projects and weekly check-ins"
+ },
+ {
+  "id": "notion-52",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "October 2023 IT Helpdesk Notes\nReported increasing number of VPN issues among remote workers. Recommended troubleshooting checklist added to wiki. Planned rollout of updated VPN client in November."
+ },
+ {
+  "id": "notion-53",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Customer Feedback Roundup Q1 2024\nTop themes: desire for mobile notifications, enhanced SLA reporting, and easier account management. Product team prioritized these in roadmap planning."
+ },
+ {
+  "id": "notion-54",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Engineering Bug Triage Meeting Notes - 2023-09-28\nReviewed 32 open bugs; 10 marked critical affecting Wayne Freight and Stark Media customers. Assigned fixes to sprint 45 with estimated completion in two weeks."
+ },
+ {
+  "id": "notion-55",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "HR Benefits Update Memo (2023-12)\nNew health insurance provider selected, effective January 2024. Flexible working hours policy introduced. Details and enrollment instructions sent via email."
+ },
+ {
+  "id": "notion-56",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Code Review Best Practices (Outdated)\nGuidelines encouraged peer reviews within 24 hours, use of GitHub PR templates, and mandatory unit test coverage. Updated best practices now require automated linting steps integrated in the CI pipeline."
+ },
+ {
+  "id": "notion-57",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Weekly Stand-Up Summary - Dev Team (2024-02-19)\nCurrent focus on improving Beacon latency for Hooli Cloud. Discussed blockers related to database migration. Plan to coordinate with QA for regression testing early next week."
+ },
+ {
+  "id": "notion-58",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Customer Success Playbook (Old Version)\nSteps include onboarding call scripts, monthly check-ins, and usage analysis reports. This version does not cover the new customer health scoring system launched Q4 2023."
+ },
+ {
+  "id": "notion-59",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "2023 Month-End Finance Meeting Notes\nRevenue targets exceeded by 8% for November. Expense reports flagged extra costs related to office refurbishment. Finance team preparing budget proposal for 2024."
+ },
+ {
+  "id": "notion-60",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "2023 Holiday Party Planning Notes\nVenue selected at Rotterdam Waterfront. Activities include trivia quiz, awards ceremony, and catered dinner. Agreed on a budget cap of €4,000 with management approval."
+ },
+ {
+  "id": "notion-61",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Product Launch Checklist (Deprecated)\nTasks included finalizing feature specs, QA sign-off, marketing collateral prep, and sales training. The launch process was revamped in early 2024 to include beta user feedback loops and phased rollouts."
+ },
+ {
+  "id": "notion-62",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Beacon Incident Response Procedure (2023)\nInitial incident logged by support, escalation to DevOps if >15 mins unresolved. Communication templates for affected clients included. Procedure updated in 2024 to integrate automated alerts and postmortem reports."
+ },
+ {
+  "id": "notion-63",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Data Privacy Compliance Summary (2023)\nReviewed GDPR requirements and actions taken to secure customer data. Annual audit passed with minor recommendations. Contact legal for detailed compliance documentation."
+ },
+ {
+  "id": "notion-64",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Lunch Rota - March 2024\nWeek 1: Team B\nWeek 2: Team C\nWeek 3: Team D\nWeek 4: Team A\nPlease confirm attendance on Monday morning."
+ },
+ {
+  "id": "notion-65",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Onboarding Troubleshooting Tips\nCommon new hire issues include VPN access errors, MFA enrollment problems, and slow laptop performance. IT can be contacted for priority support during first two weeks."
+ },
+ {
+  "id": "notion-66",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "December 2023 Retrospective Summary\nAcknowledged successful feature deployments and improved response SLAs. Identified persistent delay in onboarding new customers. Plan to introduce onboarding specialists in Q1 2024."
+ },
+ {
+  "id": "notion-67",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Beacon Dashboard Customization How-To (Old)\nInstructions for manual widget arrangement and color scheme changes via settings page. New version now supports drag-and-drop and saved user profiles."
+ },
+ {
+  "id": "notion-68",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "2024-03-05 Cross-Department Sync Notes\nMarketing requested updated product specs to improve campaign accuracy. Engineering committed to biweekly updates. Customer Success to provide feedback summaries regularly."
+ },
+ {
+  "id": "notion-69",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Internal Training Calendar 2023\nQuarterly workshops planned on security best practices, customer empathy, and new Beacon features. Recordings available on Knowledge Base."
+ },
+ {
+  "id": "notion-70",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Emergency Contact List (Outdated)\nIncludes IT after-hours support, building security, and HR contacts. Updated list emailed February 2024 replaces these details with expanded service numbers."
+ },
+ {
+  "id": "notion-71",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Beacon Pricing Model Overview (2023)\nDetailed tier structures and add-on features. Discount policy for multi-year contracts outlined. Pricing reevaluated in 2024 with new usage-based options introduced."
+ },
+ {
+  "id": "notion-72",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Weekly Product Team Meeting Notes - 2023-10-12\nDiscussed backlog grooming and prioritization. New client requests from Contoso Health considered. Decision to pause feature X development to focus on stability improvements."
+ },
+ {
+  "id": "notion-73",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "SVN Repository Guidelines (Deprecated)\nBranch naming conventions and commit message templates. We migrated fully to Git in Q1 2024, retiring SVN for all projects."
+ },
+ {
+  "id": "notion-74",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Employee Birthday Calendar 2023\nMonthly listings by team for shoutouts during weekly meetings. Encouraged team leads to organize small celebrations or shoutouts."
+ },
+ {
+  "id": "notion-75",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "2023 New Hire Feedback Summary\nMixed responses on orientation session usefulness. Suggested improvements in documentation and pairing with mentors earlier in the process. HR to implement changes for next onboarding cohort."
+ },
+ {
+  "id": "notion-76",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "## Meeting Notes 2023-11-15\nDiscussed the recent uptick in support tickets related to Beacon's alert notifications. Agreed to prioritize improvements in SMS delivery reliability. Mike will draft a proposal for the engineering team by next week.\n\n## Retrospective Q4 2023\nTeam felt cross-department communication had improved but identified documentation gaps. Action: Introduce weekly team updates and encourage shared Notion notes.\n\n## Offsite Agenda January 2024\nDay 1: Company kickoff with keynote by CEO, breakout sessions on product roadmap.\nDay 2: Team-building activities, customer journey workshops.\nDay 3: Hackathon focusing on Beacon feature ideas.\n\n## How-To: Setting up Beacon Alerts (Old Version)\nTo add a new alert, navigate to Settings > Alerts > Add New. Enter the URL to monitor and choose notification channels.\n\n## Lunch Rota Q1 2024\nWeek 1: Alice and Bob\nWeek 2: Carla and Derek\nWeek 3: Eva and Frank\nPlease swap responsibly if unavailable.\n\n## New Hire Onboarding Checklist April 2023\nComplete paperwork with HR\nSet up work laptop and accounts\nIntro meeting with team lead\nTraining on Beacon platform basics\n\n## Meeting Notes 2023-12-10\nReviewed Acme Logistics uptime report; service uptime at 99.95% last quarter. Client requested a monthly PDF summary feature.\n\n## Retrospective Q1 2024\nPositive feedback on recent UI update; some bugs remain in mobile alerts. Plan: triage and fix top five issues within two sprints.\n\n## Offsite Agenda July 2023\nFocus on improving customer support workflows.\nWorkshops on scaling infrastructure for anticipated traffic.\nEvening social event at local brewery.\n\n## How-To: Deploying Beacon Updates\nCurrent process involves staging review, automated tests, and deployment during low traffic hours (2am-4am CET).\n\n## Lunch Rota Q3 2023\nWeek 10: Gina and Harry\nWeek 11: Ingrid and Jack\nWeek 12: Karen and Leo\n\n## New Hire Onboarding Checklist July 2023\nAccount access setup\nProduct training session\nMeetings with support and engineering teams\nSecurity briefing\n\n## Meeting Notes 2024-01-20\nDiscussed network latency issues affecting Globex alerts. Assigned task to infrastructure team for diagnostics.\n\n## Retrospective Q2 2023\nIdentified documentation as a weak point. Decision made to assign a documentation owner for each project.\n\n## Offsite Agenda November 2023\nStrategy refresh for Beacon’s marketing approach.\nCompetitive analysis group work.\nKeynote on emerging uptime monitoring technologies.\n\n## How-To: Managing Customer Permissions\nGo to Admin Console > Customers, select user, and update roles. Save changes and notify the user.\n\n## Lunch Rota February 2024\nWeek 5: Mike and Nina\nWeek 6: Olivia and Peter\nWeek 7: Quentin and Rachel\n\n## New Hire Onboarding Checklist October 2023\nHR welcome packet\nSet up email and internal chat\nSecurity training\nShadow support calls\n\n## Meeting Notes 2023-09-05\nReviewed Beacon's server migration progress. Migration expected to complete by end of September.\n\n## Retrospective December 2023\nAcknowledged improvement in sprint predictability. Need to improve bug triage turnaround times.\n\n## Offsite Agenda April 2023\nDeep dive into Beacon customer success stories.\nWorkshops on feature prioritization.\nGroup dinners for networking.\n\n## How-To: Incident Response Workflow\nOn alert, notify incident manager, open an incident ticket, and start status updates every 30 minutes.\n\n## Lunch Rota June 2023\nWeek 24: Steve and Tina\nWeek 25: Uma and Victor\nWeek 26: Wendy and Xavier\n\n## New Hire Onboarding Checklist March 2024\nLaptop setup\nIntroduction to Beacon UI\nMeetings with key stakeholders\nCompliance overview\n\n## Meeting Notes 2023-08-17\nAgreed on new SLA terms with Umbrella Retail. SLA to be updated in contract by legal team.\n\n## Retrospective August 2023\nPositive feedback on new collaboration tools including Slack integrations.\nPlan to continue adoption across teams.\n\n## Offsite Agenda September 2023\nFocus on engineering best practices.\nSecurity audit preparation workshops.\nTeam outings to Rotterdam city center.\n\n## How-To: Creating a New Customer Account\nLogin to Admin Portal, navigate to Customers > Add New, fill in customer details, set service level, and send welcome email.\n\n## Lunch Rota December 2023\nWeek 50: Zach and Alice\nWeek 51: Bob and Carla\nWeek 52: Derek and Eva\n\n## New Hire Onboarding Checklist November 2023\nComplete tax and benefits forms\nReview company handbook\nProduct deep dive\nTeam lunch introduction\n\n## Meeting Notes 2024-02-14\nDiscussed feedback from Stark Media; requested enhanced alert customization options for different teams.\n\n## Retrospective May 2023\nSprint velocity improved. Need to focus on reducing customer escalations.\n\n## Offsite Agenda March 2024\nInnovation day with customer feedback sessions.\nTeam presentations on latest developments.\nClosed with a group dinner.\n\n## How-To: Troubleshooting Beacon Downtime\nCheck status dashboard, review logs, escalate to sysadmin if unresolved in 15 minutes.\n\n## Lunch Rota August 2023\nWeek 32: Fiona and George\nWeek 33: Hannah and Ian\nWeek 34: Julia and Karl\n\n## New Hire Onboarding Checklist December 2023\nSet up workspace\nComplete IT security training\nAttend Beacon product overview\nMeet buddy mentor\n\n## Meeting Notes 2023-10-22\nReviewed financial performance. Revenue growth steady but marketing spend needs optimization.\n\n## Retrospective July 2023\nIdentified bottlenecks in release pipeline. Plan to introduce automation tooling by Q4.\n\n## Offsite Agenda May 2023\nCustomer experience workshop.\nMarketing and sales team joint planning.\nOutdoor activities in the afternoon."
+ },
+ {
+  "id": "notion-77",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "items"
+ },
+ {
+  "id": "notion-78",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "2023 Q1 Retrospective\nIn Q1, we focused on improving Beacon's alert system reliability. We faced challenges with false positives, which were addressed by refining sensitivity thresholds. Team communication improved, though some delays in cross-department coordination were noted. Action items include more frequent bug triages and setting up a dedicated Slack channel for urgent issues."
+ },
+ {
+  "id": "notion-79",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "February 2023 All-Hands Meeting Notes\nDiscussed the upcoming Beacon 3.0 feature rollout scheduled for Q2. Customer feedback from Acme Logistics and Globex led to priority on dashboard customization. Finance shared updates on budget adjustments due to increased server costs. HR reminded everyone about the new remote work policy starting March 2023."
+ },
+ {
+  "id": "notion-80",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Onboarding Checklist for New Employees, 2023\n1. Complete HR paperwork and benefits enrollment.\n2. Set up company email and VPN access.\n3. Attend product overview session.\n4. Meet with team lead to review current projects.\n5. Complete security training and compliance quiz.\n6. Familiarize with internal wiki and Slack channels."
+ },
+ {
+  "id": "notion-81",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Old How-To: Creating a Beacon Monitor\nLog into the Beacon dashboard using your company credentials. Navigate to 'Monitors' and click 'Add New'. Input the website URL and choose monitoring frequency (recommended: every 5 minutes). Set alert preferences including SMS and email notifications. Save and test the monitor to ensure proper setup."
+ },
+ {
+  "id": "notion-82",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Lunch Rota - April 2023\nWeek 1: Team Alpha cooks on Monday, Team Beta on Thursday.\nWeek 2: Team Gamma on Tuesday, Team Delta on Friday.\nEveryone is encouraged to suggest local Rotterdam food spots for order-in days."
+ },
+ {
+  "id": "notion-83",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Past Offsite Agenda - May 2023\nDay 1: Company vision session and team-building activities at Rotterdam Harbor.\nDay 2: Breakout sessions focusing on Beacon feature improvements and customer success stories.\nDay 3: Social dinner and awards night at local brewery.\nObjective: Strengthen inter-team collaboration and align Q3 OKRs."
+ },
+ {
+  "id": "notion-84",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "September 2023 Bug Triage Notes\nKey bugs identified: Intermittent downtime alerts affecting Umbrella Retail and Contoso Health. Root cause linked to API rate-limiting. Temporary mitigation implemented with increased request intervals. Plan for code patch deployment in early October."
+ },
+ {
+  "id": "notion-85",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Archived Customer Feedback Summary\nTop features requested: Multi-region monitoring, real-time incident collaboration, and enhanced reporting. Notable mentions from Hooli Cloud and Stark Media highlight scalability concerns. Development team to evaluate feasibility in upcoming sprint."
+ },
+ {
+  "id": "notion-86",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Past Security Policy Update - March 2024\nIntroduced MFA for all internal tools and access points. Password rotation policy now requires change every 90 days. Phishing awareness training made mandatory for all staff. Security team scheduled quarterly audits starting Q2 2024."
+ },
+ {
+  "id": "notion-87",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Historical Product Roadmap - 2023\nQ1: Improve uptime monitoring accuracy.\nQ2: Launch Beacon 3.0 with enhanced analytics.\nQ3: Introduce multi-user dashboards.\nQ4: Expand integrations with third-party incident management tools."
+ },
+ {
+  "id": "notion-88",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "2023 Holiday Schedule\nCompany holidays include New Year’s Day, King's Day (April 27), Christmas Day, and Boxing Day. Additional floating holidays provided for Eid and Diwali. Offices closed during these dates, with limited support from on-call engineers."
+ },
+ {
+  "id": "notion-89",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Old Meeting Notes: Customer Success Sync - July 2023\nDiscussed onboarding challenges faced by Vandelay Imports and Soylent Foods. Recommendation to create dedicated onboarding resources. Plan to assign Customer Success Manager for Tyrell Bio to improve engagement."
+ },
+ {
+  "id": "notion-90",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Deprecated FAQ Page\nQ: Can Beacon monitor internal network services?\nA: Currently, Beacon only supports public-facing endpoints. Internal monitoring is planned for 2024. Check back for updates."
+ },
+ {
+  "id": "notion-91",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "2023 Internship Program Outline\nDuration: 3 months (June-August). Interns to assist in QA testing and documentation updates. Weekly mentorship and bi-weekly check-ins. Final presentation to engineering team at program end."
+ },
+ {
+  "id": "notion-92",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Old How-To: Resetting User Password\nNavigate to the Admin Console, select ‘Users’, find the user, and click ‘Reset Password’. An automated email is sent to the user with reset instructions. Admins must verify user identity before initiating resets."
+ },
+ {
+  "id": "notion-93",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Past Retrospective: Beacon 2.5 Launch\nStrengths: Smooth deployment, positive customer feedback.\nWeaknesses: Underestimated support load.\nImprovements: Expand support team during major releases, better internal documentation for known issues."
+ },
+ {
+  "id": "notion-94",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Customer Escalations Log - Q4 2023\nHigh priority escalations from Fabrikam and Wayne Freight addressed within SLA. Root causes mainly due to third-party CDN failures. Increased monitoring frequency during high traffic periods recommended."
+ },
+ {
+  "id": "notion-95",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Legacy API Documentation\nVersion 1.2 supported endpoints for uptime checks and status reports. Deprecated in early 2024 in favor of RESTful API v2. Refer to new API docs for current integration methods."
+ },
+ {
+  "id": "notion-96",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Old Company Values Statement\nInnovation, Customer Centricity, Transparency, and Teamwork. Emphasized during the 2023 hiring and onboarding processes."
+ },
+ {
+  "id": "notion-97",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "March 2023 Team Expansion Announcement\nWelcome to five new hires across engineering, sales, and support. New roles created to support Beacon 3.0 development. HR to schedule welcome lunches for new starters."
+ },
+ {
+  "id": "notion-98",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Internal Training Session Notes - May 2023\nTopic: Handling incident alerts effectively. Conducted by Head of Support. Emphasized importance of quick response, proper logging, and customer communication. Recorded session available on knowledge base."
+ },
+ {
+  "id": "notion-99",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Archived Beacon Uptime SLA\n99.9% uptime guaranteed during business hours. Downtime credited as service credits applied per contract terms. Updated SLA applied in Q2 2024 with improved guarantees."
+ },
+ {
+  "id": "notion-100",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Old Social Events Schedule\nMonthly team lunches every last Friday. Quarterly happy hours at nearby pubs. Annual family day at Rotterdam Zoo scheduled for September."
+ },
+ {
+  "id": "notion-101",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Past Development Sprint Goals - Sprint 24\nFocus on backend optimizations and reducing false alerts. Code refactoring to improve maintainability. Completed automated regression tests for alert engine."
+ },
+ {
+  "id": "notion-102",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Legacy Internal Wiki Structure\nOrganized by Teams > Projects > Documentation > Archives. Each project folder contained meeting notes, designs, and sprint reports. Deprecated in favor of a new collaborative platform."
+ },
+ {
+  "id": "notion-103",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Previous OKRs - H2 2023\nObjective: Improve customer retention by 15%. Key Result: Release multi-user dashboards by November. Objective: Reduce alert false positives by 30%. Key Result: Deploy machine learning alert filters."
+ },
+ {
+  "id": "notion-104",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Old Troubleshooting Guide: Beacon Monitor Failures\nCheck internet connection and Beacon agent status. Verify URL correctness and DNS resolution. Confirm no firewall blocks monitoring traffic. Contact Support if issue persists."
+ },
+ {
+  "id": "notion-105",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Historical Sales Targets 2023\nQ1: 25 new customers.\nQ2: 35 new customers.\nQ3: 40 new customers.\nQ4: 50 new customers. Actuals slightly underperformed in Q2 due to competition."
+ },
+ {
+  "id": "notion-106",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Pre-COVID Remote Work Policy\nOffice presence mandatory Monday to Friday 9 AM - 6 PM. Remote work approved only in special circumstances. Policy revised in April 2020 to allow hybrid work."
+ },
+ {
+  "id": "notion-107",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Archived Beacon Pricing Plans\nBasic: $20/month, up to 5 monitors.\nProfessional: $50/month, up to 25 monitors.\nEnterprise: Custom pricing with SLA guarantees.\nPricing updated in January 2024."
+ },
+ {
+  "id": "notion-108",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Old Employee Directory\nNames, roles, email addresses, and phone extensions. List included founders, engineers, sales team, and support staff as of December 2023."
+ },
+ {
+  "id": "notion-109",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Historic Performance Review Process\nAnnual reviews conducted every December. Focus on goal achievement, feedback, and career development. Introduced 360-degree reviews in 2023."
+ },
+ {
+  "id": "notion-110",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Old Beacon Widget Setup Instructions\nEmbed code snippet provided to customers for website status display. Customization options included color and size. Deprecated with new widget version released in Q1 2024."
+ },
+ {
+  "id": "notion-111",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Legacy Incident Response Playbook\nStep 1: Identify and classify incident.\nStep 2: Notify on-call engineer.\nStep 3: Communicate with affected clients.\nStep 4: Post-incident review scheduled within 48 hours."
+ },
+ {
+  "id": "notion-112",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Historic PR Campaign Overview\nTargeted logistics and healthcare sectors in 2023. Featured case studies from Acme Logistics and Contoso Health. Social media push increased LinkedIn followers by 20%."
+ },
+ {
+  "id": "notion-113",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Old Employee Recognition Program\nMonthly awards for 'Beacon Champion' and 'Customer Hero'. Winners featured in company newsletter. Program placed on hold pending review."
+ },
+ {
+  "id": "notion-114",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "2023 Beacon Feature Requests Tracker\nList of over 100 requests from various clients. Prioritized based on customer impact and implementation complexity. Planning to migrate tracker to Jira in 2024."
+ },
+ {
+  "id": "notion-115",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Past Internal Newsletter Template\nSections included leadership updates, team spotlights, upcoming events, and customer success stories. Distributed monthly via email."
+ },
+ {
+  "id": "notion-116",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Outdated Beacon Status Page URL\nPreviously monitored via status.northwindlabs.com. Replaced with status.beaconmonitor.com in November 2023."
+ },
+ {
+  "id": "notion-117",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Old Backup Procedures\nWeekly full backups and daily incremental backups of customer data. Stored onsite and in cloud storage. Updated in 2024 to include automated verification scripts."
+ },
+ {
+  "id": "notion-118",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "Archived Team Alpha Meeting Minutes\nDiscussed backend stability and monitoring agent deployment strategies. Agreed to increase logging verbosity for diagnostics. Scheduled code review for next sprint."
+ },
+ {
+  "id": "notion-119",
+  "source": "notion",
+  "bucket": "backfill",
+  "text": "**2023 Q4 Retrospective Summary**\nIn the Q4 retrospective meeting held on December 15, the team discussed challenges with Beacon's alerting delays and customer feedback regarding UI responsiveness. Key successes included a 20% reduction in false positives and onboarding three new enterprise clients, including Stark Media and Hooli Cloud. Action items focused on improving API latency monitoring and enhancing user documentation. Everyone appreciated the improved cross-team collaboration between DevOps and Customer Support last quarter. Next steps include a dedicated sprint on enhancing mobile notifications in Q1 2024."
+ }
+]

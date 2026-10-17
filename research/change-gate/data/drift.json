@@ -1,0 +1,902 @@
+[
+ {
+  "id": "late-false-alerts-0",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #03715 from Acme Logistics: We've noticed that some of our Beacon alerts are coming through with a delay of about 5-7 minutes. This has impacted our response times significantly. Can you check the eu-west region probes?"
+ },
+ {
+  "id": "late-false-alerts-1",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10782 from Globex: Several false positive alerts for downtime have triggered today from checks originating in the eu-west probe region. Our systems have been perfectly operational all day."
+ },
+ {
+  "id": "late-false-alerts-2",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "Slack message: hey team, got a couple of tickets about late alerts from eu-west probes, anyone else seeing that? 🤔"
+ },
+ {
+  "id": "late-false-alerts-3",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #04938 from Initech: Our uptime monitor flagged downtime around 10:30 AM local, but our logs show zero incidents. The alerts seem delayed as well, arriving nearly 6 minutes after the actual check time."
+ },
+ {
+  "id": "late-false-alerts-4",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #05824 from Umbrella Retail: We've experienced some false alarms from Beacon, mostly linked to the eu-west probe. These alerts are also arriving later than expected, which is concerning for us."
+ },
+ {
+  "id": "late-false-alerts-5",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "Slack message: weird, eu-west check alerts are lagging behind by minutes today, might need to look into the probe nodes there."
+ },
+ {
+  "id": "late-false-alerts-6",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #09143 from Contoso Health: Our Beacon uptime alerts from the eu-west region are late and some appear to be false positives. This is causing confusion for our IT team during shift changes."
+ },
+ {
+  "id": "late-false-alerts-7",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #12640 from Fabrikam: Received multiple delayed alerts in the last 24 hours from eu-west probes, also noticed one downtime alert when our service was running perfectly fine."
+ },
+ {
+  "id": "late-false-alerts-8",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "Slack message: noticed a cluster of late alert tickets from eu-west probes. no clue what's going on yet but seems like a pattern?"
+ },
+ {
+  "id": "late-false-alerts-9",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #03457 from Wayne Freight: Beacon sent an alert about downtime that never occurred, specifically from eu-west checks. The alert was delayed by about 8 minutes after the check time."
+ },
+ {
+  "id": "late-false-alerts-10",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #07761 from Stark Media: We rely heavily on timely alerts but lately eu-west probes have been sending our notifications with a considerable delay, sometimes as much as 10 minutes."
+ },
+ {
+  "id": "late-false-alerts-11",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "Slack message: eu-west monitoring nodes seem flaky, getting some delayed and false alerts coming through."
+ },
+ {
+  "id": "late-false-alerts-12",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10998 from Hooli Cloud: Several false downtime alerts triggered from eu-west that didn't match our system logs. Also, the notifications were delayed by a few minutes."
+ },
+ {
+  "id": "late-false-alerts-13",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #08855 from Soylent Foods: Beacon's alerting from eu-west locations is off - delays and false positives have increased over the past day or two, making it hard to trust the monitoring data."
+ },
+ {
+  "id": "late-false-alerts-14",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "Slack message: lots of false positives and lag on eu-west probe alerts, wish we had better insight into their status."
+ },
+ {
+  "id": "late-false-alerts-15",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #02344 from Vandelay Imports: Observing that the Beacon uptime alerts are not only late but seem inaccurate from the eu-west probe area, leading to unnecessary escalations."
+ },
+ {
+  "id": "late-false-alerts-16",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #06578 from Tyrell Bio: False offline alert from eu-west probe reached us 5 minutes late yesterday. This happened twice, affecting our SLA reporting."
+ },
+ {
+  "id": "late-false-alerts-17",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "Slack message: just got a new ticket re: late alerts from the eu-west region. definitely feels like a regional probe issue to me."
+ },
+ {
+  "id": "late-false-alerts-18",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #04110 from Acme Logistics: Our team has reported multiple instances where Beacon alerts from eu-west lag behind real-time checks by several minutes and sometimes flag no issue at all."
+ },
+ {
+  "id": "late-false-alerts-19",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #06923 from Globex: False downtime alarms fired late from the eu-west probe area have caused unnecessary investigation on our side. Please investigate this ASAP."
+ },
+ {
+  "id": "late-false-alerts-20",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #05091 from Initech: Beacon alerts are lagging on eu-west checks; a downtime alert arrived almost 9 minutes late and was a false alarm based on our logs."
+ },
+ {
+  "id": "late-false-alerts-21",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "Slack message: eu-west seems to be struggling with probe accuracy and timing lately, got a handful of similar tickets."
+ },
+ {
+  "id": "late-false-alerts-22",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #03994 from Umbrella Retail: We've had several alerts from eu-west that didn't reflect actual service status plus delays in alert delivery which is impacting our incident response."
+ },
+ {
+  "id": "late-false-alerts-23",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #08420 from Contoso Health: Delay and false alert issues confirmed on Beacon from eu-west nodes. Appreciate updates as you investigate."
+ },
+ {
+  "id": "late-false-alerts-24",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "Slack message: looks like eu-west beacon nodes are sending delayed and wrong alerts, can someone pull logs from those probes?"
+ },
+ {
+  "id": "late-false-alerts-25",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #07112 from Fabrikam: Multiple late alerts detected from eu-west probes with no underlying downtime. This degradation in reliability is becoming disruptive."
+ },
+ {
+  "id": "late-false-alerts-26",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #09634 from Wayne Freight: Beacon sent a late false downtime alert that took nearly 7 minutes to arrive, originating from the eu-west probe region."
+ },
+ {
+  "id": "late-false-alerts-27",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "Slack message: eu-west probe alerts are arriving late and with questionable accuracy. might want to keep an eye on this area."
+ },
+ {
+  "id": "late-false-alerts-28",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #05487 from Stark Media: False triggered alerts from eu-west have increased, and their delay in arrival is causing operational confusion."
+ },
+ {
+  "id": "late-false-alerts-29",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #06105 from Hooli Cloud: We got several alerts marked as downtime from eu-west probes that were delayed and didn't coincide with actual events on our service."
+ },
+ {
+  "id": "late-false-alerts-30",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "Slack message: uh oh, eu-west alerts delayed by 5+ mins and false firing reported by multiple customers. something's off there."
+ },
+ {
+  "id": "late-false-alerts-31",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #04733 from Soylent Foods: Beacon alerts from the eu-west region took too long to alert us and some showed downtime when none existed. This is undermining trust in the service."
+ },
+ {
+  "id": "late-false-alerts-32",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #09999 from Vandelay Imports: eu-west region probes sent late alerts again. Delay ranges between 6-10 minutes, and false positives up too."
+ },
+ {
+  "id": "late-false-alerts-33",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "Slack message: quick heads up - support is seeing delayed and false alert cases from eu-west probe customers. investigation might be needed soon."
+ },
+ {
+  "id": "late-false-alerts-34",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #02956 from Tyrell Bio: Observed false downtime alerts causing alarms here. These are delayed by up to 8 minutes and clustered around eu-west checks."
+ },
+ {
+  "id": "late-false-alerts-35",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #08012 from Acme Logistics: Alerts from our eu-west based Beacon checks are seriously delayed, plus a few false positives. This happened during peak hours today."
+ },
+ {
+  "id": "late-false-alerts-36",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #05555 from Globex: Received multiple late and false monitoring alerts from the eu-west node; please verify probe status."
+ },
+ {
+  "id": "late-false-alerts-37",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "Slack message: looks like eu-west probe region issues causing alert latency and false positives, been getting a lot of tickets on it."
+ },
+ {
+  "id": "late-false-alerts-38",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #06278 from Initech: Beacon alerts showed downtime from eu-west probes but none of our systems were affected, and alerts were delayed by several minutes."
+ },
+ {
+  "id": "late-false-alerts-39",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #03669 from Umbrella Retail: False outage alerts from eu-west with delivery times around 7 minutes later than expected. Please prioritize investigation."
+ },
+ {
+  "id": "late-false-alerts-40",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "Slack message: eu-west probe alerts delayed or false? anyone have logs from the region? we’re seeing a pattern here."
+ },
+ {
+  "id": "late-false-alerts-41",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #04448 from Contoso Health: Alert delays and false triggering from eu-west region probes. This is impacting our incident tracking effectiveness."
+ },
+ {
+  "id": "late-false-alerts-42",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #08230 from Fabrikam: Alerts from eu-west origin are late and occasionally inaccurate. We’ve seen multiple instances over the past 48 hours."
+ },
+ {
+  "id": "late-false-alerts-43",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "Slack message: definitely a pattern with eu-west probe alerts — late by minutes and firing wrong alerts. not good for customers."
+ },
+ {
+  "id": "late-false-alerts-44",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10012 from Acme Logistics: Our Beacon alerts from the EU-West region have been delayed by up to 10 minutes today. Can you please check?"
+ },
+ {
+  "id": "late-false-alerts-45",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10013 from Globex: We received multiple false uptime alerts for our service monitored in the eu-west probe region. Everything is running normally on our side."
+ },
+ {
+  "id": "late-false-alerts-46",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10014 from Initech: Beacon notification about downtime came late. We have notifications set for critical services but these alerts arrived after the incident was resolved."
+ },
+ {
+  "id": "late-false-alerts-47",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10015 from Umbrella Retail: Several alerts from eu-west checks seem incorrect; services were verified healthy but alerts claimed downtime."
+ },
+ {
+  "id": "late-false-alerts-48",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10016 from Contoso Health: Alert delays are affecting our incident response times. The eu-west probe alerts regularly lag behind actual events lately."
+ },
+ {
+  "id": "late-false-alerts-49",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10017 from Fabrikam: Got an alert from eu-west probe saying our site was down but we verified uptime continuously during that period."
+ },
+ {
+  "id": "late-false-alerts-50",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10018 from Wayne Freight: We've seen Beacon alerts coming minutes after issues are resolved. Are there any known delays with the eu-west region probes?"
+ },
+ {
+  "id": "late-false-alerts-51",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10019 from Stark Media: False positive alerts triggered in eu-west probe this morning. No downtime actually occurred for our monitored services."
+ },
+ {
+  "id": "late-false-alerts-52",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10020 from Hooli Cloud: Recent alerts from the eu-west region are either late or incorrect. This reduces confidence in Beacon's monitor reliability."
+ },
+ {
+  "id": "late-false-alerts-53",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10021 from Soylent Foods: We’re noticing alerts from eu-west arriving 5+ minutes late, causing delayed incident responses. Please advise on mitigation."
+ },
+ {
+  "id": "late-false-alerts-54",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10022 from Vandelay Imports: Multiple late and false Beacon alerts from eu-west checks this week. This is impacting our SLA reporting."
+ },
+ {
+  "id": "late-false-alerts-55",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10023 from Tyrell Bio: Are there known discrepancies in Beacon alert timings with the eu-west monitoring probes? Delays have been noticeable."
+ },
+ {
+  "id": "late-false-alerts-56",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "Slack message from support_engineer_1: Anyone else seeing a spike in late alerts from eu-west probes today? Feels like something's off with those checks."
+ },
+ {
+  "id": "late-false-alerts-57",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "Slack message from support_engineer_2: yep, just got pinged by a client about delayed notifications. mostly from eu-west region. monitoring logs now."
+ },
+ {
+  "id": "late-false-alerts-58",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "Slack message from support_engineer_3: false alarms on the eu-west probes also increased. not sure if probe network issues or a bug in processing alerts."
+ },
+ {
+  "id": "late-false-alerts-59",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "Slack message from support_engineer_4: noticed approx 6 false alerts in the last hour, all from eu-west region. need to see if this aligns with any backend errors."
+ },
+ {
+  "id": "late-false-alerts-60",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10024 from Acme Logistics: Another late arrival of our Beacon alert from the EU-West probe, delayed by about 7 minutes this time."
+ },
+ {
+  "id": "late-false-alerts-61",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10025 from Globex: The false downtime alerts from eu-west checks are increasing. No recent infrastructure changes on our end."
+ },
+ {
+  "id": "late-false-alerts-62",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10026 from Initech: Our Beacon alert mentioning service downtime arrived 8 minutes late and we had already taken remediation steps."
+ },
+ {
+  "id": "late-false-alerts-63",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10027 from Umbrella Retail: We've verified no downtime but received two downtime alerts about 4 minutes apart from eu-west probe yesterday."
+ },
+ {
+  "id": "late-false-alerts-64",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10028 from Contoso Health: Alert latency has impacted our operations. Please confirm if any maintenance is happening on eu-west monitoring nodes."
+ },
+ {
+  "id": "late-false-alerts-65",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "Slack message from support_engineer_5: looks like there might be a time sync issue with eu-west probes. timestamps of alerts don’t line up with real event times."
+ },
+ {
+  "id": "late-false-alerts-66",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "Slack message from support_engineer_6: clients complaining about delayed alerts multiple times in the last 2 hours, all tied to the eu-west probe region checks."
+ },
+ {
+  "id": "late-false-alerts-67",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "Slack message from support_engineer_7: false positives and late alerts from eu-west starting late last night. digging into connectivity stats now."
+ },
+ {
+  "id": "late-false-alerts-68",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10029 from Fabrikam: Beacon sent us two outage alerts minutes after everything showed green. Both incidents attributed to eu-west probe checks."
+ },
+ {
+  "id": "late-false-alerts-69",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10030 from Wayne Freight: Delayed alerts reduce our ability to respond quickly. Are there known probe performance issues in eu-west currently?"
+ },
+ {
+  "id": "late-false-alerts-70",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10031 from Stark Media: We have no outages on our side yet received multiple faulty alerts implying downtime from eu-west region checks."
+ },
+ {
+  "id": "late-false-alerts-71",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10032 from Hooli Cloud: EU-West region Beacon alerts are inconsistent in timing and accuracy today. We rely on these for uptime monitoring."
+ },
+ {
+  "id": "late-false-alerts-72",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10033 from Soylent Foods: Please investigate if there are underlying problems with the eu-west probes causing alert delays or false negatives."
+ },
+ {
+  "id": "late-false-alerts-73",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10034 from Vandelay Imports: Last night's Beacon alerts from eu-west arrived 10 minutes late; we logged an internal incident because of it."
+ },
+ {
+  "id": "late-false-alerts-74",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10035 from Tyrell Bio: Can support confirm if eu-west probe nodes have had increased latency or misfire rates? We’re seeing suspicious alert patterns."
+ },
+ {
+  "id": "late-false-alerts-75",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "Slack message from support_engineer_8: spikes in eu-west alert delays & misfires match some backend alerts about probe cluster stress. might be related."
+ },
+ {
+  "id": "late-false-alerts-76",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "Slack message from support_engineer_9: just FYI, multiple eu-west false alarms are flooding our queue, some checks didn’t match actual site status at all."
+ },
+ {
+  "id": "late-false-alerts-77",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "Slack message from support_engineer_10: i think the eu-west probes are struggling with response timeouts or retry loops, causing late alerts and duplicates."
+ },
+ {
+  "id": "late-false-alerts-78",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10036 from Acme Logistics: Re: late alerts – the delay pattern seems correlated with specific eu-west probes. Can we get probe-level logs?"
+ },
+ {
+  "id": "late-false-alerts-79",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10037 from Globex: False Beacon outages via eu-west probes are harming our customer trust. Waiting on your investigation feedback."
+ },
+ {
+  "id": "late-false-alerts-80",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10038 from Initech: Latency on alert notification delivery from eu-west region probe checks now up by 5 minutes consistently over last day."
+ },
+ {
+  "id": "late-false-alerts-81",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10039 from Umbrella Retail: A pattern noticed - beacon alerts from eu-west delivering either late or firing for no reason. Have you seen this on your end?"
+ },
+ {
+  "id": "late-false-alerts-82",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10040 from Contoso Health: EU-West probe alerts now often incorrect or delayed, causing operational headaches. Please prioritize diagnosing this issue."
+ },
+ {
+  "id": "late-false-alerts-83",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #48217 from Acme Logistics: We've noticed our Beacon alerts have been delayed by around 7-10 minutes lately, especially for our European servers. Can you check if something's wrong with the eu-west probes?"
+ },
+ {
+  "id": "late-false-alerts-84",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "ticket #48218 from Globex: Our threshold alarms are firing without any actual downtime. This started early this morning, mostly from checks in europe."
+ },
+ {
+  "id": "late-false-alerts-85",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #48219 from Initech: The Beacon alert notifications this week are arriving significantly late. This delay seems to be limited to checks done from the eu-west probe node."
+ },
+ {
+  "id": "late-false-alerts-86",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "ticket #48220 from Umbrella Retail: Weird issue with Beacon alerts - alerts are often going off falsely, indicating downtime when everything's green on our end. Mostly seeing this from the europe-west probe location."
+ },
+ {
+  "id": "late-false-alerts-87",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #48221 from Contoso Health: Are there ongoing problems with the Beacon eu-west probe? Our monitoring alerts have been erratic and frequently delayed by 5 minutes or more."
+ },
+ {
+  "id": "late-false-alerts-88",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "ticket #48222 from Fabrikam: Just to report, our uptime notifications from Beacon have been getting stuck or delayed on checks originating from the eu-west region."
+ },
+ {
+  "id": "late-false-alerts-89",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #48223 from Wayne Freight: We've had several false-positive downtime alerts today from eu-west probes triggering on perfectly fine endpoints."
+ },
+ {
+  "id": "late-false-alerts-90",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #48224 from Stark Media: Beacon alerts coming from eu-west checks are delayed and sometimes duplicated. This is affecting our incident response speed."
+ },
+ {
+  "id": "late-false-alerts-91",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "ticket #48225 from Hooli Cloud: Seeing a pattern of delayed and false Beacon alerts, especially for the servers monitored via the eu-west probe nodes."
+ },
+ {
+  "id": "late-false-alerts-92",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #48226 from Soylent Foods: Our Beacon alerts in the last 48 hours have been either late or falsely triggered, mainly from eu-west region checks. Could you please look into this?"
+ },
+ {
+  "id": "late-false-alerts-93",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "ticket #48227 from Vandelay Imports: We’re receiving some late and inaccurate alerts from Beacon that seem to be tied to checks running in the eu-west probe cluster."
+ },
+ {
+  "id": "late-false-alerts-94",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #48228 from Tyrell Bio: Beacon notifications are sometimes delayed and occasionally firing without actual issues, particularly from the eu-west probe locations."
+ },
+ {
+  "id": "late-false-alerts-95",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "slack message from support_jess: anyone else seeing more false alarms from the eu-west beacon probes? was quiet till this morning 🤔"
+ },
+ {
+  "id": "late-false-alerts-96",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "Slack from support_mike: just got pinged about a 15-min late uptime alert from eu-west again. this is weird, right?"
+ },
+ {
+  "id": "late-false-alerts-97",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "slack message from support_anya: eu-west probe weirdness ongoing - delays and phantom outages keep coming in randomly. no other regions reporting stuff so far."
+ },
+ {
+  "id": "late-false-alerts-98",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "Slack from support_liam: beacon alerts delayed quite a bit today in eu-west. is there a known issue that hasn't been posted yet?"
+ },
+ {
+  "id": "late-false-alerts-99",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "slack message from support_emma: been seeing more false positives from eu-west probe since last night, anyone else?"
+ },
+ {
+  "id": "late-false-alerts-100",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "Slack from support_noah: hmm noticing alert delays clustered on eu-west checks. logs don’t show downtime, just late notifications."
+ },
+ {
+  "id": "late-false-alerts-101",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "slack message from support_sophia: i got a couple of tickets this morning about alerts being late by 5+ mins, all from eu-west. weird timing."
+ },
+ {
+  "id": "late-false-alerts-102",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "Slack from support_jack: confirmation - eu-west alerts slower or firing without cause. not great but not sure what’s up yet."
+ },
+ {
+  "id": "late-false-alerts-103",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "ticket #48229 from Acme Logistics: The recent late alerts from your Beacon service in the EU-West region are impacting our operational response times."
+ },
+ {
+  "id": "late-false-alerts-104",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "ticket #48230 from Globex: False downtime alerts continue from eu-west Beacon checks, leading to unnecessary escalation on our side."
+ },
+ {
+  "id": "late-false-alerts-105",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "ticket #48231 from Initech: Beacon alert delays seem to be isolated to EU-West probes. Other regional checks are reporting on time."
+ },
+ {
+  "id": "late-false-alerts-106",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "ticket #48232 from Umbrella Retail: Can you verify if the eu-west probing nodes are functioning normally? We’ve had about 3 false alerts this morning alone."
+ },
+ {
+  "id": "late-false-alerts-107",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "ticket #48233 from Contoso Health: Large number of alerts coming in late and some false alarms from Beacon's eu-west checks. Please escalate."
+ },
+ {
+  "id": "late-false-alerts-108",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "ticket #48234 from Fabrikam: Is there an issue with the eu-west probe nodes causing Beacon alerts to trigger incorrectly or arrive late?"
+ },
+ {
+  "id": "late-false-alerts-109",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "ticket #48235 from Wayne Freight: Just got alerted late about an outage that actually never happened. The alert came from the eu-west probe region."
+ },
+ {
+  "id": "late-false-alerts-110",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "ticket #48236 from Stark Media: Can your team look into the beacon eu-west probes? Delays and false positives have spiked in the past 24 hours."
+ },
+ {
+  "id": "late-false-alerts-111",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "ticket #48237 from Hooli Cloud: Beacon alerts arriving late from eu-west probes, causing delays in our incident handling and code deployments."
+ },
+ {
+  "id": "late-false-alerts-112",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "ticket #48238 from Soylent Foods: False beacon alerts popping up non-stop from EU-West checks causing confusion for our tech team this afternoon."
+ },
+ {
+  "id": "late-false-alerts-113",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "ticket #48239 from Vandelay Imports: Please investigate why Beacon checks from eu-west are firing alerts despite our service being operational."
+ },
+ {
+  "id": "late-false-alerts-114",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "ticket #48240 from Tyrell Bio: Beacon alert delays and false firing patterns appearing from eu-west probes since yesterday evening."
+ },
+ {
+  "id": "late-false-alerts-115",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "slack message from support_jess: looks like eu-west beacon checks are acting funky again, delays and false alarms galore 😐"
+ },
+ {
+  "id": "late-false-alerts-116",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "Slack from support_mike: i’m getting reports on delays from eu-west for beacon reliably, weird that other regions seem fine."
+ },
+ {
+  "id": "late-false-alerts-117",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "slack message from support_anya: can confirm – eu-west probe troubles not isolated. tickets starting to pop up from multiple customers."
+ },
+ {
+  "id": "late-false-alerts-118",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "Slack from support_liam: was thinking it was isolated but now more alerts from eu-west showing latency and false triggers. hmm"
+ },
+ {
+  "id": "late-false-alerts-119",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "slack message from support_emma: these eu-west beacon delays are killing my inbox. hope it’s nothing too nasty 😅"
+ },
+ {
+  "id": "late-false-alerts-120",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "Slack from support_noah: anyone else hammering on eu-west probe logs this morning? delays and false positives are definitely correlated."
+ },
+ {
+  "id": "late-false-alerts-121",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "slack message from support_sophia: eu-west alerts definitely late or erroneous lately. might want to do a deep dive there."
+ },
+ {
+  "id": "late-false-alerts-122",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "Slack from support_jack: guess it’s a good time not to rely on eu-west beacon alerts exclusively 😅"
+ },
+ {
+  "id": "late-false-alerts-123",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10234 from Acme Logistics: We have noticed our uptime alerts from the EU-West region are delayed by about 5-10 minutes, causing us to miss critical downtime notifications. Can you help?"
+ },
+ {
+  "id": "late-false-alerts-124",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10235 from Globex: Our Beacon alerts recently fired falsely, showing downtime when all services were operational. These false positives seem to happen mostly for checks run in eu-west."
+ },
+ {
+  "id": "late-false-alerts-125",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10236 from Initech: The delay in alerts from EU-West is impacting our incident response times. This has been an ongoing issue since last week. Please advise."
+ },
+ {
+  "id": "late-false-alerts-126",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10237 from Umbrella Retail: Several of our scheduled checks have triggered alerts, but the services were fully up and running at the time. This only seems to occur with your EU-West probe."
+ },
+ {
+  "id": "late-false-alerts-127",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10238 from Contoso Health: We've observed alerts arriving with a delay of up to 8 minutes in the eu-west region, which is unusual compared to other regions. Any known issues?"
+ },
+ {
+  "id": "late-false-alerts-128",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10239 from Fabrikam: Beacon notifications from EU-West are coming in late or not at all, causing confusion with our monitoring dashboard."
+ },
+ {
+  "id": "late-false-alerts-129",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10240 from Wayne Freight: False alerts triggered by your EU-West probes have been happening more frequently, which is making it harder to trust the notifications."
+ },
+ {
+  "id": "late-false-alerts-130",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10241 from Stark Media: We saw two false downtime alerts from EU-West probes last night, but the app was serving requests normally those times."
+ },
+ {
+  "id": "late-false-alerts-131",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10242 from Hooli Cloud: Alerts generated from EU-West probes occasionally have a 5-7 minute delay. This hasn’t happened before and is causing operational headaches."
+ },
+ {
+  "id": "late-false-alerts-132",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10243 from Soylent Foods: Our EU-West Beacon alerts sometimes show downtime and then immediately recover on the next check even though the service never went down."
+ },
+ {
+  "id": "late-false-alerts-133",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10244 from Vandelay Imports: There is an issue with delayed alerts from Beacon checks on the eu-west probes; these delays didn't occur before the last update."
+ },
+ {
+  "id": "late-false-alerts-134",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10245 from Tyrell Bio: False alerts have hit us twice in the last two days, triggered by EU-West region probes when everything was normal."
+ },
+ {
+  "id": "late-false-alerts-135",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "Slack message from support_eng_anna: noticing quite a few delayed alert reports coming in from eu-west region checks this morning... 🤔"
+ },
+ {
+  "id": "late-false-alerts-136",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "Slack message from support_eng_brian: 3 false positives from eu-west probes caught my eye, wonder if there’s an intermittent issue?"
+ },
+ {
+  "id": "late-false-alerts-137",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "Slack message from support_eng_cara: received multiple tickets complaining about delayed alerts from eu-west, might be a coincidence but feels related"
+ },
+ {
+  "id": "late-false-alerts-138",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "Slack message from support_eng_dan: eu-west probe alerts firing late and sometimes spamming false warnings, could be a probe cluster or networking hiccup?"
+ },
+ {
+  "id": "late-false-alerts-139",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "Slack message from support_eng_emma: hmm, eu-west looks like the only region with these delayed/fake alert reports so far, need to dig into logs"
+ },
+ {
+  "id": "late-false-alerts-140",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10246 from Acme Logistics: The latency in alert delivery from your eu-west probe is causing synchronization issues with our internal tools."
+ },
+ {
+  "id": "late-false-alerts-141",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10247 from Globex: EU-West region checks falsely reported downtime twice last weekend, impacting dashboard reliability."
+ },
+ {
+  "id": "late-false-alerts-142",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10248 from Initech: Beacon's delayed notifications from eu-west have led our on-call team to miss early signs of real outages."
+ },
+ {
+  "id": "late-false-alerts-143",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10249 from Umbrella Retail: False beacon alerts appearing only from eu-west region; our other probe regions are stable and accurate."
+ },
+ {
+  "id": "late-false-alerts-144",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10250 from Contoso Health: We’re consistently seeing a 4-6 minute delay on alerts triggered by eu-west probes, which is unusual compared to US regions."
+ },
+ {
+  "id": "late-false-alerts-145",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10251 from Fabrikam: Alert timing mismatch on eu-west checks causing confusion about our service status; can you check if the probe servers are healthy?"
+ },
+ {
+  "id": "late-false-alerts-146",
+  "source": "tickets",
+  "bucket": "late-false-alerts",
+  "text": "Ticket #10252 from Wayne Freight: Receiving false positives on downtime from eu-west probes; we verified our infrastructure had no issues during these times."
+ },
+ {
+  "id": "late-false-alerts-147",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "Slack message from support_eng_felix: still seeing more false downtimes from eu-west probes today, might be a false alert storm brewing"
+ },
+ {
+  "id": "late-false-alerts-148",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "Slack message from support_eng_gina: eu-west probe delays definitely spiked this week, possibly linked to network routing changes?"
+ },
+ {
+  "id": "late-false-alerts-149",
+  "source": "slack",
+  "bucket": "late-false-alerts",
+  "text": "Slack message from support_eng_harold: just got flagged on several tickets reporting late alerts from eu-west, should we raise a status update?"
+ }
+]
