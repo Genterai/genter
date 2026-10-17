@@ -45,7 +45,7 @@ function changedLine(x) {
 const line = (x, n = 300, changes = false) =>
   `[${x.id}] ${x.t < 0 ? "" : `${dateOf(x.t)} · `}${x.source} · ${clip(oneLine(x.text), n)}${changes && changedLine(x) ? `\n    ${changedLine(x)}` : ""}`;
 
-async function ranked(query, pool) {
+export async function ranked(query, pool) {
   const ix = await indexOf();
   const [qv] = await embedAll([query]);
   const q = shrink(qv, 256);
@@ -58,7 +58,7 @@ async function ranked(query, pool) {
 
 // The items Genter adds: closest to the key that the agent has not seen yet, plus the newest items of other sources
 // about a customer the key names. Or, for inject-global, the newest items of the workspace.
-async function added(arm, key, seen, task) {
+export async function added(arm, key, seen, task) {
   const ix = await indexOf();
   if (arm === "inject-oracle") return (await ranked(task.task)).filter((x) => isRelevant(task, x) && !seen.has(x.id)).slice(0, 2);
   if (arm === "inject-global") return [...ix.items].filter((x) => x.t > 0 && !seen.has(x.id)).sort((a, b) => b.t - a.t).slice(0, ADDED);

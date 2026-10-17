@@ -1,0 +1,306 @@
+{
+ "rows": [
+  {
+   "id": "T01",
+   "kind": "changed-direct",
+   "task": 1,
+   "entity": null,
+   "recency": 609,
+   "relevantInTop4": 1
+  },
+  {
+   "id": "T02",
+   "kind": "changed-direct",
+   "task": 1,
+   "entity": null,
+   "recency": 181,
+   "relevantInTop4": 1
+  },
+  {
+   "id": "T03",
+   "kind": "changed-direct",
+   "task": 1,
+   "entity": null,
+   "recency": 35,
+   "relevantInTop4": 1
+  },
+  {
+   "id": "T04",
+   "kind": "changed-direct",
+   "task": 2,
+   "entity": null,
+   "recency": 306,
+   "relevantInTop4": 1
+  },
+  {
+   "id": "T05",
+   "kind": "changed-constraint",
+   "task": 67,
+   "entity": null,
+   "recency": 609,
+   "relevantInTop4": 0
+  },
+  {
+   "id": "T06",
+   "kind": "changed-constraint",
+   "task": 1,
+   "entity": null,
+   "recency": 181,
+   "relevantInTop4": 1
+  },
+  {
+   "id": "T07",
+   "kind": "changed-constraint",
+   "task": 1,
+   "entity": null,
+   "recency": 306,
+   "relevantInTop4": 1
+  },
+  {
+   "id": "T08",
+   "kind": "changed-constraint",
+   "task": 7,
+   "entity": null,
+   "recency": 35,
+   "relevantInTop4": 0
+  },
+  {
+   "id": "T09",
+   "kind": "changed-constraint",
+   "task": 1,
+   "entity": null,
+   "recency": 463,
+   "relevantInTop4": 1
+  },
+  {
+   "id": "T10",
+   "kind": "entity-state",
+   "task": 1,
+   "entity": 1,
+   "recency": 378,
+   "relevantInTop4": 1
+  },
+  {
+   "id": "T11",
+   "kind": "entity-state",
+   "task": 3,
+   "entity": 3,
+   "recency": 188,
+   "relevantInTop4": 1
+  },
+  {
+   "id": "T12",
+   "kind": "entity-state",
+   "task": 4,
+   "entity": 4,
+   "recency": 142,
+   "relevantInTop4": 1
+  },
+  {
+   "id": "T13",
+   "kind": "entity-state",
+   "task": 3,
+   "entity": 3,
+   "recency": 365,
+   "relevantInTop4": 2
+  },
+  {
+   "id": "T14",
+   "kind": "entity-state",
+   "task": 8,
+   "entity": 8,
+   "recency": 580,
+   "relevantInTop4": 0
+  },
+  {
+   "id": "T15",
+   "kind": "static-policy",
+   "task": 4,
+   "entity": null,
+   "recency": 1169,
+   "relevantInTop4": 1
+  },
+  {
+   "id": "T16",
+   "kind": "static-policy",
+   "task": 4,
+   "entity": null,
+   "recency": 665,
+   "relevantInTop4": 1
+  },
+  {
+   "id": "T17",
+   "kind": "static-policy",
+   "task": 2,
+   "entity": null,
+   "recency": 1098,
+   "relevantInTop4": 1
+  },
+  {
+   "id": "T18",
+   "kind": "static-policy",
+   "task": 8,
+   "entity": null,
+   "recency": 1200,
+   "relevantInTop4": 0
+  },
+  {
+   "id": "T19",
+   "kind": "static-policy",
+   "task": 1,
+   "entity": null,
+   "recency": 1114,
+   "relevantInTop4": 1
+  },
+  {
+   "id": "T20",
+   "kind": "static-policy",
+   "task": 2,
+   "entity": null,
+   "recency": 341,
+   "relevantInTop4": 1
+  },
+  {
+   "id": "T21",
+   "kind": "new-situation",
+   "task": 36,
+   "entity": null,
+   "recency": 479,
+   "relevantInTop4": 0
+  },
+  {
+   "id": "T22",
+   "kind": "new-situation",
+   "task": 1,
+   "entity": 1,
+   "recency": 2,
+   "relevantInTop4": 4
+  },
+  {
+   "id": "T23",
+   "kind": "new-situation",
+   "task": 1,
+   "entity": null,
+   "recency": 194,
+   "relevantInTop4": 1
+  },
+  {
+   "id": "T24",
+   "kind": "new-situation",
+   "task": 37,
+   "entity": null,
+   "recency": 2,
+   "relevantInTop4": 0
+  },
+  {
+   "id": "T25",
+   "kind": "control",
+   "task": 1,
+   "entity": null,
+   "recency": 1097,
+   "relevantInTop4": 1
+  },
+  {
+   "id": "T26",
+   "kind": "control",
+   "task": 1,
+   "entity": null,
+   "recency": 1169,
+   "relevantInTop4": 1
+  },
+  {
+   "id": "T27",
+   "kind": "control",
+   "task": 1,
+   "entity": null,
+   "recency": 1090,
+   "relevantInTop4": 1
+  },
+  {
+   "id": "T28",
+   "kind": "control",
+   "task": 1,
+   "entity": null,
+   "recency": 1111,
+   "relevantInTop4": 1
+  },
+  {
+   "id": "T29",
+   "kind": "control",
+   "task": 1,
+   "entity": null,
+   "recency": 1186,
+   "relevantInTop4": 1
+  },
+  {
+   "id": "T30",
+   "kind": "control",
+   "task": 2,
+   "entity": null,
+   "recency": 1015,
+   "relevantInTop4": 1
+  }
+ ],
+ "table": [
+  {
+   "kind": "changed-direct",
+   "n": 4,
+   "task@4": 1,
+   "task@10": 1,
+   "entity@4": null,
+   "recency@4": 0,
+   "recency@50": 0.25,
+   "precision of top 4 by task": 0.25
+  },
+  {
+   "kind": "changed-constraint",
+   "n": 5,
+   "task@4": 0.6,
+   "task@10": 0.8,
+   "entity@4": null,
+   "recency@4": 0,
+   "recency@50": 0.2,
+   "precision of top 4 by task": 0.15
+  },
+  {
+   "kind": "entity-state",
+   "n": 5,
+   "task@4": 0.8,
+   "task@10": 1,
+   "entity@4": 0.8,
+   "recency@4": 0,
+   "recency@50": 0,
+   "precision of top 4 by task": 0.25
+  },
+  {
+   "kind": "static-policy",
+   "n": 6,
+   "task@4": 0.8333333333333334,
+   "task@10": 1,
+   "entity@4": null,
+   "recency@4": 0,
+   "recency@50": 0,
+   "precision of top 4 by task": 0.20833333333333334
+  },
+  {
+   "kind": "new-situation",
+   "n": 4,
+   "task@4": 0.5,
+   "task@10": 0.5,
+   "entity@4": 0.25,
+   "recency@4": 0.5,
+   "recency@50": 0.5,
+   "precision of top 4 by task": 0.3125
+  },
+  {
+   "kind": "control",
+   "n": 6,
+   "task@4": 1,
+   "task@10": 1,
+   "entity@4": null,
+   "recency@4": 0,
+   "recency@50": 0,
+   "precision of top 4 by task": 0.25
+  }
+ ]
+}
