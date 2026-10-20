@@ -151,11 +151,11 @@ describe("who reviews", () => {
     }
     // The code Genter Cloud imports (the plan's D7) and the server's, which may not be in the tree yet; the reader
     // schema; and what runs in CI and on release.
-    for (const required of ["/src/memory.js", "/src/readers.js", "/src/net.js", "/src/lexical.js", "/src/local.js", "/src/http.js", "/readers/reader.schema.json", "/.github/", "/server.json", "/manifest.json", "/STEWARDSHIP.md", "/TRADEMARKS.md", "/GOVERNANCE.md", "/ip-boundary.md", "/.github/CODEOWNERS"]) {
+    for (const required of ["/src/memory.js", "/src/readers.js", "/src/net.js", "/src/lexical.js", "/src/local.js", "/src/http.js", "/readers/reader.schema.json", "/.github/", "/Dockerfile", "/docker-compose.yml", "/server.json", "/manifest.json", "/STEWARDSHIP.md", "/TRADEMARKS.md", "/GOVERNANCE.md", "/ip-boundary.md", "/.github/CODEOWNERS"]) {
       assert.deepEqual(owned(required).map((l) => l.owners), [[OWNER]], required);
     }
-    // A line is for something that is there, or will be (these two files come with their own pull requests).
-    const NOT_YET = ["/src/memory.js", "/src/http.js"];
+    // A line is for something that is there, or will be (this file comes with its own pull request).
+    const NOT_YET = ["/src/memory.js"];
     for (const { pattern } of lines) {
       assert.ok(pattern.startsWith("/") && !pattern.includes("*"), `${pattern} is anchored at the root`);
       assert.ok(existsSync(at(pattern.slice(1))) || NOT_YET.includes(pattern), `${pattern} is in the tree`);
@@ -214,12 +214,16 @@ describe("what the project promises", () => {
     assert.ok(text("harden/redlines/community.md").includes("STEWARDSHIP.md"));
   });
 
-  it("[rl:community/no-phone-home] only the website fetch (src/net.js) and the embeddings call (src/local.js) name a network primitive: nothing else of the command or the engine can send", () => {
+  it("[rl:community/no-phone-home] only the website fetch (src/net.js), the embeddings call (src/local.js) and genter serve's listening server (src/http.js) name a network primitive: nothing else of the command or the engine can send", () => {
     const NET = /\bfetch\(|node:(?:https?|net|tls|dns|dgram|http2)\b|\bXMLHttpRequest\b|\bWebSocket\b|\bsendBeacon\b|from\s+["'](?:https?|net|tls|dns|dgram|http2)["']/;
     const files = ["src", "bin"].flatMap((dir) => readdirSync(at(dir), { recursive: true }).filter((f) => /\.[cm]?js$/.test(f)).map((f) => `${dir}/${f}`));
     assert.ok(files.includes("src/local.js") && files.includes("bin/genter.js"), files.join(", "));
     const reaching = files.filter((f) => NET.test(text(f))).sort();
-    assert.deepEqual(reaching, ["src/local.js", "src/net.js"]);
+    assert.deepEqual(reaching, ["src/http.js", "src/local.js", "src/net.js"]);
+    // genter serve only listens and answers: it imports createServer from node:http and nothing that makes a request.
+    const serve = text("src/http.js");
+    assert.match(serve, /^import \{ createServer \} from "node:http";$/m);
+    assert.doesNotMatch(serve, /\bfetch\(|\.request\(|\.get\(\s*["'`]https?:|node:https|node:net|node:tls|node:dns|WebSocket|sendBeacon/);
     // The embeddings call is the one --semantic makes, to the provider the person chose (SECURITY.md says so).
     assert.match(text("SECURITY.md"), /With `--semantic`, the passages to rank go to the embeddings provider you\s+chose/);
   });

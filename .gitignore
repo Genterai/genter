@@ -1,2 +1,8 @@
 node_modules
 __pycache__
+
+# genter serve with docker compose (docs/team.md): the repositories, tokens and seal key stay out of git
+/repos/
+/genter_tokens
+/genter_seal
+/.env

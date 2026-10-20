@@ -23,7 +23,10 @@
 /rules/en.json                  @dangenter
 /rules/ru.json                  @dangenter
 
-# What clients and people run: how they start Genter, where it is listed, and what a release ships
+# What clients and people run: how they start Genter, where it is listed, and what a release ships (the image the
+# release job publishes is built from the Dockerfile)
+/Dockerfile                     @dangenter
+/docker-compose.yml             @dangenter
 /server.json                    @dangenter
 /manifest.json                  @dangenter
 /glama.json                     @dangenter

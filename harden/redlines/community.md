@@ -21,10 +21,11 @@ version, so a person reads each change to it).
   it opens. What they rest on is true: the package is Apache-2.0 and has no `dependencies`, `peerDependencies` or
   `optionalDependencies`, and contributions come in with a sign-off and no CLA. A change to the file is a brief and the
   owner's review.
-* **[no-phone-home]** Only the fetch of a website the person added (`src/net.js`) and the embeddings call `--semantic`
-  makes (`src/local.js`) name a network primitive (`fetch`, `http`, `https`, `net`, `tls`, `dns`, `dgram`, `http2`,
-  `WebSocket`, `sendBeacon`): no other file of `bin/` or `src/` can send anything, so nothing the command or the server
-  runs sends a count, a ping or a report. SECURITY.md says what `--semantic` sends.
+* **[no-phone-home]** Only the fetch of a website the person added (`src/net.js`), the embeddings call `--semantic` makes
+  (`src/local.js`) and the listening server of `genter serve` (`src/http.js`, which imports `createServer` and nothing that
+  makes a request) name a network primitive (`fetch`, `http`, `https`, `net`, `tls`, `dns`, `dgram`, `http2`, `WebSocket`,
+  `sendBeacon`): no other file of `bin/` or `src/` can send anything, so nothing the command or the servers run sends a
+  count, a ping or a report. SECURITY.md says what `--semantic` sends.
 * **[community-files]** STEWARDSHIP.md, TRADEMARKS.md, GOVERNANCE.md, ip-boundary.md, CONTRIBUTING.md, SECURITY.md,
   docs/first-issues.md and docs/listings.md link only to files that are there. CONTRIBUTING.md has the two kinds of
   contribution (core: a brief and red lines; manifests: CI is the brief) and the sign-off; GOVERNANCE.md says the owner
@@ -41,11 +42,11 @@ version, so a person reads each change to it).
   `pull_request` with read-only rights and no action but GitHub's own; it reads each commit from its raw object, so
   nothing a message says moves a field.
 * **[owner-review]** `.github/CODEOWNERS` asks the owner (a user GitHub can ask, never the organization alone) to review
-  every change to `src/memory.js`, `src/readers.js`, `src/net.js`, `src/lexical.js`, `src/local.js`, `src/http.js` (the
-  last two of those may not be in the tree yet and are owned from the pull request that adds them),
-  `readers/reader.schema.json`, `server.json`, `manifest.json`, the files that state the promises, and `.github/` (a pull
-  request can change its own checks). Each reader in `readers/` has a line with the owner its `reader.json` names, or the
-  owner of the repository when that is the organization, and each file of `rules/` has one.
+  every change to `src/memory.js` (it may not be in the tree yet, and is owned from the pull request that adds it),
+  `src/readers.js`, `src/net.js`, `src/lexical.js`, `src/local.js`, `src/http.js`, `readers/reader.schema.json`, the
+  `Dockerfile` and `docker-compose.yml`, `server.json`, `manifest.json`, the files that state the promises, and
+  `.github/` (a pull request can change its own checks). Each reader in `readers/` has a line with the owner its
+  `reader.json` names, or the owner of the repository when that is the organization, and each file of `rules/` has one.
 * **[works-with-genter]** TRADEMARKS.md asks "works with Genter" to be claimed only by a server or client that passes
   `genter-cli/conformance`, shows the call (`conformance(send, { query, mark: true })`), and says forks rename;
   `genter-cli/conformance` is an export of the package, and a server that answers every request with an error does not

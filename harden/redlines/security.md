@@ -10,6 +10,8 @@ Sources: the security spec on the legacy branch of Genterai/specs (archive); `sr
   hop of a redirect too: private, loopback, link-local, unique local, multicast and reserved addresses (IPv4 and IPv6,
   documentation, benchmarking and discard-only ranges included) are refused, an IPv4 address carried in IPv6 (mapped,
   compatible, translated, NAT64, 6to4) is judged as that IPv4 address, and an address that cannot be read is refused.
+  A site whose address is not public is refused before anything is fetched, saying so ("… is not a public address:
+  Genter reads websites at public addresses only"), and `genter serve` given one does not start.
 * **[checked-address]** A name is looked up once per request: every answer must be public, and the request connects
   only to the addresses that were checked (TLS still checks the name), so a second DNS answer cannot swap in a private
   address.
