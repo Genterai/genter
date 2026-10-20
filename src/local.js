@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
-import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, renameSync, statSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { classifyFailure, contentHash, recipeId, splitMarkdown } from "./anchor.js";
@@ -77,7 +77,7 @@ export function localSecret(home = genterHome()) {
   return secret;
 }
 
-export function createLocal({ home = genterHome(), secret, userId = "default", openrouterApiKey, embed, cwd = process.cwd() } = {}) {
+export function createLocal({ home = genterHome(), secret, userId = "default", openrouterApiKey, embed, cwd = process.cwd(), project = cwd } = {}) {
   secret ??= localSecret(home);
   const { seal, open } = cipher(`${secret}:${userId}:local`);
   const file = join(home, "local.json");
@@ -85,8 +85,8 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
   embed ??= openrouterApiKey ? openrouterEmbedder(openrouterApiKey) : null;
   const texts = new Map(); // path -> { mtimeMs, size, text, digest }: files read by this process, never stored
   const prepared = new Map(); // anchor id + digest -> its sections, ready to rank
-  // The project this Genter searches: the one of the folder it runs in (or the folder given).
-  const { root, by } = projectOf(resolve(cwd));
+  // The project this Genter searches: the one of the folder it runs in, or of the folder given (`genter mcp <folder>`).
+  const { root, by } = projectOf(resolve(cwd, project));
   let state;
   let loadedAt = 0;
   let dirty = false;
@@ -106,18 +106,22 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
     }
     state ??= { v: 2, sources: {}, anchors: {}, vectors: {} };
     loadedAt = at;
-    if (state.v !== 2) split(state);
+    split(state);
     return state;
   }
   // A store made by 0.3 holds one list of sources for everything. Split once, when it is first opened: a folder or a
   // file goes to the project whose root holds it (one outside any project is a project of its own folder), a website
   // stays in every project as it was (it is public), and notes stay the person's own. Ids and digests do not change.
+  // A source genter-cli 0.3 adds to a split store later (it shares ~/.genter) goes the same way at the next open.
   function split(s) {
+    let moved = s.v !== 2;
     for (const src of Object.values(s.sources)) {
       if (src.kind === "notes" || src.projects || src.everywhere) continue;
       if (src.kind === "website") src.everywhere = true;
       else src.projects = [projectOf(src.kind === "file" ? dirname(src.path) : src.path).root];
+      moved = true;
     }
+    if (!moved) return;
     s.v = 2;
     dirty = true;
     save();
@@ -138,20 +142,38 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
   // ---- what is read ----
 
   // What a read in this project leaves out, read again at each call (both files may change while the MCP server runs):
-  // { skip(path, isFolder), off(path), refused? }. The person's own off list holds everywhere; the project's
-  // genter.json narrows only places inside the project, and is not used at all when refused.
+  // { skip(path, isFolder), off(path), refused? }. The person's own off list holds everywhere, matched by the path and
+  // by where its links lead, so a link never reaches a place switched off. The project's genter.json, and that of each
+  // project nested in it (a folder inside with its own genter.json), narrow only places inside them; a refused one is
+  // not used at all.
   function scope() {
     const config = join(home, "config.json");
     const off = readConfig(home).off ?? [];
     if (!Array.isArray(off) || off.some((p) => typeof p !== "string")) throw new Error(`${config}: "off" must be a list of paths`);
-    const mine = off.filter((p) => p.trim()).map((p) => resolve(homedir(), expandHome(p.trim())));
+    const reals = new Map();
+    const real = (path) => {
+      if (!reals.has(path)) reals.set(path, realOf(path));
+      return reals.get(path);
+    };
+    const named = off.filter((p) => p.trim()).map((p) => resolve(homedir(), expandHome(p.trim())));
+    const mine = [...new Set([...named, ...named.map(realOf)])];
     const repo = projectConfig(root, cwd);
-    const isOff = (path) => under(path, mine);
+    const configs = new Map([[root, repo.refused ? {} : repo]]);
+    const configOf = (dir) => {
+      if (!configs.has(dir)) {
+        const c = projectConfig(dir);
+        configs.set(dir, c.refused ? {} : c);
+      }
+      return configs.get(dir);
+    };
+    const isOff = (path) => mine.length > 0 && (under(path, mine) || under(real(path), mine));
     const skip = (path, folder = false) => {
       if (isOff(path)) return true;
-      if (repo.refused || !under(path, [root])) return false;
-      if (under(path, repo.off) || under(path, repo.exclude)) return true;
-      return Boolean(repo.include) && !under(path, repo.include) && !(folder && repo.include.some((p) => under(p, [path])));
+      for (let dir = folder ? path : dirname(path); under(dir, [root]); dir = dirname(dir)) {
+        if (narrows(configOf(dir), path, folder)) return true;
+        if (dir === root) break;
+      }
+      return false;
     };
     return { skip, off: isOff, ...(repo.refused && { refused: repo.refused }) };
   }
@@ -304,9 +326,11 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
     const out = files.map((path) => readFile(path, source.id));
     const listed = new Set(files);
     // A file of this source that a whole listing no longer has is gone (deleted, or ignored now); after a cut-off
-    // listing it is read on its own. One this project leaves out is neither read nor gone.
+    // listing it is read on its own. One this project leaves out is neither read nor gone. A file another source read
+    // first (sources of two projects overlap) is gone here only when it is deleted.
     for (const a of Object.values(s.anchors)) {
-      if (a.source !== source.id || a.tool !== FILE_READ || a.status !== "fresh" || listed.has(a.args.path) || skip(a.args.path)) continue;
+      if (a.tool !== FILE_READ || a.status !== "fresh" || listed.has(a.args.path) || skip(a.args.path)) continue;
+      if (a.source !== source.id && (!covers(source, a.args.path) || existsSync(a.args.path))) continue;
       if (complete) {
         texts.delete(a.args.path);
         s.anchors[a.id] = { ...a, status: "gone", checked_at: now() };
@@ -431,17 +455,19 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
     // The sources this project searches, notes included: [{ id, kind, place, places, gone, added_at, everywhere?, off? }].
     sources() {
       const s = load();
-      const { off } = scope();
+      const { off, skip } = scope();
       return Object.values(s.sources)
         .filter(ours)
         .map((src) => {
-          const anchors = Object.values(s.anchors).filter((a) => a.source === src.id);
+          const anchors = Object.values(s.anchors).filter((a) => (src.kind === "website" ? a.source === src.id : Boolean(a.args.path) && covers(src, a.args.path) && !skip(a.args.path)));
           return { ...shownSource(src, cwd), places: anchors.filter((a) => a.status === "fresh").length, gone: anchors.filter((a) => a.status === "gone").length, ...(src.everywhere && { everywhere: true }), ...(src.path && off(src.path) && { off: true }) };
         });
     },
 
     // Stops searching a source in this project, by its id, its path or its address; once no project searches it, its
-    // Anchors are dropped. { source, removed, elsewhere }: elsewhere counts the projects that still search it.
+    // Anchors are dropped, but for those another source still holds (they become that source's). A website kept from
+    // 0.3 is in every project, so it is forgotten in all. { source, removed, elsewhere }: elsewhere counts the
+    // projects that still search it.
     forget(target) {
       const s = load();
       let id = ours(s.sources[target]) ? target : null;
@@ -457,8 +483,12 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
       if (elsewhere.length) s.sources[id] = { ...source, projects: elsewhere };
       else {
         delete s.sources[id];
+        const rest = Object.values(s.sources).filter((src) => src.path);
         for (const a of Object.values(s.anchors)) {
-          if (a.source === id) {
+          if (a.source !== id) continue;
+          const heir = a.args.path && rest.find((src) => covers(src, a.args.path));
+          if (heir) s.anchors[a.id] = { ...a, source: heir.id };
+          else {
             delete s.anchors[a.id];
             removed++;
           }
@@ -493,7 +523,7 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
       const sc = scope();
       dropOff(sc);
       let added;
-      if (!Object.values(state.sources).some((src) => src.projects?.includes(root)) && root !== resolve(homedir()) && root !== resolve("/") && !sc.off(root)) added = await api.add(root);
+      if (!Object.values(state.sources).some((src) => src.projects?.includes(root)) && !homes().includes(root) && root !== resolve("/") && !sc.off(root)) added = await api.add(root);
       if (existsSync(notesPath)) ensureNotes();
       const reads = [];
       const seenPaths = new Set();
@@ -663,13 +693,27 @@ const shownSource = (src, cwd) => src && { id: src.id, kind: src.kind, place: sr
 function under(path, places = []) {
   return places.some((p) => path === p || path.startsWith(p.endsWith(sep) ? p : p + sep));
 }
+// Whether a file or folder source holds a path.
+const covers = (src, path) => (src.kind === "folder" ? under(path, [src.path]) : path === src.path);
+// Where a path is once its links are followed (for one that is not there, where its nearest folder that is leads).
+function realOf(path) {
+  try {
+    return realpathSync.native(path);
+  } catch {
+    const up = dirname(path);
+    return up === path ? path : join(realOf(up), basename(path));
+  }
+}
+// The home folder, as written and with its links followed.
+const homes = (home = homedir()) => [...new Set([resolve(home), realOf(resolve(home))])];
 
 // The project of a folder: walking up from it, the first folder that holds a genter.json or a .git (so a genter.json
 // makes a folder inside a repository a project of its own); with neither, the folder itself. The home folder and the
 // root are never found by walking up: everything a person has is under them. { root, by: "genter.json" | ".git" | "folder" }.
 export function projectOf(folder, home = homedir()) {
   const start = resolve(folder);
-  for (let dir = start; dir !== resolve(home) && dirname(dir) !== dir; dir = dirname(dir)) {
+  const stop = homes(home);
+  for (let dir = start; !stop.includes(dir) && dirname(dir) !== dir; dir = dirname(dir)) {
     let st = null;
     try {
       st = statSync(join(dir, "genter.json"));
@@ -712,6 +756,12 @@ export function projectConfig(root, cwd = root) {
     }
   }
   return out;
+}
+// Whether a genter.json's narrowing ({ include?, exclude?, off? }) leaves a path out; a folder holding an included
+// path is kept, so the walk reaches it.
+function narrows(config, path, folder = false) {
+  if (under(path, config.off) || under(path, config.exclude)) return true;
+  return Boolean(config.include) && !under(path, config.include) && !(folder && config.include.some((p) => under(p, [path])));
 }
 
 // The readable files of a folder: text and code, not hidden, not ignored by its .gitignore, not keys or lockfiles, and

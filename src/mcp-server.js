@@ -51,7 +51,8 @@ export async function callTool(local, name, args = {}) {
     }
     case "genter_add": {
       const out = await local.add(args.source, { depth: args.depth });
-      return { text: `${out.new ? "Added" : "Read again"} ${out.source.place}: ${out.places} places (${out.created} new, ${out.changed} changed, ${out.gone} gone)${out.complete === false ? "; the listing stopped at its limit" : ""}.` };
+      const text = `${out.new ? "Added" : "Read again"} ${out.source.place}: ${out.places} places (${out.created} new, ${out.changed} changed, ${out.gone} gone)${out.complete === false ? "; the listing stopped at its limit" : ""}.`;
+      return { text: [out.refused, text].filter(Boolean).join("\n\n") };
     }
     case "genter_sources":
       return { text: sourcesText(local.project(), local.sources()) };

@@ -300,7 +300,8 @@ The store (`~/.genter`, or `GENTER_HOME`) is sealed with a secret made on the fi
 A search reads its own project's sources and your notes, never another project's. The project is the nearest folder
 up from where `genter` runs that holds a `genter.json` or a `.git`; with neither, the folder itself (the home folder and
 `/` never count). The first `genter ask` in a project adds its folder. `genter add`, `forget` and `sources`, and the MCP
-server, work on the project they run in. Your notes are yours and answer in every project, with their dates.
+server, work on the project they run in; `genter mcp <folder>` works on that folder's project wherever your AI tool
+starts it. Your notes are yours and answer in every project, with their dates.
 
 A project's `genter.json` comes with a clone, so it can only narrow what Genter reads there:
 
@@ -309,8 +310,10 @@ A project's `genter.json` comes with a clone, so it can only narrow what Genter 
 ```
 
 Every path in it is inside the project. If one is not (`~/…`, `../…`, an absolute path elsewhere), Genter uses nothing
-from the file and says so. Your own `"off"` list in `~/.genter/config.json` (paths; `~/` works) switches places off in
-every project: Genter never reads them, drops what it kept of them, and no `genter.json` brings them back.
+from the file and says so. A folder inside with its own `genter.json` is a project of its own, and its `genter.json`
+still holds when the outer project reads there. Your own `"off"` list in `~/.genter/config.json` (paths; `~/` works)
+switches places off in every project: Genter never reads them, through a link either, drops what it kept of them, and
+no `genter.json` brings them back.
 
 A store from 0.3 (one list of sources) is split once, the first time it is opened after the upgrade: each folder or
 file goes to the project that holds it (one outside any project answers from its own folder), websites stay in every

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawn, spawnSync } from "node:child_process";
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, symlinkSync, unlinkSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
@@ -345,6 +345,8 @@ describe("local search: projects", () => {
       assert.deepEqual(of("dir-named"), { root: box.at("dir-named"), by: "folder" }, "a folder named genter.json is not one");
       assert.deepEqual(of("me/notes"), { root: box.at("me/notes"), by: "folder" }, "the home folder's .git and genter.json make no project");
       assert.deepEqual(of("me"), { root: box.at("me"), by: "folder" });
+      symlinkSync(box.at("me"), box.at("me-link"));
+      assert.deepEqual(projectOf(box.at("me/notes"), box.at("me-link")), { root: box.at("me/notes"), by: "folder" }, "nor when the home folder is a link");
     } finally {
       box.done();
     }
@@ -387,6 +389,8 @@ describe("local search: projects", () => {
         assert.ok(found.result.content[0].text.startsWith(out.project.refused), "the MCP answer says so first");
       }
       assert.equal(a.project().refused, (await a.find("zebra code")).project.refused);
+      const added = await handle(a, { jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "genter_add", arguments: { source: box.at("a/docs") } } });
+      assert.ok(added.result.content[0].text.startsWith(a.project().refused), "genter_add says so first too");
     } finally {
       box.done();
     }
@@ -423,6 +427,75 @@ describe("local search: projects", () => {
       assert.equal(readFileSync(configFile, "utf8"), '{"off": ["x"],}');
       writeFileSync(configFile, JSON.stringify({ secret, off: "b" }));
       await assert.rejects(createLocal({ home: box.home, cwd: box.at("a") }).find("zebra code"), /"off" must be a list of paths/);
+    } finally {
+      box.done();
+    }
+  });
+
+  it("[rl:local-search/repo-config-narrows] a project nested in another keeps its genter.json when the outer one reads it", async () => {
+    const box = folders({
+      "repo/.git/HEAD": GIT,
+      "repo/packages/web/genter.json": JSON.stringify({ off: ["internal"] }),
+      "repo/packages/web/README.md": "# Web\n\nThe zebra web code is 1111.\n",
+      "repo/packages/web/internal/plan.md": "# Internal\n\nThe zebra launch code is 4242.\n",
+      "repo/packages/api/README.md": "# Api\n\nThe api.\n",
+    });
+    try {
+      const web = await createLocal({ home: box.home, secret: "s", cwd: box.at("repo/packages/web") }).find("zebra launch code");
+      assert.equal(web.project.root, box.at("repo/packages/web"));
+      assert.doesNotMatch(textOf(web), /4242/);
+      const repo = await createLocal({ home: box.home, secret: "s", cwd: box.at("repo/packages/api") }).find("zebra launch code");
+      assert.equal(repo.added.source.place, box.at("repo"));
+      assert.match(textOf(repo), /1111/, "the outer project still reads the nested one");
+      assert.doesNotMatch(textOf(repo), /4242/, "but not what the nested genter.json leaves out");
+    } finally {
+      box.done();
+    }
+  });
+
+  it("[rl:local-search/person-off-wins] a link never reaches a place switched off, whichever side the link is on", async () => {
+    const box = folders({
+      "real/proj/.git/HEAD": GIT,
+      "real/proj/README.md": "# Proj\n\nThe zebra project.\n",
+      "real/proj/hr/salaries.md": "# Salaries\n\nThe zebra salary band is 999.\n",
+      "other/.git/HEAD": GIT,
+      "other/README.md": "# Other\n\nHello.\n",
+    });
+    symlinkSync(box.at("real"), box.at("work"));
+    const offAt = (home, path) => put(home, "config.json", JSON.stringify({ off: [path] }));
+    try {
+      // Switched off through the link; searched from the folder itself (the current folder is always the physical one).
+      const one = join(box.base, "home-1");
+      offAt(one, box.at("work/proj/hr"));
+      for (const cwd of [box.at("real/proj"), box.at("work/proj")]) assert.doesNotMatch(textOf(await createLocal({ home: one, secret: "s", cwd }).find("zebra salary band")), /999/, cwd);
+      // Switched off as it is; reached through the link from another project.
+      const two = join(box.base, "home-2");
+      offAt(two, box.at("real/proj/hr"));
+      const other = createLocal({ home: two, secret: "s", cwd: box.at("other") });
+      await assert.rejects(other.add(box.at("work/proj/hr")), /is switched off/);
+      assert.equal((await other.add(box.at("work/proj"))).places, 1, "a linked folder is read without the place switched off");
+      assert.doesNotMatch(textOf(await other.find("zebra salary band")), /999/);
+    } finally {
+      box.done();
+    }
+  });
+
+  it("[rl:local-search/forget] [rl:local-search/gone-not-answer] sources of two projects that overlap each say what is gone, and forgetting one keeps the other's", async () => {
+    const box = folders({ "code/A/.git/HEAD": GIT, "code/A/docs/deploy.md": DEPLOY, "code/A/docs/old.md": "# Old\n\nThe old pooler port was 1111.\n" });
+    try {
+      const code = createLocal({ home: box.home, secret: "s", cwd: box.at("code") });
+      const a = createLocal({ home: box.home, secret: "s", cwd: box.at("code/A") });
+      assert.equal((await code.find("pooler port")).project.root, box.at("code"), "a folder above a repository is a project of its own");
+      await a.find("pooler port");
+      assert.deepEqual(a.sources().filter((x) => x.kind === "folder").map((x) => x.places), [2], "A counts its files, though code read them first");
+      unlinkSync(box.at("code/A/docs/old.md"));
+      assert.deepEqual((await a.find("pooler port")).changes, [{ place: "docs/old.md", event: "gone" }]);
+      assert.equal(code.forget(box.at("code")).removed, 0, "A still searches its files");
+      const after = await a.find("which port does the staging pooler use?");
+      assert.deepEqual(after.changes, [], "nothing turns new in A");
+      assert.match(after.results[0].text, /6432/);
+      assert.equal(a.forget(box.at("code/A")).removed, 2);
+      assert.deepEqual(Object.keys(storeOf(box.home).anchors), []);
     } finally {
       box.done();
     }
@@ -471,6 +544,14 @@ describe("local search: projects", () => {
       assert.match(textOf(await made("loose").find("loose zebra code")), /777/, "a source outside any project answers from its own folder");
       const note = (await made("b").find("who do I escalate to?")).results.find((r) => r.path === join(box.home, "notes.md"));
       assert.ok(note?.facts.some((f) => /^noted \d{4}-\d{2}-\d{2} \d{2}:\d{2} UTC$/.test(f)), "notes answer in every project, with their dates");
+      // genter-cli 0.3 shares ~/.genter: a source it adds to the split store has no project either, and goes to its own
+      // at the next open.
+      const later = storeOf(box.home);
+      delete Object.values(later.sources).find((x) => x.path === box.at("loose")).projects;
+      writeFileSync(join(box.home, "local.json"), JSON.stringify({ v: 1, blob: cipher("s:default:local").seal(later) }));
+      assert.deepEqual(made("loose").sources().filter((x) => x.kind === "folder").map((x) => x.place), [box.at("loose")]);
+      assert.deepEqual(storeOf(box.home).sources[Object.values(later.sources).find((x) => x.path === box.at("loose")).id].projects, [box.at("loose")]);
+      assert.equal(made("loose").forget(box.at("loose")).removed, 1);
     } finally {
       box.done();
     }
@@ -631,6 +712,14 @@ describe("the genter command", () => {
       assert.doesNotMatch(found.result.content[0].text, /6432|deploy\.md/);
       assert.doesNotMatch(sources.result.content[0].text, /\/a\b/);
       assert.match(mcp.stderr, /searching the project .*\bb and your notes/);
+      // An MCP client that starts each server outside its project, with the folder given: each searches that project.
+      const serve = (folder) => pkg.start(["mcp", join(pkg.base, folder)], { cwd: pkg.base, input: rpc(1, "initialize", { protocolVersion: "2025-06-18" }) + rpc(2, "tools/call", { name: "genter_find", arguments: { question } }) });
+      const fromA = await serve("a");
+      assert.match(fromA.stdout, /6432/, fromA.stderr);
+      const fromB = await serve("b");
+      assert.equal(fromB.status, 0, fromB.stderr);
+      assert.doesNotMatch(fromB.stdout.trim().split("\n").at(-1), /6432|deploy\.md/);
+      assert.match(fromB.stderr, /searching the project .*\bb and your notes/);
     } finally {
       pkg.done();
     }
