@@ -211,6 +211,21 @@ revocable token per person, read-only, no notes. Every token holder reads every 
 the whole team may read. claude.ai cannot connect yet (no OAuth). The compose file, the tokens and TLS in front:
 [docs/team.md](docs/team.md).
 
+## Your apps' own MCP servers
+
+Notion, Linear, Atlassian and others run MCP servers of their own. `genter add` takes one by its address, as a source of
+the project, with nothing but your own account at the vendor:
+
+```bash
+genter add https://mcp.linear.app/mcp   # prints where to sign in; you open it in your browser once
+```
+
+Genter signs in as MCP's authorization spec says (it registers itself, PKCE, a loopback address on your computer), asks
+for no scope that writes, and calls only the server's read-only tools. What they list and find becomes Anchors read
+again at every question, with the server's name as the place; nothing they answer is copied. The tokens are sealed in
+`~/.genter`, never printed, and dropped with `genter forget <address>`. A server that fails or whose sign-in expired is
+named in the answer. Which vendors were checked, and how it works: [docs/remote.md](docs/remote.md).
+
 ## In code
 
 No dependencies. A docs assistant that answers from your folder and cites the file and lines of each fact, in full in
@@ -290,7 +305,7 @@ marks in the same format.
 
 | | `genter-cli` | Genter Cloud |
 | -- | -- | -- |
-| Sources | folders, files, websites, notes | your apps |
+| Sources | folders, files, websites, notes, your apps' own MCP servers | your apps |
 | Kept current | read again at every question | every event in an app rechecks the Anchors it touches |
 | Runs | on your computer | at genter.ai; your AI tool connects to it |
 | Price | free, Apache-2.0 | see [genter.ai](https://genter.ai) |
@@ -391,6 +406,7 @@ memory layers publish), run `node bench/convo/run.mjs --answer` with a key. [Res
 | `genter demo` | a decision is replaced and nobody tells Genter: the next answer has the new one first (a temp folder, offline, no key) |
 | `genter ask <question>` | the passages that answer, read now (the first time, this project's folder) |
 | `genter add <folder\|file\|url> ...` | search these from now on, in this project |
+| `genter add <https://…/mcp>` | an MCP server (Notion, Linear, Atlassian…): sign in once; only its read-only tools are called ([docs/remote.md](docs/remote.md)) |
 | `genter remember <text>` | keep a note in `~/.genter/notes.md`, found in every project; edit it as you like |
 | `genter sources` · `genter forget <...>` | list what this project searches; stop searching one here |
 | `genter mcp [folder\|url ...]` | all of it for your agent, over stdio |
@@ -421,7 +437,7 @@ Every path in it is inside the project. If one is not (`~/…`, `../…`, an abs
 from the file and says so. A folder inside with its own `genter.json` is a project of its own, and its `genter.json`
 still holds when the outer project reads there. Your own `"off"` list in `~/.genter/config.json` (paths; `~/` works)
 switches places off in every project: Genter never reads them, through a link either, drops what it kept of them, and
-no `genter.json` brings them back.
+no `genter.json` brings them back. An address in it (`https://mcp.linear.app`) switches off the MCP servers there.
 
 A store from 0.3 (one list of sources) is split once, the first time it is opened after the upgrade: each folder or
 file goes to the project that holds it (one outside any project answers from its own folder), websites stay in every
