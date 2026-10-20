@@ -71,11 +71,11 @@ Decided:
   place, a line of the story, the next command), with no prompt and no title of their own; the alt text says it is
   paced to be read and that the command takes about a tenth of a second.
 * **Links that work today.** Add to Claude and Add to ChatGPT lead to the README's own steps for Genter Cloud's one
-  address, written from Claude's and OpenAI's guides (genter.ai publishes no such page today: `/docs/directory` answers
-  404); Claude's dialog link with the address filled in is not in Claude's guide, so it is not used. Add to Cursor and
-  Install in VS Code are the editors' https install links carrying the entry `genter install` writes, so GitHub keeps
-  them (it drops `cursor:` and `vscode:` links). Claude Desktop's `.mcpb` links the releases page, "from the next
-  release": no release carries `genter.mcpb` yet. No Discord: there is none.
+  address, written from Claude's and OpenAI's guides (genter.ai publishes no page with these steps today); Claude's
+  dialog link with the address filled in is not in Claude's guide, so it is not used. Add to Cursor and Install in VS
+  Code are the editors' install pages over https, which open their documented `cursor:` and `vscode:` links, carrying
+  the entry `genter install` writes. Claude Desktop's `.mcpb` links the releases page, "next release": no release
+  carries `genter.mcpb` yet. No Discord: there is none.
 * **The npm package is older than main.** npm has genter-cli 0.3.0; `demo` there prints the old demo, and `install` and
   `decisions` are unknown commands. The first screen says so in one note under the commands and gives
   `npx -y github:Genterai/genter <command>` (checked: it runs main's demo); the editor links and `install` add
@@ -94,12 +94,11 @@ Decided:
   dependencies."; the keyword "resolver" gives way to "decisions" and "adr". `server.json`, `manifest.json` and
   `docs/listings.md` keep their descriptions (cli/registry-entry, cli/listings: their own step).
 Open:
-* **`https://genter.ai/try` answers 404 today.** Genter Cloud's main has the try page (the signed-out home, with `/try`
-  redirecting to it), but production still serves the earlier signed-out page ("One agent for everything in your
-  apps.") and `/try`, `/privacy`, `/security` and `/docs/directory` answer 404. The README's first link, and the
-  picture's, lead there. → Nothing in this repository changes for it: the pull request stays a draft until production
-  serves `/try`, and the lead deploys Genter Cloud or decides [non-blocking for this brief; it blocks marking the pull
-  request ready]
+* **`https://genter.ai/try` answers 404 today.** The try page is not live yet: genter.ai serves its earlier signed-out
+  page ("One agent for everything in your apps."), and `/try` answers 404. The README's first link, and the picture's,
+  lead there. → Nothing in this repository changes for it: the pull request stays a draft until genter.ai serves
+  `/try`, and the lead deploys Genter Cloud or decides [non-blocking for this brief; it blocks marking the pull request
+  ready]
 * The archive questions of the old-answer test wait for the owner's review (`bench/old-answer/RESULTS.md`, "reviewed:
   pending owner"), and the first screen quotes their counts. → Quote them now with that said beside them, as step 1.9
   asks to lead the local part with them; a review that changes a count changes the README in the same pull request,
