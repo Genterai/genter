@@ -5,6 +5,7 @@ import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "nod
 import { classifyFailure, contentHash, recipeId, splitMarkdown } from "./anchor.js";
 import { driftFacts, HEAD_LINES, supersededOf } from "./drift.js";
 import { bm25, prepare, terms, topTerms } from "./lexical.js";
+import { readDocument } from "./readers.js";
 import { cipher } from "./seal.js";
 import { crawl, forgetPage, readPage, siteUrl } from "./web.js";
 
@@ -16,6 +17,8 @@ import { crawl, forgetPage, readPage, siteUrl } from "./web.js";
 // Words rank the sections (lexical.js); with an OpenRouter key, embeddings rank them too.
 // A search reads its own project's sources and the person's notes, never another project's (projectOf). A project's
 // genter.json can only narrow what it reads; the person's own "off" list, in Genter's config, holds in every project.
+// The readers in readers/ (readers.js) read what a file says about itself: its date, its status, and where it marks
+// itself as replaced.
 // Every place has a number, the id search and read name it by over MCP; read reads a place whole, now, by that number,
 // and only a place of the project it runs in.
 
@@ -85,7 +88,7 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
   const file = join(home, "local.json");
   const notesPath = join(home, "notes.md");
   embed ??= openrouterApiKey ? openrouterEmbedder(openrouterApiKey) : null;
-  const texts = new Map(); // path -> { mtimeMs, size, text, digest }: files read by this process, never stored
+  const texts = new Map(); // path -> { mtimeMs, size, text, digest, read, top }: files read by this process, never stored
   const prepared = new Map(); // anchor id + digest -> its sections, ready to rank
   // The project this Genter searches: the one of the folder it runs in, or of the folder given (`genter mcp <folder>`).
   const { root, by } = projectOf(resolve(cwd, project));
@@ -295,7 +298,7 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
       texts.set(path, hit);
     }
     const at = now();
-    const about = describeFile(path, hit.text, st);
+    const about = describeFile(path, hit, st);
     if (!prev) {
       s.anchors[id] = { id, number: nextNumber(s), tool: FILE_READ, args: { path }, source: sourceId, ...about, digest: hit.digest, size: st.size, mtimeMs: st.mtimeMs, status: "fresh", created_at: at, updated_at: at, checked_at: at };
       dirty = true;
@@ -306,20 +309,33 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
       dirty = true;
       return { record: s.anchors[id], text: hit.text, event: "changed" };
     }
-    if (prev.status !== "fresh" || prev.mtimeMs !== st.mtimeMs) {
-      s.anchors[id] = { ...prev, status: "fresh", mtimeMs: st.mtimeMs, checked_at: at };
+    // The replaced mark of a file whose text did not change is still read again: the readers, the language rules or the
+    // place it points to may have changed since it was kept (a store made by an earlier version).
+    const remarked = JSON.stringify(prev.superseded) !== JSON.stringify(about.superseded);
+    if (prev.status !== "fresh" || prev.mtimeMs !== st.mtimeMs || remarked) {
+      s.anchors[id] = { ...prev, superseded: about.superseded, status: "fresh", mtimeMs: st.mtimeMs, checked_at: at };
       dirty = true;
       return { record: s.anchors[id], text: hit.text, event: prev.status !== "fresh" ? "back" : "unchanged" };
     }
     return { record: prev, text: hit.text, event: "unchanged" };
   }
 
-  // Title, headings, dates and the replaced mark of a file, from its own text: no model.
-  function describeFile(path, text, st) {
+  // Title, headings, dates and the replaced mark of a file, from its own text: no model. What the readers read in it, and
+  // the mark at its top, are kept with the text this process read (hit.read, hit.top), not in the store, and read again
+  // when the file changes; the place a mark points to is looked for at every read (readFile keeps what it finds).
+  function describeFile(path, hit, st) {
+    const { text } = hit;
     const title = /^#\s+(.+)$/m.exec(text)?.[1].replace(/[`*_]/g, "").trim() || basename(path);
     const items = MARKDOWN.test(path) ? [...new Set(splitMarkdown(path, text).map((p) => p.headings.join(" › ")))].slice(0, 40) : [];
-    const superseded = replacedMark({ title, text: text.slice(0, 1500) }, (link) => (/^https?:/i.test(link) ? link : localLink(path, link)));
+    if (hit.read === undefined) hit.read = readDocument(readerPath(path), text);
+    if (hit.top === undefined) hit.top = supersededOf({ title, text: text.slice(0, 1500) });
+    const superseded = replacedMark({ title, text: text.slice(0, 1500) }, (link) => (/^https?:/i.test(link) ? link : localLink(path, link)), hit.read, hit.top);
     return { title: title.slice(0, 120), items, source_at: new Date(st.mtimeMs).toISOString(), superseded: superseded ?? undefined };
+  }
+  // A file's path as readers match it: from the project's root when it is inside it, else as it is; "/" between folders.
+  function readerPath(path) {
+    const rel = relative(root, path);
+    return (rel && !rel.startsWith("..") && !isAbsolute(rel) ? rel : path).split(sep).join("/");
   }
 
   // A page read as its Anchor, the same way: { record, text, event }.
@@ -771,6 +787,7 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
     const a = x.record;
     const passage = passageOf(x, qTerms);
     const event = changedNow.get(place(a));
+    const document = documentOf(a.args.path ? texts.get(a.args.path)?.read : null);
     const facts = [];
     if (event === "changed") facts.push("changed since the last look");
     if (event === "created") facts.push("new since the last look");
@@ -787,7 +804,7 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
       headings: x.headings,
       text: passage.text,
       score: Number(score.toFixed(3)),
-      anchor: { id: a.id, tool: a.tool, args: a.args, status: a.status, updated_at: a.updated_at, ...(a.source_at && { source_at: a.source_at }), ...(a.superseded && { superseded: a.superseded }) },
+      anchor: { id: a.id, tool: a.tool, args: a.args, status: a.status, updated_at: a.updated_at, ...(a.source_at && { source_at: a.source_at }), ...(a.superseded && { superseded: a.superseded }), ...(document && { document }) },
       ...(superseded && { superseded }),
       seen: [...facts],
       facts,
@@ -980,9 +997,13 @@ function readText(path) {
   return PRIVATE_KEY.test(text) ? null : text;
 }
 
-// A link at the top of a file to the file it points to, when that file is there.
+// A link in a file to the file it points to, when that file is there; a link that is not a valid escape is as written.
 function localLink(from, link) {
-  const clean = decodeURIComponent(link.replace(/[#?].*$/, ""));
+  const raw = link.replace(/[#?].*$/, "");
+  let clean = raw;
+  try {
+    clean = decodeURIComponent(raw);
+  } catch {}
   if (!clean) return null;
   const target = resolve(dirname(from), clean);
   return existsSync(target) ? target : null;
@@ -995,14 +1016,23 @@ function absoluteLink(from, link) {
   }
 }
 
-// The replaced mark of a document's top (drift.js), with a relative link beside it resolved.
-function replacedMark(doc, resolveLink) {
-  const mark = supersededOf(doc);
-  if (!mark || mark.by) return mark;
+// What the readers read about a document, as a result shows it: { readers, date?, status? } (the document's own words).
+const documentOf = (read) => read && { readers: read.readers, ...(read.date && { date: read.date.value }), ...(read.status && { status: read.status.value }) };
+
+// The replaced mark of a document: where a reader says it is (an ADR's Status section, a banner at its top, front
+// matter), the one that names what replaces it first; else the language rules' phrases at its top (drift.js). A
+// relative link beside it is resolved; a place that is not there is no replacement. Only a mark at the top with no
+// place beside it takes the first link of the top lines (as before readers); a reader's mark that names no place that
+// is there has none.
+function replacedMark(doc, resolveLink, read, top = supersededOf(doc)) {
+  const found = read?.marks?.find((m) => m.by) ?? read?.marks?.[0];
+  const named = found?.by && (/^https?:/i.test(found.by) ? found.by : resolveLink(found.by));
+  if (found && (named || !top)) return { marker: found.marker ?? found.kind, line: found.line, reader: found.reader, ...(named && { by: named }) };
+  if (!top || top.by) return top;
   const head = String(doc.text).split("\n").map((l) => l.trim()).filter(Boolean).slice(0, 5).join("\n");
   const link = /\]\(\s*<?([^)\s>]+)>?\s*\)/.exec(head)?.[1];
   const by = link && resolveLink(link);
-  return by ? { ...mark, by } : mark;
+  return by ? { ...top, by } : top;
 }
 
 // The line at a document's top that marks it as replaced, as it reads now: its mark's quote. Read again each time,

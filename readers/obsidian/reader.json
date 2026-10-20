@@ -1,0 +1,30 @@
+{
+  "$schema": "../reader.schema.json",
+  "dsl": 1,
+  "name": "obsidian",
+  "owner": "@Genterai",
+  "fallback": true,
+  "matches": {
+    "files": ["**/*.md"]
+  },
+  "lines": 60,
+  "fields": {
+    "date": [
+      { "in": "front-matter", "pattern": "^date: {0,3}[\"']?(\\d{4}-\\d{2}-\\d{2})" },
+      { "in": "front-matter", "pattern": "^created: {0,3}[\"']?(\\d{4}-\\d{2}-\\d{2})" }
+    ],
+    "status": [
+      { "in": "front-matter", "pattern": "^status: {0,3}[\"']?([a-z]{3,20})" }
+    ],
+    "marks": [
+      { "kind": "superseded", "in": "front-matter", "pattern": "^(?:superseded|replaced)[_-]by: {0,3}[\"']?\\[([^\\]]{1,120})\\]\\(([^)\\s]{1,200})\\)", "name": 1, "by": 2 },
+      { "kind": "superseded", "in": "front-matter", "pattern": "^(?:superseded|replaced)[_-]by: {0,3}[\"']?\\[\\[([^\\]|]{1,120})\\|[^\\]]{1,120}\\]\\]", "name": 1 },
+      { "kind": "superseded", "in": "front-matter", "pattern": "^(?:superseded|replaced)[_-]by: {0,3}[\"']?\\[\\[([^\\]|]{1,120})\\]\\]", "name": 1 },
+      { "kind": "superseded", "in": "front-matter", "pattern": "^(?:superseded|replaced)[_-]by: {0,3}[\"']?([^\\s\"'\\[\\]][^\"'\\[\\]]{0,199}\\.md)[\"']?$", "by": 1 },
+      { "kind": "superseded", "in": "front-matter", "pattern": "^status: {0,3}[\"']?superseded\\b" },
+      { "kind": "deprecated", "in": "front-matter", "pattern": "^status: {0,3}[\"']?deprecated\\b" },
+      { "kind": "deprecated", "in": "front-matter", "pattern": "^deprecated: {0,3}true$" },
+      { "kind": "archived", "in": "front-matter", "pattern": "^archived: {0,3}true$" }
+    ]
+  }
+}

@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Genter reader",
+  "description": "A format reader: data that turns a document's text into its own date, status and explicit marks (replaced, deprecated, removed, with the place that replaces it). It is never run: src/readers.js interprets it. A pattern is a restricted language: literals, '.', classes ([a-z], [^)], \\d \\s \\w and their capitals), anchors (^ $ \\b), groups ((...) and (?:...)) and alternation, and bounded repeats (? {n} {n,m}, m at most 200) of something that holds no repeat; no *, +, {n,}, backreference or lookaround. It is matched without case, one trimmed line (at most 400 characters) at a time, in time linear in the line.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["dsl", "name", "owner", "matches"],
+  "properties": {
+    "$schema": { "const": "../reader.schema.json" },
+    "dsl": { "const": 1, "description": "The version of this manifest language." },
+    "name": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{1,39}$", "description": "The name of the reader's folder in readers/." },
+    "owner": { "type": "string", "pattern": "^@[A-Za-z0-9][A-Za-z0-9-]{0,38}$", "description": "The GitHub handle of the person or organization that keeps it." },
+    "fallback": { "type": "boolean", "description": "true for a reader of any document of a kind (banners, front matter): format readers are asked first." },
+    "matches": { "$ref": "#/$defs/matches" },
+    "lines": { "type": "integer", "minimum": 1, "maximum": 400, "description": "How many lines of a document it reads, from the first (60 when not given)." },
+    "fields": { "$ref": "#/$defs/fields" },
+    "entries": { "$ref": "#/$defs/entries" }
+  },
+  "$defs": {
+    "pattern": { "type": "string", "minLength": 1, "maxLength": 300 },
+    "group": { "type": "integer", "minimum": 1, "maximum": 6, "description": "The number of a group of the pattern, from 1." },
+    "kind": { "enum": ["superseded", "deprecated", "obsolete", "archived", "moved", "removed", "unmaintained"] },
+    "where": {
+      "enum": ["front-matter", "top", "section", "any", "heading"],
+      "description": "front-matter: the lines between a first line '---' and the next '---'; top: the first `first` lines that are not empty (6 when not given), after the front matter; section: the lines under the first heading `section` matches, to the next heading of its level or above; any: every line read; heading: the headings (an entry's own heading, in an entry). Lines in code fences are never read."
+    },
+    "matches": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["files"],
+      "properties": {
+        "files": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": { "type": "string", "minLength": 1, "maxLength": 120 },
+          "description": "Globs from the project's root, without case: * and ? within a name, ** for any folders, {a,b} for either. A name that starts with '.' is never matched, and a glob that could match a secret-looking file (*.pem, *.key, id_rsa, credentials) is refused."
+        },
+        "headings": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": { "$ref": "#/$defs/pattern" },
+          "description": "When given, the reader takes only a document with a heading one of these patterns matches."
+        }
+      }
+    },
+    "rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["in", "pattern"],
+      "properties": {
+        "in": { "$ref": "#/$defs/where" },
+        "section": { "$ref": "#/$defs/pattern" },
+        "first": { "type": "integer", "minimum": 1, "maximum": 40 },
+        "pattern": { "$ref": "#/$defs/pattern" },
+        "value": { "$ref": "#/$defs/group" }
+      }
+    },
+    "mark": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["in"],
+      "properties": {
+        "kind": { "$ref": "#/$defs/kind" },
+        "in": { "$ref": "#/$defs/where" },
+        "section": { "$ref": "#/$defs/pattern" },
+        "first": { "type": "integer", "minimum": 1, "maximum": 40 },
+        "pattern": { "$ref": "#/$defs/pattern" },
+        "phrases": { "const": true, "description": "Mark a short line with the phrases of the language rules (rules/<lang>.json) instead of a pattern." },
+        "by": { "$ref": "#/$defs/group" },
+        "name": { "$ref": "#/$defs/group" }
+      }
+    },
+    "fields": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "date": { "type": "array", "minItems": 1, "maxItems": 16, "items": { "$ref": "#/$defs/rule" }, "description": "The first rule that finds a date (its group `value`, 1 when not given) gives it." },
+        "status": { "type": "array", "minItems": 1, "maxItems": 16, "items": { "$ref": "#/$defs/rule" }, "description": "The first rule that finds a status word gives it." },
+        "marks": { "type": "array", "minItems": 1, "maxItems": 16, "items": { "$ref": "#/$defs/mark" }, "description": "Each line it marks, with the replacing place from the group `by` (else a link beside the match) and its name from `name`." }
+      }
+    },
+    "heading": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pattern"],
+      "properties": {
+        "pattern": { "$ref": "#/$defs/pattern" },
+        "level": { "type": "integer", "minimum": 1, "maximum": 6 },
+        "title": { "$ref": "#/$defs/group" },
+        "date": { "$ref": "#/$defs/group" }
+      }
+    },
+    "entries": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["heading"],
+      "properties": {
+        "heading": { "type": "array", "minItems": 1, "maxItems": 8, "items": { "$ref": "#/$defs/heading" }, "description": "An entry is a heading the first of these matches (at its level, when given), to the next heading of its level or above." },
+        "fields": { "$ref": "#/$defs/fields" }
+      }
+    },
+    "languageRules": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lang", "marks"],
+      "properties": {
+        "lang": { "type": "string", "pattern": "^[a-z]{2,3}$" },
+        "marks": { "type": "array", "minItems": 1, "maxItems": 40, "items": { "$ref": "#/$defs/phrase" } }
+      }
+    },
+    "phrase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["marker", "kind", "pattern", "hits", "misses"],
+      "properties": {
+        "marker": { "type": "string", "minLength": 1, "maxLength": 40 },
+        "kind": { "$ref": "#/$defs/kind" },
+        "pattern": { "$ref": "#/$defs/pattern" },
+        "hits": { "type": "array", "minItems": 1, "maxItems": 20, "items": { "type": "string", "minLength": 1, "maxLength": 200 } },
+        "misses": { "type": "array", "minItems": 1, "maxItems": 20, "items": { "type": "string", "minLength": 1, "maxLength": 200 } }
+      }
+    }
+  }
+}

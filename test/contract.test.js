@@ -34,10 +34,11 @@ const dated = (path, iso) => utimesSync(path, new Date(iso), new Date(iso));
 const call = async (local, name, args) => (await handle(local, { jsonrpc: "2.0", id: 1, method: "tools/call", params: { name, arguments: args } })).result;
 const text = (res) => res.content[0].text;
 
-// `genter mcp` of a copy of the package (no node_modules), and a send() over its stdin and stdout for conformance.
+// `genter mcp` of a copy of the package (what it ships: bin, src, readers and rules; no node_modules), and a
+// send() over its stdin and stdout for conformance.
 function server(base, cwd) {
   const pkg = join(base, "pkg");
-  for (const part of ["bin", "src", "package.json"]) cpSync(join(root, part), join(pkg, part), { recursive: true });
+  for (const part of ["bin", "src", "readers", "rules", "package.json"]) cpSync(join(root, part), join(pkg, part), { recursive: true });
   const child = spawn(process.execPath, [join(pkg, "bin/genter.js"), "mcp"], { cwd, env: { PATH: process.env.PATH, HOME: join(base, "home"), GENTER_HOME: join(base, "home/.genter") } });
   const waiting = new Map();
   let buffer = "";

@@ -62,6 +62,14 @@ safe.
   answers again. A project whose source holds a deleted file says it is gone, even when another project's source read
   the file first.
 * **[follow-replaced]** A place marked as replaced brings what replaces it right after it, marked "replaces [n]".
+* **[reader-marks]** A file a reader in `readers/` takes is marked as replaced where the reader says (an ADR's Status
+  section, a banner at its top, its front matter), the mark that names what replaces it first; what replaces it is the
+  place the reader read beside the mark, when that place is there, and a link elsewhere in the file is taken only for a
+  mark at its top (as before readers); a link that is not a valid escape is taken as written and stops no search. A file
+  no reader marks is marked only at its top (anchor-drift/top-marks). Marks are read again at every look, so a store
+  made by an earlier version shows them without the file being edited. A result shows the date and status the file gives
+  itself as its readers read them (`anchor.document`: `readers`, `date`, `status`), read again with the file and never
+  kept in the store.
 * **[no-text-stored]** The store keeps which places there are, their numbers, digests, headings and dates, sealed;
   never a line of their text (a replaced mark's notice is quoted from the text read now), and no place name in the
   clear.

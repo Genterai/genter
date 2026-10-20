@@ -1,0 +1,25 @@
+{
+  "$schema": "../reader.schema.json",
+  "dsl": 1,
+  "name": "rfc",
+  "owner": "@Genterai",
+  "matches": {
+    "files": ["**/rfcs/**/*.md", "**/rfc/**/*.md", "**/peps/pep-*.{rst,md,txt}", "**/keps/**/kep.yaml"]
+  },
+  "lines": 60,
+  "fields": {
+    "date": [
+      { "in": "top", "first": 30, "pattern": "^[-*]? {0,3}\\*{0,2}(?:start date|start-date|created|date|creation-date)\\*{0,2}:\\*{0,2} {0,3}[\"']?(\\d{4}-\\d{2}-\\d{2}|\\d{1,2}-[a-z]{3}-\\d{4})" }
+    ],
+    "status": [
+      { "in": "top", "first": 30, "pattern": "^[-*]? {0,3}\\*{0,2}status\\*{0,2}:\\*{0,2} {0,3}[\"']?([a-z]{3,20})" }
+    ],
+    "marks": [
+      { "kind": "superseded", "in": "top", "first": 30, "pattern": "^[-*]? {0,3}\\*{0,2}status\\*{0,2}:\\*{0,2} {0,3}(?:replaced|superseded|obsoleted) by:? {0,3}\\[([^\\]]{1,120})\\]\\(([^)\\s]{1,200})\\)", "name": 1, "by": 2 },
+      { "kind": "superseded", "in": "top", "first": 30, "pattern": "^[-*]? {0,3}\\*{0,2}status\\*{0,2}:\\*{0,2} {0,3}(?:replaced|superseded|obsoleted) by:? {0,3}((?:rfc|pep|kep)[- ]?\\d{1,5})\\b", "name": 1 },
+      { "kind": "superseded", "in": "top", "first": 30, "pattern": "^superseded-by: {0,3}(\\d{1,5})\\b", "name": 1 },
+      { "kind": "deprecated", "in": "top", "first": 30, "pattern": "^[-*]? {0,3}\\*{0,2}status\\*{0,2}:\\*{0,2} {0,3}deprecated\\b" },
+      { "kind": "obsolete", "in": "top", "first": 30, "pattern": "^[-*]? {0,3}\\*{0,2}status\\*{0,2}:\\*{0,2} {0,3}obsolete\\b" }
+    ]
+  }
+}

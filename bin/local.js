@@ -7,6 +7,7 @@ import { runDemo } from "../src/demo.js";
 import { install, terminalAsk } from "../src/install/index.js";
 import { createLocal, embedderFor, embeddingProvider, findText, genterHome } from "../src/local.js";
 import { serveMcp, sourcesText } from "../src/mcp-server.js";
+import { readerCommand } from "./reader.js";
 
 const version = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")).version;
 
@@ -33,6 +34,9 @@ reads it there again, so the answer is what your docs say now.
                                      shows each change, then asks. --cloud adds Genter Cloud too, --semantic sets
                                      GENTER_SEMANTIC=1, --folder <dir> is what Claude Desktop searches, --dry-run only
                                      shows, --undo puts every file back
+  genter reader new <name>           make readers/<name>/: a reader for a text format (its date, status and replaced
+                                     marks), written as data, with fixtures and what they give
+  genter reader check [folder ...]   lint the readers in readers/ (and rules/) and check them against their fixtures
 
   A project is the nearest folder up from here (for mcp, from its first folder) with a genter.json or a .git, else
   that folder; ask reads only its sources and your notes. Its genter.json can only narrow that: {"include": [...],
@@ -118,6 +122,11 @@ export async function local(argv) {
     return;
   }
   if (command === "demo") return runDemo();
+  // Readers are data in readers/: making and checking them touches no store and needs no key.
+  if (command === "reader") {
+    process.exitCode = readerCommand(words);
+    return;
+  }
   // It edits other tools' settings, not Genter's store: no store, no key, and its --cloud adds Genter Cloud's address.
   if (command === "install") {
     try {

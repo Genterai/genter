@@ -1,0 +1,79 @@
+{
+  "docs/deprecation-policy.md": {},
+  "docs/flags.md": {
+    "marks": [
+      {
+        "kind": "deprecated",
+        "marker": "deprecated",
+        "line": 2,
+        "quote": "> Deprecated since 2.0. See [Flags with OpenFeature](flags-openfeature.md).",
+        "name": "Flags with OpenFeature",
+        "by": "flags-openfeature.md"
+      }
+    ]
+  },
+  "docs/handbook.md": {},
+  "docs/howto.rst": {
+    "marks": [
+      {
+        "kind": "deprecated",
+        "line": 4,
+        "quote": ".. deprecated:: 2.0"
+      }
+    ]
+  },
+  "docs/old-api.mdx": {
+    "marks": [
+      {
+        "kind": "deprecated",
+        "line": 3,
+        "quote": ":::warning Deprecated"
+      }
+    ]
+  },
+  "docs/release-process.md": {
+    "marks": [
+      {
+        "kind": "superseded",
+        "marker": "superseded",
+        "line": 3,
+        "quote": "Superseded by [Release process v2](release-process-v2.md) on 2026-10-03.",
+        "name": "Release process v2",
+        "by": "release-process-v2.md"
+      }
+    ]
+  },
+  "docs/ru/regulations.md": {
+    "marks": [
+      {
+        "kind": "deprecated",
+        "marker": "устарел",
+        "line": 1,
+        "quote": "> **Устарело:** заменено на [Регламент v2](regulations-v2.md)",
+        "name": "Регламент v2",
+        "by": "regulations-v2.md"
+      }
+    ]
+  },
+  "docs/runbook.md": {
+    "marks": [
+      {
+        "kind": "deprecated",
+        "marker": "deprecated",
+        "line": 1,
+        "quote": "> **Deprecated:** replaced by [Runbook v2](runbook-v2.md)",
+        "name": "Runbook v2",
+        "by": "runbook-v2.md"
+      }
+    ]
+  },
+  "site/guide.md": {
+    "marks": [
+      {
+        "kind": "deprecated",
+        "line": 1,
+        "quote": "<div class=\"admonition deprecated\">This guide is kept for history: the <a href=\"/guide-v2\">new guide</a> holds.</div>"
+      }
+    ]
+  }
+}

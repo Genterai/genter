@@ -1,0 +1,99 @@
+{
+  "docs/decisions.md": {
+    "date": {
+      "value": "2026-09-24",
+      "line": 17
+    },
+    "entries": [
+      {
+        "title": "Jobs run on Postgres",
+        "line": 5,
+        "date": {
+          "value": "2026-03-03",
+          "line": 5
+        },
+        "status": {
+          "value": "superseded",
+          "line": 7
+        },
+        "marks": [
+          {
+            "kind": "superseded",
+            "line": 7,
+            "quote": "Status: superseded by [Jobs run on Redis](#2026-09-24-jobs-run-on-redis)",
+            "name": "Jobs run on Redis",
+            "by": "#2026-09-24-jobs-run-on-redis"
+          }
+        ]
+      },
+      {
+        "title": "Invoices are numbered per shop",
+        "line": 11,
+        "date": {
+          "value": "2026-05-14",
+          "line": 11
+        },
+        "status": {
+          "value": "accepted",
+          "line": 13
+        }
+      },
+      {
+        "title": "Jobs run on Redis",
+        "line": 17,
+        "date": {
+          "value": "2026-09-24",
+          "line": 17
+        },
+        "status": {
+          "value": "accepted",
+          "line": 19
+        }
+      }
+    ]
+  },
+  "team/DECISIONS.md": {
+    "date": {
+      "value": "2026-10-03",
+      "line": 3
+    },
+    "entries": [
+      {
+        "title": "Friday deploys stop",
+        "line": 3,
+        "date": {
+          "value": "2026-10-03",
+          "line": 3
+        }
+      },
+      {
+        "title": "Deploys on Fridays",
+        "line": 7,
+        "date": {
+          "value": "2026-02-11",
+          "line": 7
+        },
+        "status": {
+          "value": "replaced",
+          "line": 9
+        },
+        "marks": [
+          {
+            "kind": "superseded",
+            "line": 9,
+            "quote": "- Status: replaced by Friday deploys stop",
+            "name": "Friday deploys stop"
+          }
+        ]
+      },
+      {
+        "title": "Code review",
+        "line": 13,
+        "date": {
+          "value": "2026-04-02",
+          "line": 15
+        }
+      }
+    ]
+  }
+}

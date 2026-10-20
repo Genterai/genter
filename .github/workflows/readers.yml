@@ -1,0 +1,26 @@
+name: readers
+# Readers and language rules are data (readers/, rules/), so CI is their brief: every manifest is linted (the schema,
+# the restricted pattern language, no network field, no code, no glob that reaches a secret-looking file) and every
+# reader's contract runs: its fixtures give the date, status, marks and entries expected.json says, blanking a line it
+# read changes that, a place the person switched off is never read, and secret-looking files are never read. Every
+# phrase of every language is checked against the lines it must mark and must not.
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: readers-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with: { node-version: 22 }
+      - name: Lint every manifest and rule, check every reader against its fixtures
+        run: node bin/genter.js reader check
+      - name: Contract tests (the engine reads with them; off list and secret files)
+        run: node --test test/readers.test.js
