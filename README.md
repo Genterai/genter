@@ -73,7 +73,7 @@ Your agent now has four tools:
 | `genter_find` | finds the passages that answer, reads them now, and returns each with its `path:lines` and what changed since the last look |
 | `genter_add` | adds a folder, a file or a website (a sibling repository, a vendor's API docs) |
 | `genter_remember` | keeps a note (a decision, a convention) that it finds later, with the note's date |
-| `genter_sources` | lists what is searched |
+| `genter_sources` | lists what this project searches |
 
 ## Choose how you run it
 
@@ -285,15 +285,39 @@ memory layers publish), run `node bench/convo/run.mjs --answer` with a key. [Res
 | | |
 | -- | -- |
 | `genter demo` | see it work on a temp folder |
-| `genter ask <question>` | the passages that answer, read now (the first time, the current folder) |
-| `genter add <folder\|file\|url> ...` | search these from now on |
-| `genter remember <text>` | keep a note in `~/.genter/notes.md`; edit it as you like |
-| `genter sources` · `genter forget <...>` | list what is searched; stop searching one |
+| `genter ask <question>` | the passages that answer, read now (the first time, this project's folder) |
+| `genter add <folder\|file\|url> ...` | search these from now on, in this project |
+| `genter remember <text>` | keep a note in `~/.genter/notes.md`, found in every project; edit it as you like |
+| `genter sources` · `genter forget <...>` | list what this project searches; stop searching one here |
 | `genter mcp [folder\|url ...]` | all of it for your agent, over stdio |
 
 `--semantic` ranks by meaning too (or set `GENTER_SEMANTIC=1`); `--json` prints JSON; `--limit N` sets the number of
 passages. Genter never reads hidden files, `.gitignore`d files, lockfiles, keys, or anything that holds a private key.
 The store (`~/.genter`, or `GENTER_HOME`) is sealed with a secret made on the first run.
+
+### Each project searches its own
+
+A search reads its own project's sources and your notes, never another project's. The project is the nearest folder
+up from where `genter` runs that holds a `genter.json` or a `.git`; with neither, the folder itself (the home folder and
+`/` never count). The first `genter ask` in a project adds its folder. `genter add`, `forget` and `sources`, and the MCP
+server, work on the project they run in; `genter mcp <folder>` works on that folder's project wherever your AI tool
+starts it. Your notes are yours and answer in every project, with their dates.
+
+A project's `genter.json` comes with a clone, so it can only narrow what Genter reads there:
+
+```json
+{ "include": ["docs", "README.md"], "exclude": ["docs/archive"], "off": ["docs/private"] }
+```
+
+Every path in it is inside the project. If one is not (`~/…`, `../…`, an absolute path elsewhere), Genter uses nothing
+from the file and says so. A folder inside with its own `genter.json` is a project of its own, and its `genter.json`
+still holds when the outer project reads there. Your own `"off"` list in `~/.genter/config.json` (paths; `~/` works)
+switches places off in every project: Genter never reads them, through a link either, drops what it kept of them, and
+no `genter.json` brings them back.
+
+A store from 0.3 (one list of sources) is split once, the first time it is opened after the upgrade: each folder or
+file goes to the project that holds it (one outside any project answers from its own folder), websites stay in every
+project, notes stay yours.
 
 ## More
 
