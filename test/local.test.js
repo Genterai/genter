@@ -952,6 +952,7 @@ describe("the genter command", () => {
 
 $ genter ask "Can we deploy on Friday?"
   [1] RUNBOOK.md:29-31 · Runbook › Deploys
+      dated 2026-03-12
   ## Deploys
 
   Yes, deploys go out on Fridays from the release branch.
@@ -969,7 +970,7 @@ $ genter ask "Can we deploy on Friday?"
   No deploys on Fridays. Deploys go out Monday to Thursday, before 15:00.
 
   [2] RUNBOOK.md:31-33 · Runbook › Deploys
-      changed since the last look · RUNBOOK.md says at its top: "Superseded by Release process v2"
+      changed since the last look · dated 2026-03-12 · RUNBOOK.md says at its top: "Superseded by Release process v2"
   ## Deploys
 
   Yes, deploys go out on Fridays from the release branch.
@@ -997,15 +998,39 @@ Next: npx genter-cli install   # adds Genter to your AI tools; shows each change
     }
   });
 
+  it("[rl:cli/demo] reads nothing of the person's, even when the temp folder is inside their repository", async () => {
+    const pkg = installed();
+    try {
+      // A repository (a .git) whose own temp folder is where the demo's folder is made, with a doc that answers the question.
+      const repo = join(pkg.base, "repo");
+      mkdirSync(join(repo, ".git"), { recursive: true });
+      mkdirSync(join(repo, "docs"));
+      mkdirSync(join(repo, "tmp"));
+      writeFileSync(join(repo, "docs/plan.md"), "# Plan\n\n## Friday\n\nOur private plan: deploy on Friday at midnight, the password is hunter2.\n");
+      const tmp = join(repo, "tmp");
+      const out = await pkg.start(["demo"], { env: { TMPDIR: tmp, TMP: tmp, TEMP: tmp } });
+      assert.equal(out.status, 0, out.stderr);
+      assert.equal(out.stdout, DEMO);
+      assert.equal(out.stdout.includes("hunter2"), false);
+      assert.deepEqual(readdirSync(tmp), []);
+    } finally {
+      pkg.done();
+    }
+  });
+
   it("[rl:cli/demo] runs offline: nothing opens a connection or looks up a name", async () => {
     const pkg = installed();
     try {
       const log = join(pkg.base, "network.log");
       const hook = join(pkg.base, "offline.mjs");
+      // The engine's own name lookup is `import { lookup } from "node:dns/promises"` (src/net.js): a named import, which
+      // only syncBuiltinESMExports() lets see the replacement.
       writeFileSync(
         hook,
         `import { appendFileSync } from "node:fs";
+import { syncBuiltinESMExports } from "node:module";
 import dns from "node:dns";
+import dnsPromises from "node:dns/promises";
 import net from "node:net";
 const refuse = (what) => {
   appendFileSync(${JSON.stringify(log)}, \`\${what}\\n\`);
@@ -1016,12 +1041,30 @@ net.Socket.prototype.connect = function (...args) {
   return refuse(\`connect \${JSON.stringify(args[0])}\`);
 };
 dns.lookup = (name) => refuse(\`lookup \${name}\`);
+dnsPromises.lookup = (name) => refuse(\`lookup \${name}\`);
+syncBuiltinESMExports();
 `,
       );
       const env = { NODE_OPTIONS: `--import=${pathToFileURL(hook).href}` };
-      // The hook is not vacuous: a program that fetches is caught by it.
-      spawnSync(process.execPath, ["-e", "fetch('http://localhost:9/').catch(() => {})"], { env: { PATH: process.env.PATH, ...env } });
-      assert.match(readFileSync(log, "utf8"), /^fetch http:\/\/localhost:9\/$/m);
+      // The hook is not vacuous: a program that fetches, connects or looks a name up, however it imports the lookup, is
+      // caught by it.
+      const control = join(pkg.base, "control.mjs");
+      writeFileSync(
+        control,
+        `import { lookup as callback } from "node:dns";
+import { lookup as promised } from "node:dns/promises";
+import net from "node:net";
+for (const attempt of [() => fetch("http://localhost:9/"), () => promised("a.invalid"), () => callback("b.invalid", () => {}), () => net.connect(9, "localhost")]) {
+  try {
+    await attempt();
+  } catch {}
+}
+`,
+      );
+      spawnSync(process.execPath, [control], { env: { PATH: process.env.PATH, ...env } });
+      const caught = readFileSync(log, "utf8").trimEnd().split("\n");
+      assert.deepEqual(caught.map((line) => line.split(" ")[0]), ["fetch", "lookup", "lookup", "connect"]);
+      assert.deepEqual(caught.slice(0, 3), ["fetch http://localhost:9/", "lookup a.invalid", "lookup b.invalid"]);
       unlinkSync(log);
       const out = await pkg.start(["demo"], { env });
       assert.equal(out.status, 0, out.stderr);

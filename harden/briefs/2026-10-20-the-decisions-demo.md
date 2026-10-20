@@ -11,9 +11,9 @@ quote behaviour; end with the one line that says what to run next, `npx genter-c
 
 Intent: the first thing a person runs shows, in a few lines of plain text, what Genter is for: the answer that holds
 now comes first and what it replaced says so in its own words — success: `npx genter-cli demo` prints, with no key, no
-network and no color, a runbook answering at `RUNBOOK.md:29-31`, then (after a doc is added and the runbook marked, with
+network and no color, a runbook answering at `RUNBOOK.md:29-31` (`dated 2026-03-12`), then (after a doc is added and the runbook marked, with
 nothing told to Genter) `docs/release-process-v2.md:12-14` first, `replaces [2]` and `dated 2026-10-03`, and
-`RUNBOOK.md:31-33` after it saying `RUNBOOK.md says at its top: "Superseded by Release process v2"`, then
+`RUNBOOK.md:31-33` after it, dated, saying `RUNBOOK.md says at its top: "Superseded by Release process v2"`, then
 `Next: npx genter-cli install`; it takes about 0.1 s here and a test fails past 0.5 s.
 Searched: `npx -y genter-cli@0.3 ask "genter demo output and the cli demo red line"` (`harden/redlines/cli.md` [demo],
 which described the old demo: an answer, an edit, the stale copy a memory would give, a replaced doc; the earlier brief
@@ -39,12 +39,19 @@ Decided:
   fine, a newer doc that says they are not, and a notice at the runbook's top that nobody told Genter about (the owner,
   2026-10-20, accepting the plan). The wording of the two narration lines is this step's, written to say only what the
   files show.
-* Nothing in the demo is demo-only code: it writes two files and calls `find` and `findText`, the engine behind
+* Nothing in the demo is demo-only code: it writes its files (a runbook, the new doc, a `genter.json`) and calls `find` and `findText`, the engine behind
   `genter ask`, so the order, `replaces [2]`, the date and the quote are what a person gets on their own docs. The
   command shown, `genter ask "Can we deploy on Friday?"`, is the one they can type: no flag is hidden.
 * The first search adds the folder (local-search/first-search-adds-folder), as it does for a person: the demo does not
-  call `add`.
-* Line numbers are part of the picture, so the runbook has 35 lines: its Friday section is in the middle, at line 29
+  call `add`. The folder holds a `genter.json` (`{}`, written before the engine is created, which finds its project
+  once), so it is a project of its own: the first search adds exactly the demo's folder, and a temp folder inside the
+  person's repository, or under a `genter.json` of theirs, is never searched in its place (review of this PR: the
+  demo had printed the files of the enclosing repository there, while saying "nothing of yours read").
+* The runbook gives itself a day too, `date: 2026-03-12` in its front matter ("we decided it in March"), and the notice
+  goes under the front matter, which is the top of a file that has one: the engine prints `dated 2026-03-12` on the
+  runbook's passage in both answers, the old one's date beside its quoted notice, as the plan's row asks. The runbook's
+  filler lost four lines so that its Friday section stays at line 29 (31 once the notice is on top).
+* Line numbers are part of the picture, so the runbook has 35 lines (front matter included): its Friday section is in the middle, at line 29
   and, once the two notice lines are on top, at 31; the new doc's is at 12. A reader of that passage never sees the top.
 * The notice is written as a Markdown quote with a link, `> Superseded by [Release process v2](docs/release-process-v2.md)`,
   the form a team writes; the quote Genter prints is the plain words, `Superseded by Release process v2`, as
@@ -75,14 +82,18 @@ Open:
   describe the demo. Proposal: the GIF is recorded from this output after that step lands [non-blocking]
 Proof: `test/local.test.js`, "the genter command" (the package as installed: `bin`, `src`, `rules`, `readers`, no
 `node_modules`, no key in the environment): "[rl:cli/demo] [rl:local-search/current-first]" the whole output, character
-for character (the answer at `RUNBOOK.md:29-31`, then the new doc at `docs/release-process-v2.md:12-14` with `replaces
-[2]` and `dated 2026-10-03`, the runbook at `RUNBOOK.md:31-33` with its notice quoted, the last line), stderr empty,
+for character (the answer at `RUNBOOK.md:29-31`, dated 2026-03-12, then the new doc at `docs/release-process-v2.md:12-14` with `replaces
+[2]` and `dated 2026-10-03`, the runbook at `RUNBOOK.md:31-33` with its date and its notice quoted, the last line), stderr empty,
 exit 0, no escape character, the temp folder it ran in empty after, the person's Genter home not made and the project
-it ran in unchanged / "[rl:cli/demo]" offline: a preloaded module makes `fetch`, a socket connection and a name lookup
-throw and log (and a control program shows it catches `fetch`), and the demo prints the same and logs nothing /
+it ran in unchanged / "[rl:cli/demo]" with the temp folder inside a repository (a `.git`) that holds a doc answering
+"Friday": the output is the same, character for character, and nothing of the repository is in it / "[rl:cli/demo]"
+offline: a preloaded module makes `fetch`, a socket connection and a name lookup (the callback one and the engine's own,
+`node:dns/promises`) throw and log (and a control program shows it catches each of the four, the lookup imported by
+name as `src/net.js` does), and the demo prints the same and logs nothing /
 "[rl:cli/demo-fast]" the median of three whole-command runs is under 500 ms (about 110 ms here). Each fails when its part
-is undone (checked by hand: a `fetch` added to the demo, a 600 ms wait, the temp folder left behind). Checks that
-nothing else broke: `npm test` (159 pass), `npm run lint` (0 errors), `harden check`, the packed tarball installed in a
+is undone (checked by hand: a `fetch` added to the demo, a name lookup of `src/net.js` added to it, a 600 ms wait, the
+temp folder left behind, the `genter.json` not written, the hook without the `node:dns/promises` patch). Checks that
+nothing else broke: `npm test` (170 pass), `npm run lint` (0 errors), `harden check`, the packed tarball installed in a
 clean folder runs `genter demo` and prints the same text.
 
 ## Red lines after
