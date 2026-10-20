@@ -1,0 +1,25 @@
+name: dco
+# Every commit of a pull request is signed off ("Signed-off-by: Name <email>", git commit -s): the Developer Certificate
+# of Origin in place of a CLA (STEWARDSHIP.md, CONTRIBUTING.md). Plain git and one script, no app of anyone's; the
+# script and its rules are .github/scripts/dco.mjs. Pull requests opened by Dependabot are not checked.
+on:
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: dco-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  dco:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v6
+        with: { node-version: 22 }
+      - name: Every commit is signed off
+        env:
+          DCO_BASE: ${{ github.event.pull_request.base.sha }}
+          DCO_HEAD: ${{ github.event.pull_request.head.sha }}
+          DCO_PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: node .github/scripts/dco.mjs

@@ -21,6 +21,66 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  mcpb:
+    # genter.mcpb, the Claude Desktop extension (manifest.json and the files npm publish ships; docs/listings.md), on the
+    # release this run made: v<version> is tagged at this very commit and has no genter.mcpb yet, else the job does
+    # nothing. A job of its own, after the release job, so that packing cannot fail the npm publish and "Re-run failed
+    # jobs" tries it again. Outside code is @anthropic-ai/mcpb at the version pinned below and the packages it asks for by
+    # range (it has no lockfile, so they float), and the token is in reach of the two steps that name it, not of that.
+    # What it packed is checked against what was staged, byte for byte, before anything is uploaded.
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # the release's files
+    steps:
+      - uses: actions/checkout@v7
+        with: { fetch-depth: 0, persist-credentials: false }
+      - uses: actions/setup-node@v6
+        with: { node-version: 22 }
+      - name: Does this commit's release lack genter.mcpb?
+        id: gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          tag="v$(node -p 'require("./package.json").version')"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          if [ "$(git rev-parse -q --verify "refs/tags/$tag^{commit}" || true)" != "$(git rev-parse HEAD)" ]; then
+            echo "$tag is not released from this commit: nothing to attach."
+            echo "attach=false" >> "$GITHUB_OUTPUT"
+          elif ! assets="$(gh release view "$tag" --json assets --jq '.assets[].name')"; then
+            echo "$tag has no GitHub release: nothing to attach."
+            echo "attach=false" >> "$GITHUB_OUTPUT"
+          elif printf '%s\n' "$assets" | grep -qx genter.mcpb; then
+            echo "$tag has genter.mcpb already."
+            echo "attach=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "attach=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Stage what npm ships, with the manifest
+        if: steps.gate.outputs.attach == 'true'
+        run: node .github/scripts/mcpb.mjs stage "$RUNNER_TEMP/genter"
+      - name: Pack genter.mcpb
+        if: steps.gate.outputs.attach == 'true'
+        run: npx --yes --ignore-scripts @anthropic-ai/mcpb@2.1.2 pack "$RUNNER_TEMP/genter" genter.mcpb
+      - name: The bundle is what was staged, byte for byte, and is this version
+        if: steps.gate.outputs.attach == 'true'
+        env:
+          TAG: ${{ steps.gate.outputs.tag }}
+        run: |
+          unzip -q genter.mcpb -d "$RUNNER_TEMP/unpacked"
+          diff -r "$RUNNER_TEMP/genter" "$RUNNER_TEMP/unpacked"
+          test "$(node "$RUNNER_TEMP/unpacked/bin/genter.js" --version)" = "${TAG#v}"
+      - name: Attach it to the release
+        if: steps.gate.outputs.attach == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ steps.gate.outputs.tag }}
+        run: |
+          gh release upload "$TAG" genter.mcpb
+          echo "$TAG genter.mcpb sha256 $(sha256sum genter.mcpb | cut -d' ' -f1)" >> "$GITHUB_STEP_SUMMARY"
+
   release:
     runs-on: ubuntu-latest
     outputs:

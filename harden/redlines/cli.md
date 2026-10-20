@@ -2,7 +2,9 @@
 
 Intent: a person runs Genter on their own machine with nothing to set up, and adds Genter Cloud to their AI tool as
 its own MCP server — success: `npx genter-cli ask "how do we deploy?"` answers from the folder it runs in.
-Sources: the cli spec on the legacy branch of Genterai/specs (archive); `bin/`, `src/demo.js`, `src/mcp-server.js`.
+Sources: the cli spec on the legacy branch of Genterai/specs (archive); `bin/`, `src/demo.js`, `src/mcp-server.js`;
+step 1.8 of Genter's open-source plan: `server.json`, `manifest.json`, `glama.json`, `.github/scripts/mcpb.mjs`,
+`.github/scripts/versions.mjs`.
 `genter serve`, the same tools over HTTP for a team, is its own area: `serve`.
 
 Most weight: [no-packages] (the first run must work), [config-private] (the config holds the store's secret and
@@ -58,6 +60,35 @@ keys), [cloud-own-server] (no token on the person's disk), and the local MCP con
   supported, else the latest.
 * **[local-mcp-stdout]** One JSON message per line on stdout, in order, nothing else; a line that is not JSON gets
   -32700.
+
+### Packaging and listings
+
+Where clients and directories find Genter and how they start it. The release job that attaches the extension is
+`.github/workflows/release.yml` (outside Sources on purpose: Dependabot updates its actions); a test reads it.
+
+* **[registry-entry]** `server.json` is the entry of the official MCP Registry (schema 2025-12-11) for
+  `io.github.<owner>/genter`, the owner spelled as GitHub spells it, capitals included (the registry grants a GitHub
+  namespace by that spelling, case for case; `Genterai`), and equal to `mcpName` in `package.json`: one npm package,
+  `genter-cli` at this version, over stdio, run as `genter mcp`, and the hosted address `https://genter.ai/api/mcp` as
+  a streamable-HTTP remote that the client signs in to with OAuth. A description of 100 characters at most, a specific
+  version, and no header, variable, environment, key or private address anywhere in it.
+* **[versions-agree]** `package.json`, `server.json` (twice) and `manifest.json` name one version, and
+  `node .github/scripts/versions.mjs` writes the first's into the others, changing no byte but those lines.
+* **[listings]** `docs/listings.md` gives the registry entry's name and one line as `server.json` has them, and the
+  hosted address; `glama.json` names as maintainer an owner CODEOWNERS names.
+* **[mcpb-manifest]** `manifest.json` is an MCPB manifest (0.3) for Claude Desktop that starts `node bin/genter.js mcp
+  <folder>`: the folder is a `directory` the person picks (required, one, no default: nothing is searched until they
+  choose a folder); the tools it lists are the contract's two, `search` and `read`; it has no environment, key or secret
+  field; it names macOS and Windows and Node 20, as the package's `engines`.
+* **[mcpb-starts]** The bundle holds what `npm pack` ships and the manifest, and nothing else; the manifest's command,
+  started in another folder than the person's with a folder whose name has a space, searches the folder chosen and
+  passes `genter-cli/conformance` (contract/conformance). Staging refuses a folder that is not empty, a manifest of
+  another version than the package, and a file the manifest starts from that the package does not ship.
+* **[mcpb-release]** `genter.mcpb` is attached to the GitHub release by a job of its own after the release job, only when
+  the version's tag is at that commit and the release has none; it packs with `@anthropic-ai/mcpb` at an exact version
+  (the packages that version asks for float, as it has no lockfile) in a step that sees no token, and what it packed is
+  compared with what was staged, byte for byte, before the bundle is started or uploaded; the npm release job does not
+  know about it.
 
 ## Proof
 

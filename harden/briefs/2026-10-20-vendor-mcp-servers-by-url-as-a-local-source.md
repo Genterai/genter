@@ -185,3 +185,6 @@ against the six vendors' live metadata. `npm test`, `npm run lint` (no new findi
 * contract/search-shape: text changed, the server's name and the document's link, `mcp`, and "Not searched: …" after
   the files not read in time
 * cli/output-local: text changed, the `ask` line of an MCP document, and where to sign in on stderr
+* community/no-phone-home: text changed (with main's packaging step merged in), `src/remote.js` names `createServer`
+  for the sign-in's loopback and nothing that makes a request; an MCP server the person added is called through
+  `src/net.js`; the .mcpb description says it fetches a website or an MCP server only if you add one
