@@ -12,8 +12,8 @@ keys), [cloud-own-server] (no token on the person's disk), and the local MCP con
 
 ### Commands
 
-* **[no-packages]** The commands (`ask`, `add`, `remember`, `forget`, `sources`, `mcp`, `demo`, `install`, `reader`)
-  run with no key and no package beside genter-cli.
+* **[no-packages]** The commands (`ask`, `add`, `remember`, `forget`, `sources`, `mcp`, `demo`, `install`, `reader`,
+  `decisions`) run with no key and no package beside genter-cli.
 * **[help]** No command prints the help, its last line Genter Cloud's MCP address `https://genter.ai/api/mcp`; an
   unknown command, or `ask` with no question, exits 1.
 * **[output-local]** `ask` prints each passage under `[n] place:lines · headings`, what Genter did on stderr;
