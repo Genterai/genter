@@ -25,9 +25,10 @@ keys), [cloud-own-server] (no token on the person's disk), and the local MCP con
   an MCP server, remote/sign-in); `--json` prints the same as JSON.
 * **[config-private]** The config and the store are readable by their owner only (0600).
 * **[demo]** `genter demo` runs offline on a temp folder it removes after, with no key and no model, and reads nothing
-  of the person's, not even when that temp folder sits inside their repository (the demo's folder is a project of its
-  own): a runbook, dated March by itself, that says deploys go out on Fridays answers "Can we deploy on Friday?" with
-  its file and line; then a newer doc, dated by itself in October, says no deploys on Fridays, and the runbook says
+  of the person's (beyond removing 0.3's Genter Cloud token from the config, as every command does first,
+  [cloud-own-server]), not even when that temp folder sits inside their repository (the demo's folder is a project of
+  its own): a runbook, dated March by itself, that says deploys go out on Fridays answers "Can we deploy on Friday?"
+  with its file and line; then a newer doc, dated by itself in October, says no deploys on Fridays, and the runbook says
   "Superseded by" it at its top, with nobody telling Genter; asked again, the answer is `genter ask`'s own
   (local-search/current-first): the new rule first with its date, the runbook's Friday line after it, with its date and
   its notice quoted. The last line is the command to run next, `npx genter-cli install`. It prints plain text, so

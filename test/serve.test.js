@@ -354,7 +354,7 @@ describe("genter serve: the local engine for a small team over HTTP", () => {
     }
   });
 
-  it("[rl:serve/own-home] it keeps a store of its own: with Genter's home at the person's own ~/.genter (GENTER_HOME unset, naming it or linking to it) it does not start and writes nothing there", { timeout: 60_000 }, async () => {
+  it("[rl:serve/own-home] it keeps a store of its own: with Genter's home at the person's own ~/.genter (GENTER_HOME unset, naming it or linking to it) it does not start and writes nothing there, but for taking 0.3's Genter Cloud token out of the config", { timeout: 60_000 }, async () => {
     const b = box();
     setup(b.base, { filler: 0 });
     const personal = b.at("home/.genter"); // serve() runs with HOME at <dir>/home
@@ -366,12 +366,19 @@ describe("genter serve: the local engine for a small team over HTTP", () => {
     }
     mkdirSync(personal, { recursive: true });
     writeFileSync(join(personal, "local.json"), "the person's own store");
+    // 0.3's Genter Cloud token is the one thing it takes out of the person's home first, as every command does
+    // (cli/cloud-own-server): the rest of their config and their store stay as they were.
+    writeFileSync(join(personal, "config.json"), JSON.stringify({ secret: "s0", cloud: { token: `gnt_${"o".repeat(43)}` } }), { mode: 0o600 });
+    const signedIn = await serve(["repos", "--port", "0"], { cwd: b.base, env: { GENTER_TOKENS_FILE: b.at("genter_tokens"), GENTER_SECRET_FILE: b.at("genter_seal") } });
+    assert.equal(signedIn.code, 1);
+    assert.match(signedIn.stderr(), /^genter: removed the Genter Cloud token genter 0\.3's login kept in .*config\.json[^\n]*\ngenter serve keeps a store of its own/);
+    assert.deepEqual(JSON.parse(readFileSync(join(personal, "config.json"), "utf8")), { secret: "s0" });
     symlinkSync(personal, b.at("alias"));
     const linked = await serve(["repos", "--port", "0"], { cwd: b.base, env: { GENTER_HOME: b.at("alias") } });
     assert.equal(linked.code, 1);
-    assert.match(linked.stderr(), /keeps a store of its own/);
+    assert.match(linked.stderr(), /^genter serve keeps a store of its own/);
     assert.equal(readFileSync(join(personal, "local.json"), "utf8"), "the person's own store");
-    assert.deepEqual(fs.readdirSync(personal), ["local.json"]);
+    assert.deepEqual(fs.readdirSync(personal).sort(), ["config.json", "local.json"]);
     b.done();
   });
 

@@ -17,7 +17,7 @@ import { readerCommand } from "./reader.js";
 const version = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")).version;
 
 // Genter Cloud is not reached from here: it is its own MCP server in the person's AI tool, which signs in with OAuth,
-// so no token is kept on this computer (the one 0.3's genter login kept is dropped, below).
+// so no token is kept on this computer (the one 0.3's genter login kept is removed by whatever command runs first, below).
 const CLOUD = "https://genter.ai/api/mcp";
 const CLOUD_LINE = `Genter Cloud finds in your team's apps (GitHub, Slack, Notion and 500 more): add it to your AI tool as its own MCP
 server, next to genter mcp (genter install offers it). The tool signs in with OAuth, and nothing is kept on this
@@ -100,20 +100,33 @@ function config(home) {
   }
 }
 
-// 0.3's genter login kept a Genter Cloud token in config.json. Nothing reads it now, so the first command drops it and
-// keeps the rest of the file, still readable by its owner only.
-function dropCloudToken(home, c) {
-  if (!c.cloud) return c;
-  const { cloud, ...rest } = c;
+// 0.3's genter login kept a Genter Cloud token in config.json, under "cloud" (with its address, workspace and user).
+// Nothing reads it now and Genter Cloud may still accept it, so whatever command runs first removes it, before anything
+// else, and keeps the rest of the file, still readable by its owner only. Said once, on stderr (stdout is --version's
+// line and mcp's JSON-RPC), and never the token. A config.json that is not JSON is left as it is, and named.
+function dropCloudToken(home) {
   const file = join(home, "config.json");
+  let c;
   try {
-    writeFileSync(`${file}.${process.pid}.tmp`, JSON.stringify(rest, null, 2), { mode: 0o600 });
-    renameSync(`${file}.${process.pid}.tmp`, file);
-    console.error(`genter: removed the Genter Cloud token genter 0.3 kept in ${file}; nothing uses it now`);
+    c = JSON.parse(readFileSync(file, "utf8"));
   } catch (error) {
-    console.error(`genter: delete "cloud" from ${file}: it holds the Genter Cloud token genter 0.3 kept, which nothing uses now (${error.message})`);
+    if (error.code === "ENOENT" || error.code === "ENOTDIR") return; // no config, so no token
+    console.error(`genter: ${file} ${error.code ? `could not be read (${error.code})` : "is not JSON"}, so it is left as it is: if it holds the Genter Cloud token genter 0.3's login kept ("cloud"), delete that by hand; nothing uses it now`);
+    return;
   }
-  return rest;
+  if (!c?.cloud) return;
+  const { cloud, ...rest } = c;
+  const temp = `${file}.${process.pid}.tmp`;
+  try {
+    writeFileSync(temp, JSON.stringify(rest, null, 2), { mode: 0o600 });
+    renameSync(temp, file);
+    console.error(`genter: removed the Genter Cloud token genter 0.3's login kept in ${file}, and kept the rest of the file: nothing uses it now, and Genter Cloud may still accept it`);
+  } catch (error) {
+    try {
+      unlinkSync(temp);
+    } catch {}
+    console.error(`genter: delete "cloud" from ${file} by hand: it holds the Genter Cloud token genter 0.3's login kept, which nothing uses now and Genter Cloud may still accept (${error.message})`);
+  }
 }
 
 const say = (flags, data, text) => console.log(flags.json ? JSON.stringify(data, null, 2) : text);
@@ -185,6 +198,7 @@ const isFolder = (path) => {
 const within = (path, dir) => under(path, [dir]) || under(realOf(path), [realOf(dir)]);
 
 export async function local(argv) {
+  dropCloudToken(genterHome()); // whatever the command, help and --version included (cli/cloud-own-server)
   const [command = "help", ...rest] = argv;
   const { flags, words } = parse(rest);
   if (command === "--version" || command === "-v") return console.log(version);
@@ -235,7 +249,7 @@ export async function local(argv) {
     // what its command names and nothing else of the project, and no one's notes.
     if (command === "serve" && !words.length) throw new Error("genter serve <folder|url> ...: the folders to serve, read-only (docs/team.md)");
     const served = command === "serve" ? serveSetup({ env: process.env, home, host: flags.host, port: flags.port, log: console.error }) : null;
-    const c = dropCloudToken(home, config(home));
+    const c = config(home);
     if (gone) throw new Error(`${gone} is gone.\n${CLOUD_LINE}`);
     const semantic = flags.semantic || Boolean(flags.provider) || process.env.GENTER_SEMANTIC === "1" || c.semantic === true;
     const embed = semantic ? embedderFor(embeddingProvider({ env: process.env, config: c, name: flags.provider })) : undefined;
