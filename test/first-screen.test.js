@@ -44,6 +44,12 @@ const sample = (results, id) => (results.samples ? results.samples.find((s) => s
 const gate = (results) => sample(results, "heldout") ?? sample(results, "first");
 // The readers in readers/: a folder with a manifest.
 const readerCount = () => readdirSync(at("readers"), { withFileTypes: true }).filter((d) => d.isDirectory() && existsSync(at(join("readers", d.name, "reader.json")))).length;
+// A PEP as the READMEs name it: peps/pep-0566.rst is PEP 566.
+function pep(path) {
+  const m = /(?:^|\/)pep-0*(\d+)\.[a-z]+$/.exec(path);
+  assert.ok(m, `${path} is not a PEP the READMEs can name`);
+  return `PEP ${m[1]}`;
+}
 // A count in Russian: 1 ридер, 2 ридера, 5 ридеров, 21 ридер.
 const ru = (n, [one, few, many]) => `${n} ${n % 10 === 1 && n % 100 !== 11 ? one : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? few : many}`;
 // A question an arm does worse on than plain ranking, the current answer counted with its chain or as written
@@ -237,8 +243,17 @@ describe("the README's first screen", () => {
     // Genter's losses both ways, and the questions the chain changed (named under Benchmarks).
     const losses = results.questions.filter((q) => lost(q, false)).length;
     const lossesWritten = results.questions.filter((q) => lost(q, true)).length;
-    const chained = results.questions.filter((q) => [q.plain, q.genter].some((a) => a.current_first !== a.written_first)).map((q) => q.id);
+    const changed = results.questions.filter((q) => [q.plain, q.genter].some((a) => a.current_first !== a.written_first));
+    const chained = changed.map((q) => q.id);
     assert.ok(chained.length, "the chain changes a question, which the README names");
+    // On each, what both arms put first, as the Benchmarks sections say it: plain ranking the document the question
+    // was written for, Genter the last of its chain, so counted as written it is a loss and with the chain none.
+    for (const q of changed) {
+      assert.equal(q.plain.first, q.current, `${q.id}: plain ranking puts first the document the question was written for`);
+      assert.equal(q.genter.first, q.later.at(-1).place, `${q.id}: Genter puts first the last of its chain`);
+      assert.ok(lost(q, true) && !lost(q, false), `${q.id}: a loss as written, none with the chain`);
+    }
+    const oneLoss = lossesWritten === 1;
     // The 50-repository gate: its verdict on the held-out sample, and the first 50 beside it.
     const repos = latest("bench/repos");
     const h = gate(repos);
@@ -257,11 +272,12 @@ describe("the README's first screen", () => {
         `and ${drift} from DriftBench.`,
         `unmarked in its first five on ${p.old_unmarked} of ${n} and puts it first on ${p.old_first} of ${n}; Genter on ${g.old_unmarked} of ${n} for both`,
         `Genter puts the current answer first on ${g.current_first} of ${n} (plain ranking: ${p.current_first} of ${n})`,
-        `counted as written, the named document alone, ${g.written_first} of ${n} (plain ranking: ${p.written_first} of ${n})`,
+        `the current answer being the document the question was written for or a later one the archive's own replacement marks lead to; counted as written, that document alone, ${g.written_first} of ${n} (plain ranking: ${p.written_first} of ${n})`,
         `Genter's first result differs from plain ranking's on ${differ.length} of ${n} questions, ${differArchive} of them among the ${archive} archive questions; on ${other} of ${n} both put another document first`,
         `the losses (${losses} counted with the chain, ${lossesWritten} as written)`,
         `asks ${n} questions whose answer a newer document replaced`,
         `The chain rule was set after a run in which it changed ${chained.length === 1 ? "one question" : `${chained.length} questions`}, ${chained.join(", ")}:`,
+        ...changed.map((q) => `plain ranking puts first ${pep(q.plain.first)}, the document the question was written for, and Genter ${pep(q.genter.first)}, the last of that chain, so counted as written that question is ${oneLoss ? "Genter's one loss" : `one of Genter's ${lossesWritten} losses`}`),
         `Its ${readers} readers (readers/) read`,
         "The " + readers + " readers in `readers/` read",
         `of ${h.repos} popular ones the readers were not written for, the median holds ${h.median_records} records the readers read`,
@@ -272,21 +288,22 @@ describe("the README's first screen", () => {
         `| старый ответ без отметки в первой пятёрке | ${p.old_unmarked} из ${n} | **${g.old_unmarked} из ${n}** |`,
         `| старый ответ первым | ${p.old_first} из ${n} | **${g.old_first} из ${n}** |`,
         `| актуальный ответ первым, с цепочкой замен | ${p.current_first} из ${n} | **${g.current_first} из ${n}** |`,
-        `| актуальный ответ первым, только названный в вопросе | ${p.written_first} из ${n} | ${g.written_first} из ${n} |`,
+        `| актуальный ответ первым, без цепочки замен | ${p.written_first} из ${n} | ${g.written_first} из ${n} |`,
         `| из ${n} вопросов (результаты) | обычное ранжирование |`,
         `${n} вопросов, ответ на которые заменён более новым документом: ${archive} из публичных архивов решений`,
         `и ${drift} из DriftBench.`,
         `без отметки в первой пятёрке в ${p.old_unmarked} из ${n} и ставит его первым в ${p.old_first} из ${n};`,
         `Genter не делает ни того, ни другого ни в одном вопросе (${g.old_unmarked} из ${n})`,
         `Актуальный ответ Genter ставит первым в ${g.current_first} из ${n} (обычное ранжирование: в ${p.current_first} из ${n})`,
-        `Если считать только названный документ, то в ${g.written_first} из ${n} (обычное ранжирование: в ${p.written_first} из ${n})`,
-        `Первый результат у Genter и у обычного ранжирования разный в ${differ.length} из ${n} вопросов, из них ${differArchive} из ${archive} вопросов по архивам; в ${other} из ${n} оба ставят первым другой документ`,
+        `актуальным считается документ, для которого написан вопрос, или более поздний, к которому ведут собственные пометки архива о замене. Если считать только этот документ, то в ${g.written_first} из ${n} (обычное ранжирование: в ${p.written_first} из ${n})`,
+        `Первый результат у Genter и у обычного ранжирования разный в ${differ.length} из ${n} вопросов, в том числе в ${differArchive} из ${archive} вопросов по архивам; в ${other} из ${n} оба ставят первым другой документ`,
         `проигрыши (${losses} с цепочкой замен, ${lossesWritten} без неё)`,
         `Правило цепочки принято после запуска, в котором оно изменило ${chained.length === 1 ? "один вопрос" : `${chained.length} вопроса`}, ${chained.join(", ")}:`,
+        ...changed.map((q) => `обычное ранжирование ставит первым ${pep(q.plain.first)}, для которого написан вопрос, а Genter — ${pep(q.genter.first)}, последний в этой цепочке, так что без цепочки этот вопрос — ${oneLoss ? "единственный проигрыш Genter" : `один из проигрышей Genter (их ${lossesWritten})`}`),
         `${ru(readers, ["ридер", "ридера", "ридеров"])} (readers/) читают`,
         ru(readers, ["ридер", "ридера", "ридеров"]) + " в `readers/` читают",
         `из ${h.repos} популярных репозиториев, которых ридеры не видели, пока их писали, у медианного ${h.median_records} записей`,
-        `Проверку судят по ${h.repos} отложенным репозиториям, которые выбраны по тому же записанному правилу и закоммичены до того, как на них запустили ридеры: у медианного репозитория ${h.median_records} записей решений, которые читают ридеры, у ${h.with_records} из ${h.repos} их 5 или больше, а ${h.with_marks} из ${h.repos} содержат хотя бы один документ с пометкой, которую ридеры читают, поэтому проверка ${h.passes ? "пройдена" : "не пройдена"}`,
+        `Итог проверки подводят по ${h.repos} отложенным репозиториям, которые выбраны по тому же записанному правилу и закоммичены до того, как на них запустили ридеры: у медианного репозитория ${h.median_records} записей решений, которые читают ридеры, у ${h.with_records} из ${h.repos} их 5 или больше, а ${h.with_marks} из ${h.repos} содержат хотя бы один документ с пометкой, которую ридеры читают, поэтому проверка ${h.passes ? "пройдена" : "не пройдена"}`,
         `На первых ${f.repos}, глядя на которые ридеры расширяли (число заведомо смещённое, оно для сравнения), медианное число записей — ${f.median_records}, у ${f.with_records} из ${f.repos} их 5 или больше, у ${f.with_marks} из ${f.repos} есть пометка`,
       ],
     };

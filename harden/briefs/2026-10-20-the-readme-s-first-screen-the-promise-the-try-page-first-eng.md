@@ -79,15 +79,15 @@ Decided:
   picture's SHA-256 and those of the files it was made from (`hero.html` for both PNGs; `demo.txt` and `terminal.html`
   for the GIF). A test fails when a picture or one of its sources changes without a new render, so a `demo.txt`
   refreshed by hand with a stale GIF, or a `hero.html` edited without new PNGs, does not pass.
-* **The local part leads with the old-answer test,** plain ranking against Genter, the current answer counted both
-  ways (with its chain, and as written: the document the question names alone) and the losses both ways in the same
+* **The local part leads with the old-answer test,** plain ranking against Genter, the current answer counted both ways
+  (with its chain, and as written: the document the question was written for alone) and the losses both ways in the same
   paragraph (none with the chain, one as written), and says beside it that the archive questions wait for a person's
   review, as `bench/old-answer/README.md` does, and that on 11 of 39 both arms put another document first. Under
-  Benchmarks it says the chain rule was set after a run in which it changed one question, and names it (peps/0241:
-  plain ranking puts first the PEP the question names, Genter the PEP that replaced it, so as written it is Genter's one
-  loss), as RESULTS.md does. Then what the 13 readers read, named from `readers/*/reader.json`, and the held-out
-  gate's count beside it (most repositories keep their records where no reader looks yet), so the first screen does
-  not promise more than the readers deliver.
+  Benchmarks it says the chain rule was set after a run in which it changed one question, and names it (peps/0241: plain
+  ranking puts first PEP 314, the one the question was written for, Genter PEP 566, the last of that chain, so as
+  written it is Genter's one loss), as RESULTS.md does. Then what the 13 readers read, named from
+  `readers/*/reader.json`, and the held-out gate's count beside it (most repositories keep their records where no reader
+  looks yet), so the first screen does not promise more than the readers deliver.
 * **Refreshed after #93 and #94.** #93 (wider readers, replacements named by number, the held-out gate, the chain rule)
   changed every count both READMEs quote and what the readers read; #94 (`/health` while searches run) changes nothing
   they say (`docs/team.md` is serve's). Main was merged and every count rewritten from the files on main. #93's runs
@@ -157,13 +157,16 @@ README naming the other at its top / "[rl:first-screen/numbers-named]" every per
 block that links its file in `bench/`, and in both languages the old-answer rows and sentences (the questions, the
 split between the archives and DriftBench, the current answer with its chain and as written, the questions whose first
 result differs, those where both arms put another document first, the losses both ways, the question the chain
-changed) and the gate's sentences (held out and first 50), in the first screen and under Benchmarks, equal to the
-results file each bench's RESULTS.md names, the number of readers equal to `readers/`'s, DriftBench's table only in
-README.md / "[rl:first-screen/npm-name]". Each fails when its part is undone (checked by hand: an anchor misspelt in
-either README, a link to a file that is not here, a "99%" with no file beside it, a byte of the GIF or of `demo.txt`
-changed without a new render; on the refresh, 18 counts changed one at a time, each restored before the next, 9 English
-and 9 Russian, each `# fail 1`: the chain and as-written rows, the differing questions, the losses, the held-out and
-first-50 gate counts, the chained question's id, the readers' number, the archive split, the other-document count).
+changed and what each arm put first on it) and the gate's sentences (held out and first 50), in the first screen and
+under Benchmarks, equal to the results file each bench's RESULTS.md names, the number of readers equal to
+`readers/`'s, DriftBench's table only in README.md / "[rl:first-screen/npm-name]". Each fails when its part is undone
+(checked by hand: an anchor misspelt in either README, a link to a file that is not here, a "99%" with no file beside
+it, a byte of the GIF or of `demo.txt` changed without a new render; on the refresh, 18 counts changed one at a time,
+each restored before the next, 9 English and 9 Russian, each `# fail 1`: the chain and as-written rows, the differing
+questions, the losses, the held-out and first-50 gate counts, the chained question's id, the readers' number, the
+archive split, the other-document count; after review, 13 more, each `# fail 1`: on peps/0241 Genter's or plain
+ranking's PEP changed in either README, "one loss" changed in either, the as-written definition put back to "the
+question names", and the as-written, held-out and archive counts of the reworded sentences).
 Outside links checked on 2026-10-20: Cursor's page 200 and opening its install link in Chromium, vscode.dev 302 to
 `vscode:mcp/install?{…"args":["-y","genter-cli","mcp"],"name":"genter"}`, Claude's and OpenAI's guides 200, GitHub 200;
 claude.ai, chatgpt.com and npmjs.com answer an automated client with a challenge page (403), as they do any script;

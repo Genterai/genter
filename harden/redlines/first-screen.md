@@ -47,8 +47,8 @@ description.
   in ms) is in a paragraph, list or table that links the file in `bench/` it comes from, and the old-answer test's
   counts and the 50-repository gate's are the latest results' of those benches (the results file each bench's
   RESULTS.md names): the old-answer test's current answer both with its chain and as written, its losses both ways
-  and the questions the chain changed, named; the gate's verdict and counts on its held-out sample, with the first
-  sample's beside them, said to be biased. The number of readers either README states is the number of readers in
-  `readers/`. DriftBench's tables are in README.md only, where its guard reads them.
+  and the questions the chain changed, named, with what each arm put first on them; the gate's verdict and counts on
+  its held-out sample, with the first sample's beside them, said to be biased. The number of readers either README
+  states is the number of readers in `readers/`. DriftBench's tables are in README.md only, where its guard reads them.
 * **[npm-name]** Both READMEs say the package is `genter-cli` and that the npm package called `genter` belongs to
   someone else.

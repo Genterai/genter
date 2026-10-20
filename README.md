@@ -34,8 +34,8 @@ the open engine does not yet (planned: with your own key or Ollama).
 Kubernetes' KEPs, Jaeger's RFCs and ADRs) and 5 from [DriftBench](bench/drift). An agent's plain ranking leaves the
 replaced document unmarked in its first five on 31 of 39 and puts it first on 8 of 39; Genter on 0 of 39 for both,
 quoting the document's own notice each time. Genter puts the current answer first on 28 of 39 (plain ranking: 20 of 39),
-the current answer being the document the question names or a later one the archive's own replacement marks lead to;
-counted as written, the named document alone, 27 of 39 (plain ranking: 20 of 39). Genter's first result differs from
+the current answer being the document the question was written for or a later one the archive's own replacement marks
+lead to; counted as written, that document alone, 27 of 39 (plain ranking: 20 of 39). Genter's first result differs from
 plain ranking's on 10 of 39 questions, 9 of them among the 34 archive questions; on 11 of 39 both put another document
 first, which may state the current answer too. Every question, what each arm put first, and the losses (0 counted with
 the chain, 1 as written): [bench/old-answer/RESULTS.md](bench/old-answer/RESULTS.md) (the archive questions wait for a
@@ -315,12 +315,12 @@ account. Genter Cloud's own numbers are not on this page.
 **[The old-answer test](bench/old-answer)** asks 39 questions whose answer a newer document replaced and counts, for an
 agent's plain ranking and for Genter over the same sections, how often the replaced document comes first or appears
 unmarked in the first five, and how often the current answer comes first. The current answer is counted two ways: as
-written, the document the question names; and with its chain, also any later document the archive's own marks lead to
-(PEP 314 says "Superseded-By: 345", and PEP 345 "Superseded-By: 566"). The chain rule was set after a run in which it
-changed one question, peps/0241: plain ranking puts first PEP 314, the document the question names, and Genter PEP 566,
-the last of that chain, so counted as written that question is Genter's one loss. The table at the top gives both
-counts, and [RESULTS.md](bench/old-answer/RESULTS.md) has every question, the losses and the plan's decision rule.
-`node bench/old-answer/run.mjs` rebuilds it (it fetches the three archives at pinned commits with `git`).
+written, the document the question was written for; and with its chain, also any later document the archive's own marks
+lead to (PEP 314 says "Superseded-By: 345", and PEP 345 "Superseded-By: 566"). The chain rule was set after a run in
+which it changed one question, peps/0241: plain ranking puts first PEP 314, the document the question was written for,
+and Genter PEP 566, the last of that chain, so counted as written that question is Genter's one loss. The table at the
+top gives both counts, and [RESULTS.md](bench/old-answer/RESULTS.md) has every question, the losses and the plan's
+decision rule. `node bench/old-answer/run.mjs` rebuilds it (it fetches the three archives at pinned commits with `git`).
 
 **[The 50-repository gate](bench/repos)** runs the readers on popular repositories at pinned commits, in two samples.
 The gate is judged on 46 held out, picked by the same written rule and committed before the readers ran on them: the
