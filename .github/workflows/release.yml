@@ -3,6 +3,8 @@
 # version releases nothing. To release: raise "version" in package.json in the pull request.
 # npm publishes through trusted publishing (OIDC): genter-cli on npmjs.com trusts this repository and release.yml, with
 # "Allow npm publish" on. No npm token is kept anywhere; each run gets a short one, and provenance comes with it.
+# Once the release job has released a version, the image job publishes genter serve's container image (Dockerfile,
+# docs/team.md) to ghcr.io/genterai/genter:<version> and :latest, with the run's own token: nothing is stored either.
 name: Release
 
 on:
@@ -21,6 +23,9 @@ concurrency:
 jobs:
   release:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      released: ${{ steps.version.outputs.npm == 'true' || steps.version.outputs.tag == 'true' }}
     steps:
       - uses: actions/checkout@v7
         with: { fetch-depth: 0 }
@@ -61,3 +66,27 @@ jobs:
         run: gh release create "v${{ steps.version.outputs.version }}" --target "$GITHUB_SHA" --title "v${{ steps.version.outputs.version }}" --generate-notes
         env:
           GH_TOKEN: ${{ github.token }}
+
+  image:
+    # Only after the release job released this version (it ran to the end with something to release): a run that
+    # releases nothing, or whose npm publish fails, publishes no image, and this job never touches the npm one.
+    needs: release
+    if: needs.release.outputs.released == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write # ghcr.io/genterai/genter, with the run's GITHUB_TOKEN
+    steps:
+      - uses: actions/checkout@v7
+      - name: Sign in to GHCR
+        run: echo "$GH_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Build and push ghcr.io/genterai/genter:${{ needs.release.outputs.version }}
+        # amd64 and arm64 from one Dockerfile, which runs nothing in the image while it builds, so arm64 needs no emulation.
+        run: |
+          v="${{ needs.release.outputs.version }}"
+          docker buildx create --use --name genter
+          docker buildx build --platform linux/amd64,linux/arm64 \
+            --label "org.opencontainers.image.version=$v" --label "org.opencontainers.image.revision=$GITHUB_SHA" \
+            --tag "ghcr.io/genterai/genter:$v" --tag ghcr.io/genterai/genter:latest --push .

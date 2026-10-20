@@ -1,0 +1,12 @@
+# What the image of genter serve holds: the package as npm ships it (package.json "files"), nothing else. Above all
+# never the tokens, the seal key, .env or the repositories a team serves.
+*
+!package.json
+!LICENSE
+!README.md
+!bin/
+!src/
+!rules/
+!readers/
+readers/*/fixtures
+readers/*/expected.json

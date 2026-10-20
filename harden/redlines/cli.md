@@ -3,6 +3,7 @@
 Intent: a person runs Genter on their own machine with nothing to set up, and adds Genter Cloud to their AI tool as
 its own MCP server — success: `npx genter-cli ask "how do we deploy?"` answers from the folder it runs in.
 Sources: the cli spec on the legacy branch of Genterai/specs (archive); `bin/`, `src/demo.js`, `src/mcp-server.js`.
+`genter serve`, the same tools over HTTP for a team, is its own area: `serve`.
 
 Most weight: [no-packages] (the first run must work), [config-private] (the config holds the store's secret and
 keys), [cloud-own-server] (no token on the person's disk), and the local MCP contract ([local-mcp-tools],
@@ -12,8 +13,9 @@ keys), [cloud-own-server] (no token on the person's disk), and the local MCP con
 
 ### Commands
 
-* **[no-packages]** The commands (`ask`, `add`, `remember`, `forget`, `sources`, `mcp`, `demo`, `install`, `reader`,
-  `decisions`) run with no key and no package beside genter-cli.
+* **[no-packages]** The commands (`ask`, `add`, `remember`, `forget`, `sources`, `mcp`, `serve`, `demo`, `install`,
+  `reader`, `decisions`) run with no key and no package beside genter-cli; `serve`'s `--host` and `--port`, like
+  `install`'s and `decisions`' own flags, are refused by the other commands.
 * **[help]** No command prints the help, its last line Genter Cloud's MCP address `https://genter.ai/api/mcp`; an
   unknown command, or `ask` with no question, exits 1.
 * **[output-local]** `ask` prints each passage under `[n] place:lines · headings`, what Genter did on stderr;

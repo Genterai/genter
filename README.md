@@ -203,6 +203,14 @@ Cursor, Windsurf, Codex, VS Code or any MCP client:
 { "mcpServers": { "genter": { "command": "npx", "args": ["-y", "genter-cli", "mcp", "."], "env": { "GENTER_SEMANTIC": "1" } } } }
 ```
 
+## For a small team
+
+`genter serve` runs the same search on a server the team owns, over the repositories cloned there: one URL for
+everyone's CLI and IDE clients (Claude Code, Cursor, VS Code, Codex, Gemini CLI), MCP over Streamable HTTP, one
+revocable token per person, read-only, no notes. Every token holder reads every folder it serves, so serve only what
+the whole team may read. claude.ai cannot connect yet (no OAuth). The compose file, the tokens and TLS in front:
+[docs/team.md](docs/team.md).
+
 ## In code
 
 No dependencies. A docs assistant that answers from your folder and cites the file and lines of each fact, in full in
@@ -386,6 +394,7 @@ memory layers publish), run `node bench/convo/run.mjs --answer` with a key. [Res
 | `genter remember <text>` | keep a note in `~/.genter/notes.md`, found in every project; edit it as you like |
 | `genter sources` · `genter forget <...>` | list what this project searches; stop searching one here |
 | `genter mcp [folder\|url ...]` | all of it for your agent, over stdio |
+| `genter serve <folder\|url> ...` | search and read for a small team, over HTTP, one token per person ([docs/team.md](docs/team.md)) |
 | `genter install [tool ...]` | add Genter to the AI tools on this computer; `--undo` puts their files back |
 | `genter decisions [--out <file>]` | a page of this project's decisions: current, and replaced by their own text |
 | `genter reader new <name>` · `genter reader check` | make a reader for a text format; check readers against their fixtures |

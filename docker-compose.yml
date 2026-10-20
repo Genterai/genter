@@ -1,0 +1,33 @@
+# genter serve for a small team: docs/team.md. Every token holder reads every repository under ./repos: put there only
+# what the whole team may read.
+#   ./repos/          the repositories, cloned (served read-only; git pull them as you like)
+#   ./genter_tokens   one line per person: "name token" (openssl rand -hex 32); remove a line to revoke it
+#   ./genter_seal     the seal key of Genter's store (openssl rand -base64 32), kept off the data volume
+#   ./.env            GENTER_VERSION=<a release of genter-cli>
+services:
+  genter:
+    image: ghcr.io/genterai/genter:${GENTER_VERSION:?set GENTER_VERSION in .env to a release of genter-cli}
+    command: serve /repos --host 0.0.0.0 --port 8787         # inside the container; the host publishes loopback only
+    volumes: ["./repos:/repos:ro", "genter-data:/data"]
+    ports: ["127.0.0.1:8787:8787"]                           # put TLS in front of it to share it with the team
+    environment:
+      GENTER_HOME: /data
+      GENTER_TOKENS_FILE: /run/secrets/genter_tokens        # one token per person, revocable
+      GENTER_SECRET_FILE: /run/secrets/genter_seal          # the seal key, not on the data volume
+      # Ranking by meaning (the meaning profile): in .env, GENTER_SEMANTIC=1 and GENTER_EMBED_URL=http://ollama:11434/v1
+      GENTER_SEMANTIC: ${GENTER_SEMANTIC:-0}
+      GENTER_EMBED_URL: ${GENTER_EMBED_URL:-}
+      GENTER_EMBED_MODEL: ${GENTER_EMBED_MODEL:-nomic-embed-text}
+    secrets: [genter_tokens, genter_seal]
+    read_only: true                                          # it writes only to /data
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+  ollama:                                                    # optional: docker compose --profile meaning up -d, then
+    image: ollama/ollama                                     # docker compose exec ollama ollama pull nomic-embed-text
+    profiles: [meaning]
+    volumes: ["ollama:/root/.ollama"]
+volumes: { genter-data: {}, ollama: {} }
+secrets:
+  genter_tokens: { file: ./genter_tokens }
+  genter_seal: { file: ./genter_seal }

@@ -1,6 +1,6 @@
 import { redirectOf } from "./drift.js";
 import { createHash } from "node:crypto";
-import { publicFetch, textOf } from "./net.js";
+import { assertPublic, publicFetch, textOf } from "./net.js";
 
 // Websites: a page is read by a local tool, WEBSITE_READ_PAGE {url} -> { url, title, text }, and becomes an anchor
 // (local.js). Adding a site: crawl() finds its pages (the address and the pages it links to on the same site, up to
@@ -232,6 +232,13 @@ export async function crawl({ url, depth, max = WEBSITE.maxPages, budgetMs = WEB
   const first = new URL(siteUrl(url));
   const levels = Math.max(0, Math.min(WEBSITE.maxDepth, depth === undefined || depth === "" ? WEBSITE.maxDepth : Number(depth) || 0));
   const limit = Math.max(1, Math.min(WEBSITE.maxPages, Number(max) || WEBSITE.maxPages));
+  // The start's address is checked before anything is fetched, so a private or local one is refused in so many words
+  // (genter serve does not start on one), not reported as a site that is down; every fetch checks its own again.
+  try {
+    await assertPublic(first.toString());
+  } catch (e) {
+    return { successful: false, error: /not a public address/.test(e.message) ? `${e.message}: Genter reads websites at public addresses only` : e.message, data: {} };
+  }
   // Only pages under the start's folder: docs.example.com/guide/ stays in /guide/.
   const start = { hostname: first.hostname, folder: folderOf(first) };
   const rules = await robots(first.origin);

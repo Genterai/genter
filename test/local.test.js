@@ -872,7 +872,9 @@ describe("the genter command", () => {
       assert.match(help.stdout, /genter ask <question>/);
       assert.match(help.stdout, /genter install \[tool \.\.\.\]/);
       assert.match(help.stdout.trim().split("\n").at(-1), /https:\/\/genter\.ai\/api\/mcp$/);
-      assert.doesNotMatch(help.stdout, /login|logout|--local|token|dashboard|composio/i);
+      // Tokens are genter serve's alone: one per person of a team, in a file its operator keeps (none for Genter Cloud).
+      assert.match(help.stdout, / {2}genter serve <folder\|url> \.\.\.[\s\S]*one token per person \(GENTER_TOKENS_FILE\)/);
+      assert.doesNotMatch(help.stdout.replace(/ {2}genter serve[\s\S]*?(?=\n {2}genter install)/, ""), /login|logout|--local|token|dashboard|composio/i);
       // --cloud is genter install's alone: it adds Genter Cloud's address to the AI tools.
       assert.doesNotMatch(help.stdout.replace(/ {2}genter install[\s\S]*?\n\n/, ""), /--cloud/);
       const bad = pkg.run("nope");
