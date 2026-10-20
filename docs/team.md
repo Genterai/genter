@@ -11,6 +11,9 @@ mark (⚠) when a document says it was replaced.
 shares or switched-off sources (those come with Genter's full server, not open yet, and with Genter Cloud). So serve
 only what the whole team may read. One token per person, so one person can be cut off without the others.
 
+It serves exactly the folders and websites its command names, and it names each one when it starts: a folder dropped
+from the command, or one someone added with `genter add` in the same project, is not served.
+
 What else holds:
 
 - **Read-only.** It serves `search` and `read` and nothing else: no client can add a folder, keep a note or make the
@@ -140,14 +143,16 @@ on one person's computer, Claude Desktop runs `genter mcp`.
 The same server from the command, with Node 20 or later:
 
 ```bash
-GENTER_TOKENS_FILE=~/genter/genter_tokens GENTER_SECRET_FILE=~/genter/genter_seal \
+GENTER_HOME=~/genter/data GENTER_TOKENS_FILE=~/genter/genter_tokens GENTER_SECRET_FILE=~/genter/genter_seal \
   npx -y genter-cli serve ~/genter/repos --host 0.0.0.0 --port 8787
 ```
 
+- It keeps a store of its own, in the folder `GENTER_HOME` names: it does not start in your own `~/.genter` (with
+  `GENTER_HOME` unset), so a team's server never opens, seals again or shares the store of your own `genter`.
 - It listens on `127.0.0.1:8787` unless `--host` says otherwise.
 - With `--host` away from loopback, it does not start without `GENTER_TOKENS_FILE` and `GENTER_SECRET_FILE`, and it
   says that TLS must sit in front.
-- The seal key file must be outside Genter's home (`GENTER_HOME`, `~/.genter` by default), and 32 characters or more.
+- The seal key file must be outside Genter's home (`GENTER_HOME`), and 32 characters or more.
 - On loopback with no tokens it answers anyone on that computer, and only requests sent to a loopback name.
 - A website given to it is read at a public address only; a private or local one is refused, and it does not start.
 
@@ -175,8 +180,10 @@ go to it.
 
 - One search at a time: a few people's searches wait their turn, and at most 64 wait; past that a client is asked to
   come back (503). `/health` answers at once meanwhile.
-- A file over 1 MB is not read. A file that takes longer than 2 seconds to read (a stuck disk or mount) is left out of
-  that search, which names it, and read again at the next.
+- A file over 1 MB is not read. A file that takes longer than 2 seconds to read (a folder that downloads files as they
+  are read, a slow disk) is left out of that search, which names it, and is in the next search once its read has ended.
+  Listing the folders and looking at each file's size stay quick calls that wait for the disk, so serve folders on a
+  disk that answers, not a network mount that can hang.
 - No OAuth yet, so no claude.ai; no per-person rules.
 
 ## Check a server

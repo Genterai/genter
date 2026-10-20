@@ -178,7 +178,7 @@ export function sourcesText(project, list) {
 // name is -32602); about: the instructions initialize gives.
 export async function handle(local, msg, { version = "0.0.0", tools = mcpTools, about = instructions } = {}) {
   const reply = (result) => ({ jsonrpc: "2.0", id: msg.id, result });
-  const fail = (code, message) => ({ jsonrpc: "2.0", id: msg.id ?? null, error: { code, message } });
+  const fail = (code, message) => ({ jsonrpc: "2.0", id: msg?.id ?? null, error: { code, message } });
   if (msg?.jsonrpc !== "2.0" || typeof msg.method !== "string") return fail(-32600, "Invalid request");
   const notification = msg.id === undefined || msg.id === null;
   try {

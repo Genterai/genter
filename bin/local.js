@@ -224,14 +224,15 @@ export async function local(argv) {
   const gone = command === "login" || command === "logout" ? `genter ${command}` : flags.cloud ? "--cloud" : null;
   try {
     const home = genterHome();
+    // genter serve: its home, tokens, address and seal key are checked before anything is read or written; it serves
+    // what its command names and nothing else of the project, and no one's notes.
+    if (command === "serve" && !words.length) throw new Error("genter serve <folder|url> ...: the folders to serve, read-only (docs/team.md)");
+    const served = command === "serve" ? serveSetup({ env: process.env, home, host: flags.host, port: flags.port, log: console.error }) : null;
     const c = dropCloudToken(home, config(home));
     if (gone) throw new Error(`${gone} is gone.\n${CLOUD_LINE}`);
     const semantic = flags.semantic || Boolean(flags.provider) || process.env.GENTER_SEMANTIC === "1" || c.semantic === true;
     const embed = semantic ? embedderFor(embeddingProvider({ env: process.env, config: c, name: flags.provider })) : undefined;
-    // genter serve: its tokens, address and seal key are checked before anything is read; it reads no one's notes.
-    if (command === "serve" && !words.length) throw new Error("genter serve <folder|url> ...: the folders to serve, read-only (docs/team.md)");
-    const served = command === "serve" ? serveSetup({ env: process.env, home, host: flags.host, port: flags.port, log: console.error }) : null;
-    const g = createLocal({ home, userId: process.env.GENTER_USER_ID || c.user_id || "default", embed, ...((command === "mcp" || served) && { project: projectFolder(words) }), ...(served && { secret: served.secret, notes: false }) });
+    const g = createLocal({ home, userId: process.env.GENTER_USER_ID || c.user_id || "default", embed, ...((command === "mcp" || served) && { project: projectFolder(words) }), ...(served && { secret: served.secret, notes: false, only: true }) });
 
     if (command === "add") {
       if (!words.length) throw new Error("genter add <folder|file|url> ...");

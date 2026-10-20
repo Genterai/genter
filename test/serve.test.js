@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { randomBytes } from "node:crypto";
-import fs, { mkdirSync, mkdtempSync, readFileSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
+import fs, { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from "node:fs";
 import fsp from "node:fs/promises";
 import { syncBuiltinESMExports } from "node:module";
 import { request } from "node:http";
@@ -42,6 +42,18 @@ function serve(args, { cwd, env = {} }) {
       if (url) ready({ base: url, stderr: () => stderr, stop: () => (child.kill("SIGTERM"), ended), ended });
     });
     ended.then((code) => ready({ code, stderr: () => stderr, ended }));
+  });
+}
+
+// Another genter command, run to its end: { code, err }.
+function command(args, { cwd, env = {} }) {
+  return new Promise((done) => {
+    const child = spawn(process.execPath, [bin, ...args], { cwd, env: { PATH: process.env.PATH, HOME: join(cwd, "home"), ...env } });
+    let err = "";
+    child.stderr.on("data", (d) => {
+      err += d;
+    });
+    child.on("close", (code) => done({ code, err }));
   });
 }
 
@@ -114,7 +126,7 @@ describe("genter serve: the local engine for a small team over HTTP", () => {
     }
   });
 
-  it("[rl:serve/same-contract] [rl:contract/conformance] Streamable HTTP: JSON answers, a notification 202, a batch as a batch, GET and DELETE 405, bad JSON -32700, an unknown protocol version 400, another content type 415, over 1 MB 413, another path 404, the two tools alone", async () => {
+  it("[rl:serve/same-contract] [rl:contract/conformance] Streamable HTTP: JSON answers, a notification 202 (a tools/call too, run not), no JSON-RPC object 400, a batch as a batch, GET and DELETE 405, bad JSON -32700, an unknown protocol version 400, another content type 415, over 1 MB 413, another path 404, the two tools alone", async () => {
     const b = box();
     put(b.base, "repo/docs/deploy.md", "# Deploy\n\nWe deploy on Thursday.\n");
     const token = hex();
@@ -132,6 +144,16 @@ describe("genter serve: the local engine for a small team over HTTP", () => {
       const note = await post(base, { jsonrpc: "2.0", method: "notifications/initialized" }, { token });
       assert.equal(note.status, 202);
       assert.equal(note.body, null);
+      for (const method of ["tools/call", "tools/list", "initialize"]) {
+        const quiet = await post(base, { jsonrpc: "2.0", method, params: { name: "search", arguments: { query: "deploy" } } }, { token });
+        assert.equal(quiet.status, 202, `a ${method} notification runs nothing and gets no answer`);
+        assert.equal(quiet.body, null);
+      }
+      for (const body of ["null", "[null]", "5", '"x"', "[[]]"]) {
+        const invalid = await post(base, body, { token });
+        assert.equal(invalid.status, 400, body);
+        assert.deepEqual(invalid.body, { jsonrpc: "2.0", id: null, error: { code: -32600, message: "Invalid request" } }, body);
+      }
       const batch = await post(base, [{ jsonrpc: "2.0", id: 2, method: "ping" }, { jsonrpc: "2.0", method: "notifications/initialized" }, searchMsg("when do we deploy", 3)], { token, headers: { "MCP-Protocol-Version": "2025-06-18" } });
       assert.equal(batch.status, 200);
       assert.deepEqual(batch.body.map((m) => m.id), [2, 3]);
@@ -211,6 +233,23 @@ describe("genter serve: the local engine for a small team over HTTP", () => {
     }
   });
 
+  it("[rl:serve/tokens] it does not start with a tokens file that holds no token or cannot be read", { timeout: 30_000 }, async () => {
+    const b = box();
+    const home = b.at("data");
+    writeFileSync(b.at("empty"), "");
+    writeFileSync(b.at("comments"), "# ana\n\n# bo\n");
+    writeFileSync(b.at("weak"), "ana short-token\n");
+    mkdirSync(b.at("folder"));
+    for (const f of ["empty", "comments", "weak"]) assert.throws(() => serveSetup({ home, env: { GENTER_TOKENS_FILE: b.at(f) } }), /^Error: No token in .*: write one line per person, "name token"/, f);
+    for (const f of ["folder", "missing"]) assert.throws(() => serveSetup({ home, env: { GENTER_TOKENS_FILE: b.at(f) } }), /^Error: GENTER_TOKENS_FILE .* cannot be read by this user/, f);
+    setup(b.base, { filler: 0 });
+    const s = await serve(["repos", "--port", "0"], { cwd: b.base, env: { GENTER_HOME: home, GENTER_TOKENS_FILE: b.at("comments") } });
+    assert.equal(s.code, 1);
+    assert.match(s.stderr(), /No token in /);
+    assert.doesNotMatch(s.stderr(), /serving/);
+    b.done();
+  });
+
   it("[rl:serve/loopback-default] 127.0.0.1 unless --host; away from loopback only with tokens, saying TLS must sit in front; with no tokens, a loopback Host only, and never a web page", { timeout: 60_000 }, async () => {
     for (const h of ["127.0.0.1", "localhost", "::1", "[::1]", "127.8.9.10", "::ffff:127.0.0.1"]) assert.ok(isLoopback(h), h);
     for (const h of ["0.0.0.0", "::", "10.0.0.1", "192.168.1.2", "genter.example", "localhost.example", "", undefined]) assert.ok(!isLoopback(h), String(h));
@@ -245,7 +284,7 @@ describe("genter serve: the local engine for a small team over HTTP", () => {
     for (const port of [-1, 70000, Number.NaN]) assert.throws(() => serveSetup({ env: {}, home: "/tmp/x", port }), /--port takes a port number/);
   });
 
-  it("[rl:serve/seal-outside] the seal key comes from GENTER_SECRET_FILE outside Genter's home: needed away from loopback, refused when inside the home, weak or unreadable; the store opens with it and the config keeps none", { timeout: 60_000 }, async () => {
+  it("[rl:serve/seal-outside] the seal key comes from GENTER_SECRET_FILE outside Genter's home: needed away from loopback, refused when inside the home (as written or where its link leads), weak or unreadable; the store opens with it and the config keeps none", { timeout: 60_000 }, async () => {
     const b = box();
     setup(b.base, { filler: 0 });
     const home = b.at("data");
@@ -257,6 +296,8 @@ describe("genter serve: the local engine for a small team over HTTP", () => {
     assert.throws(() => serveSetup({ ...away, env: tokensEnv }), /needs the seal key of its store in a file outside .*: GENTER_SECRET_FILE/);
     assert.throws(() => serveSetup({ ...away, env: { ...tokensEnv, GENTER_SECRET_FILE: join(home, "seal") } }), /is inside Genter's home/);
     assert.throws(() => serveSetup({ home, env: { GENTER_SECRET_FILE: join(home, "seal") } }), /is inside Genter's home/, "on loopback too");
+    symlinkSync(join(home, "seal"), b.at("seal-link"));
+    assert.throws(() => serveSetup({ ...away, env: { ...tokensEnv, GENTER_SECRET_FILE: b.at("seal-link") } }), /is inside Genter's home/, "a key file outside it that links into it");
     assert.throws(() => serveSetup({ ...away, env: { ...tokensEnv, GENTER_SECRET_FILE: b.at("weak") } }), /is weak/);
     assert.throws(() => serveSetup({ ...away, env: { ...tokensEnv, GENTER_SECRET_FILE: b.at("missing") } }), /cannot be read/);
     assert.deepEqual(serveSetup({ home, env: {} }).secret, undefined, "loopback without a key file: the config's secret");
@@ -275,6 +316,62 @@ describe("genter serve: the local engine for a small team over HTTP", () => {
     const refused = await serve(["repos", "--host", "0.0.0.0", "--port", "0"], { cwd: b.base, env: { GENTER_HOME: home, ...tokensEnv, GENTER_SECRET_FILE: b.at("weak") } });
     assert.equal(refused.code, 1);
     assert.match(refused.stderr(), /The seal key in .*weak is weak/);
+    b.done();
+  });
+
+  it("[rl:serve/team-reads-all] it serves exactly what its command names: a folder dropped from the command line, or one added with genter add in that project, is neither found nor read, and it names each place it serves", { timeout: 60_000 }, async () => {
+    const b = box();
+    put(b.base, "team/deploy.md", "# Deploy\n\nWe deploy on Thursday.\n");
+    put(b.base, "secret/salaries.md", "# Salaries\n\nThe salary bands are secret.\n");
+    put(b.base, "hr/reviews.md", "# Reviews\n\nThe calibration of the performance reviews.\n");
+    const token = hex();
+    writeFileSync(b.at("tokens"), `ana ${token}\n`);
+    const env = { GENTER_HOME: b.at("data"), GENTER_TOKENS_FILE: b.at("tokens") };
+    const search = async (s, query) => textOf(await post(s.base, searchMsg(query), { token }));
+    const both = await serve(["team", "secret", "--port", "0"], { cwd: b.base, env });
+    let secretId;
+    try {
+      assert.match(both.stderr(), /serving team, secret at http/);
+      secretId = Number(/^\[(\d+)\] Salaries/m.exec(await search(both, "salary bands"))?.[1]);
+      assert.ok(secretId, "served while named");
+    } finally {
+      await both.stop();
+    }
+    // Whoever runs it adds a folder for themselves in the same project, with the same home.
+    const add = await command(["add", "../hr"], { cwd: b.at("team"), env: { GENTER_HOME: b.at("data") } });
+    assert.equal(add.code, 0, add.err);
+    const one = await serve(["team", "--port", "0"], { cwd: b.base, env });
+    try {
+      assert.match(one.stderr(), /serving team at http/);
+      assert.match(await search(one, "deploy"), /^\[\d+\] Deploy/m);
+      for (const query of ["salary bands", "calibration of the performance reviews"]) assert.match(await search(one, query), /^Nothing in this project's 1 places matches/m, query);
+      const read = textOf(await post(one.base, { jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "read", arguments: { ids: [secretId] } } }, { token }));
+      assert.match(read, new RegExp(`^Not in this project \\(team\\): ${secretId}\\.`, "m"));
+      assert.doesNotMatch(read, /salary bands/);
+    } finally {
+      await one.stop();
+      b.done();
+    }
+  });
+
+  it("[rl:serve/own-home] it keeps a store of its own: with Genter's home at the person's own ~/.genter (GENTER_HOME unset, naming it or linking to it) it does not start and writes nothing there", { timeout: 60_000 }, async () => {
+    const b = box();
+    setup(b.base, { filler: 0 });
+    const personal = b.at("home/.genter"); // serve() runs with HOME at <dir>/home
+    for (const env of [{}, { GENTER_HOME: personal }]) {
+      const s = await serve(["repos", "--port", "0"], { cwd: b.base, env: { ...env, GENTER_TOKENS_FILE: b.at("genter_tokens"), GENTER_SECRET_FILE: b.at("genter_seal") } });
+      assert.equal(s.code, 1, JSON.stringify(env));
+      assert.match(s.stderr(), /^genter serve keeps a store of its own, apart from yours in .*\.genter: set GENTER_HOME to a folder for it, such as GENTER_HOME=~\/genter\/data/m);
+      assert.ok(!existsSync(personal), "nothing written in the person's home");
+    }
+    mkdirSync(personal, { recursive: true });
+    writeFileSync(join(personal, "local.json"), "the person's own store");
+    symlinkSync(personal, b.at("alias"));
+    const linked = await serve(["repos", "--port", "0"], { cwd: b.base, env: { GENTER_HOME: b.at("alias") } });
+    assert.equal(linked.code, 1);
+    assert.match(linked.stderr(), /keeps a store of its own/);
+    assert.equal(readFileSync(join(personal, "local.json"), "utf8"), "the person's own store");
+    assert.deepEqual(fs.readdirSync(personal), ["local.json"]);
     b.done();
   });
 
@@ -309,30 +406,81 @@ describe("genter serve: the local engine for a small team over HTTP", () => {
     }
   });
 
-  it("[rl:serve/async-reads] [rl:contract/search-shape] a file whose read does not finish in time is left out of that search and named, and the others answer; a file over 1 MB is not read", { timeout: 20_000 }, async () => {
+  it("[rl:serve/async-reads] [rl:contract/search-shape] a file whose read does not finish in time is left out of that search and named, and the others answer; its read is not started again while it runs, and the next search takes what it read; a file over 1 MB is not read", { timeout: 20_000 }, async () => {
     const b = box();
     put(b.base, "repo/docs/deploy.md", "# Deploy\n\nWe deploy on Thursday, after the freeze.\n");
     put(b.base, "repo/docs/stuck.md", "# Stuck\n\nThe freeze starts on Monday.\n");
     put(b.base, "repo/docs/huge.md", `# Huge\n\n${"The freeze is everywhere in this file. ".repeat(30_000)}\n`);
     const g = createLocal({ home: b.at("home"), secret: "s", cwd: b.at("repo"), readMs: 50 });
     const real = fs.open;
-    fs.open = (path, ...rest) => (String(path).endsWith("stuck.md") ? undefined : real(path, ...rest)); // a read that never ends
+    const held = [];
+    fs.open = (path, ...rest) => (String(path).endsWith("stuck.md") ? held.push([path, ...rest]) : real(path, ...rest)); // a read held until released
     syncBuiltinESMExports();
     let out;
+    let second;
     const started = Date.now();
     try {
       out = await g.find("when is the freeze");
+      second = await g.find("when is the freeze");
     } finally {
       fs.open = real;
       syncBuiltinESMExports();
     }
-    assert.ok(Date.now() - started < 5000, "the search did not wait for the stuck file");
+    assert.ok(Date.now() - started < 5000, "the searches did not wait for the stuck file");
     assert.deepEqual(out.late, ["docs/stuck.md"]);
     assert.deepEqual(out.results.map((r) => r.place.split(":")[0]), ["docs/deploy.md"], "the others answer; huge.md is over 1 MB");
     assert.match(searchText(out), /^Not read in time, so not in this answer: docs\/stuck\.md; read again at the next search\.$/m);
+    assert.deepEqual(second.late, ["docs/stuck.md"], "still late while its read runs");
+    assert.equal(held.length, 1, "a read under way is not started again: no second thread held by the same file");
+    await new Promise((done) => {
+      const [path, ...rest] = held[0];
+      const cb = rest.pop();
+      real(path, ...rest, (...a) => (cb(...a), setTimeout(done, 20))); // the slow read ends
+    });
     const again = await g.find("when is the freeze");
     assert.equal(again.late, undefined);
-    assert.ok(again.results.some((r) => r.place.startsWith("docs/stuck.md")), "read again at the next search");
+    assert.ok(again.results.some((r) => r.place.startsWith("docs/stuck.md")), "read at the next search");
+    b.done();
+  });
+
+  it("[rl:serve/async-reads] a replacing place whose read runs late is not read on the main thread to date its mark: the search answers at once, the mark still names it", { timeout: 20_000 }, async () => {
+    const b = box();
+    setup(b.base, { filler: 0 });
+    const repo = b.at("repos/acme");
+    const home = b.at("home");
+    const warm = await createLocal({ home, secret: "s", cwd: repo }).find(QUERY); // the store knows v2 and the runbook's mark
+    const v2 = warm.results.find((r) => r.place.startsWith("docs/release-process-v2.md"));
+    assert.ok(v2, JSON.stringify(warm.results.map((r) => r.place)));
+    const g = createLocal({ home, secret: "s", cwd: repo, readMs: 50 }); // a restart: nothing read yet in this process
+    const [realOpen, realSync] = [fs.open, fs.readFileSync];
+    const isV2 = (path) => String(path).endsWith("release-process-v2.md");
+    let syncReads = 0;
+    fs.open = (path, ...rest) => (isV2(path) ? undefined : realOpen(path, ...rest)); // v2's read never ends
+    fs.readFileSync = (path, ...rest) => {
+      if (isV2(path)) syncReads++;
+      return realSync(path, ...rest);
+    };
+    syncBuiltinESMExports();
+    let ticks = 0;
+    const tick = setInterval(() => ticks++, 10);
+    let out;
+    let read;
+    const started = Date.now();
+    try {
+      out = await g.find(QUERY);
+      read = await g.read([out.results.find((r) => r.place.startsWith("docs/runbook.md")).id]);
+    } finally {
+      clearInterval(tick);
+      [fs.open, fs.readFileSync] = [realOpen, realSync];
+      syncBuiltinESMExports();
+    }
+    assert.ok(Date.now() - started < 2000, `the search and the read did not wait for v2 (${Date.now() - started} ms)`);
+    assert.ok(ticks > 0, "the event loop kept turning");
+    assert.equal(syncReads, 0, "v2 was not read on the main thread");
+    assert.deepEqual(out.late, ["docs/release-process-v2.md"]);
+    const runbook = out.results.find((r) => r.place.startsWith("docs/runbook.md"));
+    assert.equal(runbook.superseded?.id, v2.id, "the mark still names v2");
+    assert.equal(read.results[0].superseded?.id, v2.id);
     b.done();
   });
 

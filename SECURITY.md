@@ -35,4 +35,5 @@ What a report can be held against:
   loopback only with one token per person (`GENTER_TOKENS_FILE`, compared in constant time, revoked by removing its
   line) and the seal key outside its data, saying that TLS must sit in front. It serves `search` and `read` alone: no
   client can add a source, keep a note, write, or make it fetch an address; a request from a web page is refused.
-  Every token holder reads everything it serves.
+  Every token holder reads everything it serves: exactly the folders and websites its command names, from a store of
+  its own (`GENTER_HOME`, never your `~/.genter`).

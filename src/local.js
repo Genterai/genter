@@ -25,7 +25,7 @@ import { crawl, forgetPage, readPage, siteUrl } from "./web.js";
 // Every place has a number, the id search and read name it by over MCP; read reads a place whole, now, by that number,
 // and only a place of the project it runs in.
 // A file's text is read off the main thread, a few at a time: one over fileBytes is not read, and one whose read takes
-// longer than readMs is left out of that search and named in its answer, so one huge or stuck file holds up nothing
+// longer than readMs is left out of that search and named in its answer, so one huge or slow file holds up nothing
 // else (genter serve answers its health check meanwhile).
 
 export const LIMITS = { files: 5000, fileBytes: 1_000_000, readMs: 2000, readers: 8, passageChars: 1400, perPlace: 2, webCandidates: 8, chunkChars: 1500, dims: 256, readIds: 10, readChars: 20_000 };
@@ -88,15 +88,18 @@ export function localSecret(home = genterHome()) {
   return secret;
 }
 
-// notes: false leaves the person's notes out (genter serve: a team's server has no one's notes); readMs: how long one
-// file may take to read.
-export function createLocal({ home = genterHome(), secret, userId = "default", openrouterApiKey, embed, cwd = process.cwd(), project = cwd, notes = true, readMs = LIMITS.readMs } = {}) {
+// notes: false leaves the person's notes out (genter serve: a team's server has no one's notes); only: true reads the
+// sources added through this Genter alone (genter serve: what its command names, never another source of the project
+// nor a website kept from 0.3); readMs: how long one file may take to read.
+export function createLocal({ home = genterHome(), secret, userId = "default", openrouterApiKey, embed, cwd = process.cwd(), project = cwd, notes = true, only = false, readMs = LIMITS.readMs } = {}) {
   secret ??= localSecret(home);
   const { seal, open } = cipher(`${secret}:${userId}:local`);
   const file = join(home, "local.json");
   const notesPath = join(home, "notes.md");
   embed ??= openrouterApiKey ? openrouterEmbedder(openrouterApiKey) : null;
   const texts = new Map(); // path -> { mtimeMs, size, text, digest, read, top }: files read by this process, never stored
+  const reading = new Map(); // path -> a read of its text that ran late and has not ended: not started again meanwhile
+  const addedHere = only ? new Set() : null; // with only: the ids of the sources added through this Genter
   const prepared = new Map(); // anchor id + digest -> its sections, ready to rank
   // The project this Genter searches: the one of the folder it runs in, or of the folder given (`genter mcp <folder>`).
   const { root, by } = projectOf(resolve(cwd, project));
@@ -202,8 +205,9 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
   }
   const anchorId = (tool, args) => recipeId({ workspaceId: userId, scope: "", tool, args });
   const place = (a) => (a.args.url ? a.args.url : shown(a.args.path, cwd));
-  // A source this project searches: one added in it, a website kept from 0.3, or the person's notes (unless notes are off).
-  const ours = (src) => Boolean(src) && ((notes && src.kind === "notes") || src.everywhere === true || Boolean(src.projects?.includes(root)));
+  // A source this project searches: one added in it, a website kept from 0.3, or the person's notes (unless notes are off);
+  // with only, one added through this Genter and nothing else.
+  const ours = (src) => Boolean(src) && (addedHere ? addedHere.has(src.id) : (notes && src.kind === "notes") || src.everywhere === true || Boolean(src.projects?.includes(root)));
   // A place this project reads: a page of one of its sources, or a file one of its sources holds that it does not leave
   // out (skip, from scope()). read reads nothing else.
   const inProject = (a, skip) => (a.tool === PAGE_READ ? ours(state.sources[a.source]) : Object.values(state.sources).some((src) => ours(src) && src.path && covers(src, a.args.path)) && !skip(a.args.path));
@@ -282,23 +286,37 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
 
   // What a file is now: { st, hit } from what this process read (texts), else its text read now without blocking. st:
   // null when it is no file; hit: null when it is not read (not text, over fileBytes, a private key); late: its read
-  // took longer than readMs, so it is left out this time and read again at the next look. The stat is a quick look at
-  // the file's metadata; only the text, the slow part, is read off the main thread.
+  // took longer than readMs (or one that did has not ended), so it is left out this time and looked at again at the
+  // next look. The stat is a quick look at the file's metadata; only the text, the slow part, is read off the main thread.
   async function look(path) {
     let st = null;
     try {
       st = statSync(path);
     } catch {}
     if (!st?.isFile()) return { st: null };
-    let hit = texts.get(path);
+    const hit = texts.get(path);
     if (hit && hit.mtimeMs === st.mtimeMs && hit.size === st.size) return { st, hit };
     if (st.size > LIMITS.fileBytes) return { st, hit: null };
-    const text = await textWithin(path, st.size, readMs);
-    if (text === LATE) return { st, hit: null, late: true };
+    // A read of it still under way is not started again (it would hold another of node's few threads): the file stays
+    // late until that read ends, and what it read, if the file is still the same, is what the next look takes.
+    if (reading.has(path)) return { st, hit: null, late: true };
+    const read = textAsync(path, st.size);
+    const text = await within(read, readMs);
+    if (text === LATE) {
+      reading.set(path, read);
+      read.then((late) => {
+        reading.delete(path);
+        if (late != null) keep(path, st, late);
+      });
+      return { st, hit: null, late: true };
+    }
     if (text == null) return { st, hit: null };
-    hit = { mtimeMs: st.mtimeMs, size: st.size, text, digest: contentHash(text) };
+    return { st, hit: keep(path, st, text) };
+  }
+  function keep(path, st, text) {
+    const hit = { mtimeMs: st.mtimeMs, size: st.size, text, digest: contentHash(text) };
     texts.set(path, hit);
-    return { st, hit };
+    return hit;
   }
 
   // One read of a file as its Anchor: { record, text, event, late? } with event created | changed | back | unchanged |
@@ -447,7 +465,8 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
   function addSource(source) {
     const s = state;
     const had = s.sources[source.id];
-    if (ours(had)) return false;
+    addedHere?.add(source.id);
+    if (had && (had.kind === "notes" || had.everywhere === true || had.projects?.includes(root))) return false;
     if (had) s.sources[source.id] = { ...had, projects: [...(had.projects ?? []), root] };
     else s.sources[source.id] = { ...source, ...(source.kind !== "notes" && { projects: [root] }), added_at: now() };
     dirty = true;
@@ -536,7 +555,8 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
       return Boolean(w) && a.mtimeMs >= w[0] && a.mtimeMs <= w[1];
     };
   }
-  // What the readers read in a file now (readers.js): from the text this process read, else read now; never kept.
+  // What the readers read in a file now (readers.js), from the text this process read of it as it is now (look); null
+  // when it read none, as for a file whose read ran late: nothing is read here, on the main thread.
   function documentAt(path) {
     let st;
     try {
@@ -544,15 +564,21 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
     } catch {
       return null;
     }
-    let hit = texts.get(path);
-    if (!hit || hit.mtimeMs !== st.mtimeMs || hit.size !== st.size) {
-      const text = st.isFile() && st.size <= LIMITS.fileBytes ? readText(path) : null;
-      if (text == null) return null;
-      hit = { mtimeMs: st.mtimeMs, size: st.size, text, digest: contentHash(text) };
-      texts.set(path, hit);
-    }
+    const hit = texts.get(path);
+    if (!hit || hit.mtimeMs !== st.mtimeMs || hit.size !== st.size) return null;
     if (hit.read === undefined) hit.read = readDocument(readerPath(path), hit.text);
     return hit.read;
+  }
+  // The files that replace these places, as this project reads them, looked at now (look: what this process read, else
+  // read off the main thread within readMs), so their marks give those places' own days: dayOf reads nothing itself.
+  async function lookReplacers(records, skip) {
+    const paths = new Set();
+    for (const a of records) {
+      const by = a.superseded?.by;
+      const b = by && !/^https?:\/\//i.test(by) && state.anchors[anchorId(FILE_READ, { path: by })];
+      if (b?.status === "fresh" && inProject(b, skip)) paths.add(by);
+    }
+    await pool([...paths], LIMITS.readers, look);
   }
   // The day a place gives itself: the date its document gives (as its readers read it), else its file's time unless that
   // is a clone time; a page's Last-Modified, else when Genter saw it change. null when no day is known.
@@ -603,6 +629,7 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
       if (r.late) error = `it took longer than ${readMs / 1000} s to read; ask again`;
       else if (text == null && record.status !== "gone") error = "it cannot be read now (not text, over 1 MB, or it holds a private key)";
     }
+    if (text != null) await lookReplacers([record], skip);
     const clone = cloned(record);
     const dated = text != null && record.args.path ? texts.get(record.args.path)?.read?.date?.value : undefined;
     const out = { id: record.number, kind: kindOf(record), place: place(record), ...(record.args.path ? { path: record.args.path } : { url: record.args.url }), title: record.title, ...(record.source_at && !clone && { source_at: record.source_at }), ...(dated && { dated }), ...(clone && { fresh_clone: true }) };
@@ -731,7 +758,7 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
       const sc = scope();
       dropOff(sc);
       let added;
-      if (!Object.values(state.sources).some((src) => src.projects?.includes(root)) && !homes().includes(root) && root !== resolve("/") && !sc.off(root)) added = await api.add(root);
+      if (!addedHere && !Object.values(state.sources).some((src) => src.projects?.includes(root)) && !homes().includes(root) && root !== resolve("/") && !sc.off(root)) added = await api.add(root);
       if (notes && existsSync(notesPath)) ensureNotes();
       const reads = [];
       const seenPaths = new Set();
@@ -804,6 +831,7 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
       const changedNow = new Map(changes.map((c) => [c.place, c.event]));
       const textOf = new Map(reads.map((r) => [r.record.id, r.text]));
       const cloned = clones();
+      await lookReplacers(reads.map((r) => r.record), sc.skip);
       const mark = (x) => markOf(x.record, textOf.get(x.record.id), sc.skip, cloned);
       const qTerms = new Set(terms(q));
       const scoreOf = new Map(sections.map((x, i) => [x, scores[i]]));
@@ -1114,29 +1142,25 @@ function textOf(buf) {
   const text = buf.toString("utf8");
   return PRIVATE_KEY.test(text) ? null : text;
 }
-// The same without blocking (its size bytes, as its stat gave it: one open, one read, one close), or LATE once ms have
-// passed, so a file on a stuck disk, a mount or a folder that downloads on read holds up nothing else; a late read
-// finishes on its own and closes its file.
-const LATE = Symbol("late");
-function textWithin(path, size, ms) {
+// The same without blocking (its size bytes, as its stat gave it: one open, one read, one close, on node's threads).
+function textAsync(path, size) {
   return new Promise((done) => {
-    let settled = false;
-    const finish = (value) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timer);
-      done(value);
-    };
-    const timer = setTimeout(() => finish(LATE), ms);
     openFile(path, "r", (error, fd) => {
-      if (error) return finish(null);
+      if (error) return done(null);
       const buf = Buffer.allocUnsafe(size);
       readInto(fd, buf, 0, size, 0, (failed, bytes) => {
         closeFile(fd, () => {});
-        finish(failed ? null : textOf(buf.subarray(0, bytes)));
+        done(failed ? null : textOf(buf.subarray(0, bytes)));
       });
     });
   });
+}
+// What a read gives, or LATE once ms have passed, so a slow file (a folder that downloads files as they are read, a
+// slow disk) holds up nothing else; the late read goes on, and closes its file when it ends.
+const LATE = Symbol("late");
+function within(read, ms) {
+  let timer;
+  return Promise.race([read, new Promise((done) => (timer = setTimeout(() => done(LATE), ms)))]).finally(() => clearTimeout(timer));
 }
 
 // A link in a file to the file it points to, when that file is there; a link that is not a valid escape is as written.

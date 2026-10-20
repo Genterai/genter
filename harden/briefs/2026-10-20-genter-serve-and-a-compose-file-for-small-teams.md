@@ -36,7 +36,7 @@ Sources: `src/mcp-server.js` (`handle`, `callTool`, `mcpTools`, `searchText`, `s
 `.github/workflows/{release,test}.yml`, `package.json` (`files`, zero dependencies), `README.md`, `SECURITY.md`,
 `harden/redlines/{cli,contract,local-search,security}.md`, `test/{contract,local,mcp-server}.test.js`; Genter's
 open-source plan, step 3.3, decision D3 (two tools everywhere) and D5 (nothing sends data, `serve` included).
-Red lines: a new area, serve: tokens, loopback-default, team-reads-all, same-contract, read-only, notes-off,
+Red lines: a new area, serve: tokens, loopback-default, team-reads-all, same-contract, read-only, notes-off, own-home,
 seal-outside, async-reads, health, image, ac-compose. Changed: cli/no-packages (`serve`, its flags refused elsewhere),
 contract/two-tools (names the forms), contract/search-shape (the files not read in time), contract/conformance (also
 over HTTP), security/public-only (a site whose address is not public is refused saying so, before any fetch). Stay
@@ -45,12 +45,16 @@ private-key-skipped, no-text-stored, ids-stable; cli/local-mcp, local-mcp-tools,
 security/checked-address, keys-stay, never-run (node's `http` and `crypto` run nothing); zero runtime dependencies.
 Decided:
 * `genter serve <folder|url> ...` (`src/http.js`, on `node:http` alone) adds what it is given, as `genter mcp` does,
+  and serves exactly that: `createLocal({ only: true })` reads the sources added through it alone, so a folder dropped
+  from the command, one added with `genter add` in the same project and a website kept from 0.3 are neither searched
+  nor read, and it names each place it serves when it starts (a review found the project's other sources served). It
   then serves `POST /mcp` with the same `handle()` as the stdio server, given the contract's two tools alone and its own
   instructions ("the folders this server reads for the team … nothing is added or kept through it"). The tool
   definitions are `genter mcp`'s own, unchanged, so a client sees the same contract; every other name, the 0.3 aliases
   included, is -32602, so no client can add a source, keep a note or make the server fetch an address (the SSRF a
   team server would otherwise carry). JSON answers only, no stream and no session: GET and DELETE are 405, a
-  notification 202, a batch answers as a batch, a body over 1 MB 413. (plan step 3.3, D3)
+  notification 202, a batch answers as a batch, a body over 1 MB 413. A notification runs nothing, a `tools/call` too,
+  and a body that is no JSON-RPC object (`null`, `[null]`, a number) is 400 and -32600. (plan step 3.3, D3)
 * Tokens: `GENTER_TOKENS_FILE`, one `name token` line per person, `#` comments. A token is 32 characters or more of 10
   kinds or more (`openssl rand -hex 32`); a weak, malformed or repeated line is not used and is named by its line and
   name, never its token. Compared in constant time: the presented token's SHA-256 against each listed one's with
@@ -64,6 +68,12 @@ Decided:
   only a loopback `Host`, against DNS rebinding. A request with an `Origin` that is not loopback is refused (403) in
   every case, as the MCP specification asks of servers: web pages have no business here. (plan step 3.3; MCP
   Streamable HTTP's security warning)
+* Its own home: `genter serve` does not start with Genter's home at the person's own `~/.genter` (`GENTER_HOME` unset,
+  naming it or linking to it), before it reads or writes anything, and says to set `GENTER_HOME` to a folder for it;
+  `docs/team.md`'s recipe without Docker sets `GENTER_HOME=~/genter/data`. Otherwise a team's server would open the
+  person's store (refusing to start once it is sealed with their secret), seal it again with the team's key (their own
+  `genter` could no longer open it), or, on loopback without a key file, serve their project's sources. Refusing is the
+  reversible choice; a default folder of its own is for the product owner if it is wanted. (a review of this step)
 * The seal key: `GENTER_SECRET_FILE`, 32 characters or more of 10 kinds or more, refused when it lies inside
   `GENTER_HOME` (as written or where its links lead), so a copy of the data volume opens nothing; needed away from
   loopback; on loopback without it, the config's secret, as for `genter mcp`. With the key file the config keeps no
@@ -72,11 +82,14 @@ Decided:
   makes `remember` throw; serve always passes it. (plan step 3.3)
 * Reads that do not block, in every form: a file's text is read off the main thread (one `open`, one `read` of the
   size its stat gave, one `close`, on node's thread pool), `LIMITS.readers` (8) at a time, and each read races
-  `readMs` (2 s): one that takes longer (a stuck disk or mount, a synced folder that downloads on read) is left out of
-  that search and named before the places ("Not read in time, so not in this answer: …; read again at the next
-  search."), its anchor untouched, and the late read closes its file when it ends; one over 1 MB is not read, as
-  before. The stat and the folder's listing stay synchronous: quick metadata calls (3 ms for 3,000 files here), where
-  the text is the slow part. The store changes only after the reads, in listing order and with nothing awaited, so
+  `readMs` (2 s): one that takes longer (a synced folder that downloads on read, a slow disk) is left out of that
+  search and named before the places ("Not read in time, so not in this answer: …; read again at the next search."),
+  its anchor untouched; the late read is not started again while it runs (it holds one of node's four threads), and
+  what it read once it ends is what the next search takes; one over 1 MB is not read, as before. Nothing reads a
+  file's text on the main thread any more: a replaced place's mark dates what replaces it from the text read in time
+  (search has just looked at it; read looks at it within `readMs`), else from its file's time, where it used to read
+  that file synchronously. The stat and the folder's listing stay synchronous: quick metadata calls (3 ms for 3,000
+  files here) on a disk that answers, so docs/team.md says not to serve a network mount that can hang. The store changes only after the reads, in listing order and with nothing awaited, so
   places are numbered as before (contract/place-ids). The cost, measured here on a 3,000-file folder: a fresh
   `genter ask` takes 1.43–1.52 s against main's 1.29–1.41 s (three runs each; reading the text off the main thread
   costs about 0.1 s cold), and a second search in the same process (`genter mcp`, `genter serve`) is as fast as
@@ -138,18 +151,30 @@ Proof: `test/serve.test.js` "[rl:serve/same-contract] [rl:serve/tokens] [rl:serv
 and the runbook fixture passes all 12 checks of `test/serve-smoke.mjs` (the 20 searches took about 0.5 s; `/health`
 answered in 1 ms), no token printed / "search over HTTP answers word for word what genter mcp answers over stdio": the
 same text from the same store, the same two tool definitions / "Streamable HTTP …" (also [rl:contract/conformance]):
-202, a batch, 405 with `Allow: POST`, -32700, 400, 415, 413, 404, the four 0.3 names -32602, conformance over HTTP /
+202, a `tools/call`, `tools/list` and `initialize` notification 202 with nothing run, `null`, `[null]`, `5`, `"x"` and
+`[[]]` 400 and -32600, a batch, 405 with `Allow: POST`, -32700, 400, 415, 413, 404, the four 0.3 names -32602,
+conformance over HTTP /
 "[rl:serve/tokens] one token per person …": the parser's problems by line and name, `who()` on nine headers, one
 `timingSafeEqual`, a line removed in place refused at the next request with `WWW-Authenticate`, a line added accepted,
-the file removed (401) then saved anew (200), no token in the log / "[rl:serve/loopback-default] …": `isLoopback` on 14
+the file removed (401) then saved anew (200), no token in the log / "[rl:serve/tokens] it does not start with a tokens
+file that holds no token or cannot be read": an empty file, one of comments only and one of a weak token say "No
+token in", a folder and a missing file "cannot be read by this user", and `genter serve` exits 1 /
+"[rl:serve/loopback-default] …": `isLoopback` on 14
 hosts, `--host 0.0.0.0` with no tokens exits 1, with tokens and a key says TLS, loopback with no tokens answers a
 loopback Host and refuses `Host: genter.attacker.example` and two Origins (403), a loopback Origin passes /
-"[rl:serve/seal-outside] …": no key away from loopback, a key inside the home (also on loopback), a weak and a missing
-one all refused; the store opens with the file's key and config.json holds no secret / "[rl:serve/notes-off] …":
+"[rl:serve/seal-outside] …": no key away from loopback, a key inside the home (also on loopback), a key file outside
+it that links into it, a weak and a missing one all refused; the store opens with the file's key and config.json holds no secret / "[rl:serve/notes-off] …":
 the notes answer for the person; `notes: false` finds nothing in them, refuses their id, `remember` throws, and serve
-over HTTP says nothing found / "[rl:serve/async-reads] [rl:contract/search-shape] …": a read that never ends (node's
-`fs.open` replaced for that file, `syncBuiltinESMExports`) with `readMs: 50` leaves `docs/stuck.md` out and names it, the other file answers,
-a 1.2 MB file is not read, the next search reads it / "[rl:serve/async-reads] tool calls run one at a time …": with
+over HTTP says nothing found / "[rl:serve/team-reads-all] it serves exactly what its command names …": `genter serve
+team secret`, then `genter add ../hr` in team with the same home, then `genter serve team`: it says "serving team",
+neither the salaries nor hr's reviews are found, and the salaries' id is refused by read / "[rl:serve/own-home] …":
+with `GENTER_HOME` unset, naming `~/.genter` or a link to it, `genter serve` exits 1 saying to set `GENTER_HOME`, and
+nothing is written there / "[rl:serve/async-reads] [rl:contract/search-shape] …": a read held open (node's `fs.open`
+replaced for that file, `syncBuiltinESMExports`) with `readMs: 50` leaves `docs/stuck.md` out and names it, the other
+file answers, a 1.2 MB file is not read; a second search while it is held names it again and opens it no second time;
+once that read ends, the next search finds it / "[rl:serve/async-reads] a replacing place whose read runs late …":
+after a restart, v2's read never ends: search and read answer in under 2 s with the event loop turning, v2 is read on
+the main thread 0 times (`fs.readFileSync` counted), and the runbook's mark still names v2's id / "[rl:serve/async-reads] tool calls run one at a time …": with
 `waiting: 2`, a third call gets 503 and `Retry-After: 1` while `/health` and tools/list answer, at most one find ran at
 once / "[rl:security/public-only] …": `serve http://169.254.169.254/…` and `http://10.0.0.1/…` exit 1 saying the address
 is not public / "[rl:serve/image] …": the Dockerfile, `.dockerignore`, compose file, the release workflow's image job and
@@ -159,8 +184,9 @@ options: `genter_add` -32602 and nothing added). `test/serve-compose.test.js` "[
 with `GENTER_COMPOSE=1` here (Docker 29.8, Compose 5.6, the base image through a registry mirror): 12 of 12 smoke
 checks through `docker compose up`, uid 1000, `/repos` and the root not writable, the private address refused by
 `docker compose run`, no token in the logs; in CI the serve job runs it on ubuntu-latest. `test/local.test.js`
-"[rl:cli/help]" now allows "token" in `genter serve`'s lines only. `npm test` 181 of 181 (167 before), `npm run lint`
-no new finding, DriftBench guard (`node bench/drift/run.mjs --no-takes --guard README.md`) exits 0, `harden check`
+"[rl:cli/help]" now allows "token" in `genter serve`'s lines only. Each fix the review asked for was undone by hand
+in turn (`only: true`, `documentAt`'s synchronous read, the reads under way, notifications): each makes its test fail.
+`npm test` 185 of 185 (167 before), `npm run lint` no new finding, DriftBench guard (`node bench/drift/run.mjs --no-takes --guard README.md`) exits 0, `harden check`
 0 errors.
 
 ## Red lines after
@@ -169,16 +195,18 @@ no new finding, DriftBench guard (`node bench/drift/run.mjs --no-takes --guard R
   removed revokes at the next request), weak or malformed lines unused and never printed, 401 with WWW-Authenticate
 * serve/loopback-default: new, 127.0.0.1:8787 by default; away from loopback only with tokens, saying TLS must sit in
   front; without tokens a loopback Host only; a non-loopback Origin refused
-* serve/team-reads-all: new, every token holder reads everything served, said at start and first in docs/team.md,
-  which names the clients that can connect and that claude.ai cannot yet
+* serve/team-reads-all: new, every token holder reads everything served, and it serves exactly what its command names
+  (each place named at start); said at start and first in docs/team.md, which names the clients that can connect and
+  that claude.ai cannot yet
 * serve/same-contract: new, the two tools alone through the same handle(), the same text as genter mcp, conformance
-  over HTTP, Streamable HTTP's answers
+  over HTTP, Streamable HTTP's answers (a notification runs nothing, 202; no JSON-RPC object 400)
 * serve/read-only: new, any tool but search and read is -32602; the served folders are left as they were
 * serve/notes-off: new, notes neither searched nor read, remember off (`createLocal({ notes: false })`)
+* serve/own-home: new, it does not start with Genter's home at the person's own ~/.genter, and writes nothing there
 * serve/seal-outside: new, the seal key from GENTER_SECRET_FILE outside GENTER_HOME, strong, needed away from loopback;
   the config keeps no secret
-* serve/async-reads: new, reads never block; over 1 MB not read; over 2 s left out and named; one tool call at a time
-  while /health answers; 503 past 64 waiting
+* serve/async-reads: new, reads never block, a replacing place's included; over 1 MB not read; over 2 s left out and
+  named, not started again while it runs; one tool call at a time while /health answers; 503 past 64 waiting
 * serve/health: new, GET /health answers {"status":"ok"} with no token
 * serve/image: new, the Dockerfile (node:22-alpine, nothing installed or run, user node, writes only /data), the
   compose file (loopback port, repos read-only, secrets, read-only root, meaning profile), the GHCR image job after a

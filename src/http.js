@@ -1,8 +1,9 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { readFileSync, statSync } from "node:fs";
 import { createServer } from "node:http";
-import { resolve } from "node:path";
-import { realOf, under } from "./local.js";
+import { homedir } from "node:os";
+import { join, resolve } from "node:path";
+import { genterHome, realOf, under } from "./local.js";
 import { handle, serveInstructions, twoTools, VERSIONS } from "./mcp-server.js";
 
 // `genter serve`: the local engine for a small team, over MCP Streamable HTTP, with no package (node:http). The same
@@ -129,9 +130,11 @@ export function tokensFile(file, { log = () => {} } = {}) {
 
 // What genter serve needs before it reads anything, or the reason it does not start: { host, port, loopback, tokens,
 // secret? }. secret: the seal key from GENTER_SECRET_FILE; none on loopback without it (the config's secret then).
-export function serveSetup({ env = process.env, home, host = SERVE.host, port = SERVE.port, log = () => {} } = {}) {
+// Its home is its own, never the person's ~/.genter: a team's server does not open, seal again or share their store.
+export function serveSetup({ env = process.env, home = genterHome(), host = SERVE.host, port = SERVE.port, log = () => {} } = {}) {
   if (!host || typeof host !== "string") throw new Error("--host takes an address: 127.0.0.1 (the default), or 0.0.0.0 to listen on every network");
   if (!Number.isInteger(port) || port < 0 || port > 65535) throw new Error(`--port takes a port number (${SERVE.port} by default)`);
+  if (realOf(resolve(home)) === realOf(join(homedir(), ".genter"))) throw new Error(`genter serve keeps a store of its own, apart from yours in ${home}: set GENTER_HOME to a folder for it, such as GENTER_HOME=~/genter/data (docs/team.md)`);
   const loopback = isLoopback(host);
   let tokens = null;
   if (env.GENTER_TOKENS_FILE) {
@@ -175,11 +178,10 @@ export function serveHttp(local, { host = SERVE.host, port = SERVE.port, tokens 
     tail = p.catch(() => {});
     return p;
   };
-  const answer = (msg) => {
-    // A client's answer to a request (this server sends none) is taken and needs no reply.
-    if (msg && typeof msg === "object" && msg.jsonrpc === "2.0" && msg.method === undefined && ("result" in msg || "error" in msg)) return null;
-    return msg?.method === "tools/call" ? inTurn(() => handle(local, msg, options)) : handle(local, msg, options);
-  };
+  // A message with a method and no id is a notification, and a client's answer to a request (this server sends none) is
+  // taken too: neither runs anything nor gets a reply.
+  const notice = (msg) => msg.jsonrpc === "2.0" && (typeof msg.method === "string" ? msg.id === undefined || msg.id === null : msg.method === undefined && ("result" in msg || "error" in msg));
+  const answer = (msg) => (notice(msg) ? null : msg.method === "tools/call" ? inTurn(() => handle(local, msg, options)) : handle(local, msg, options));
 
   const server = createServer(async (req, res) => {
     try {
@@ -218,8 +220,9 @@ export function serveHttp(local, { host = SERVE.host, port = SERVE.port, tokens 
     }
     const batch = Array.isArray(msg);
     const messages = batch ? msg : [msg];
-    if (!messages.length) return send(req, res, 400, { jsonrpc: "2.0", id: null, error: { code: -32600, message: "Invalid request" } });
-    const calls = messages.filter((m) => m?.method === "tools/call").length;
+    // Each message is a JSON-RPC object: an empty batch, null, a number or a list inside is not.
+    if (!messages.length || messages.some((m) => !m || typeof m !== "object" || Array.isArray(m))) return send(req, res, 400, { jsonrpc: "2.0", id: null, error: { code: -32600, message: "Invalid request" } });
+    const calls = messages.filter((m) => m.method === "tools/call" && !notice(m)).length;
     if (calls && queued + calls > waiting) return rpcError(req, res, 503, `${queued} searches are waiting: ask again in a moment`, { "Retry-After": "1" });
     const answers = (await Promise.all(messages.map(answer))).filter(Boolean);
     if (!answers.length) {
@@ -245,8 +248,8 @@ export function serveHttp(local, { host = SERVE.host, port = SERVE.port, tokens 
         server.closeAllConnections?.();
         return closed;
       };
-      const { place } = local.project();
-      const said = [`genter: serving ${place} at ${url} (MCP over Streamable HTTP): search and read only, nothing written, no notes`];
+      const places = local.sources().map((src) => src.place);
+      const said = [`genter: serving ${places.length ? places.join(", ") : local.project().place} at ${url} (MCP over Streamable HTTP): search and read only, nothing written, no notes`];
       if (tokens) said.push(`genter: ${tokens.count} ${tokens.count === 1 ? "token" : "tokens"} in ${tokens.file}, read again when it changes: every token holder reads everything served here, so serve only what the whole team may read`);
       else said.push("genter: no tokens (GENTER_TOKENS_FILE): anyone on this computer can read what is served here; it answers only on loopback");
       if (!isLoopback(host)) said.push("genter: plain HTTP: put TLS in front of it (a reverse proxy such as Caddy or nginx) before anyone reaches it over a network");
