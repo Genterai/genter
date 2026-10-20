@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'Genter: before you answer what this project decided or how something works, call search first, cite the [id] and place it returns, and repeat a mark as the quote Genter shows.'"
+          }
+        ]
+      }
+    ]
+  }
+}

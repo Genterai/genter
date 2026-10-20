@@ -15,6 +15,7 @@
 
 <p align="center">
   <a href="#quickstart">Quickstart</a> ·
+  <a href="#add-it-to-claude-code">Claude Code</a> ·
   <a href="#add-it-to-your-project">Add it to your project</a> ·
   <a href="#in-code">In code</a> ·
   <a href="#genter-cloud-your-teams-apps">Genter Cloud</a> ·
@@ -102,6 +103,43 @@ with `--folder`. `--cloud` also adds [Genter Cloud](#genter-cloud-your-teams-app
 server, `--semantic` turns on ranking by meaning, and `--dry-run` only shows. A copy of every file it changes is kept
 in `~/.genter/install/`; `--undo` puts it back, or, if the tool has saved the file since, takes only Genter's entries
 out of it.
+
+## Add it to Claude Code
+
+In Claude Code:
+
+```
+/plugin marketplace add Genterai/genter
+/plugin install genter@genter
+```
+
+The plugin brings the local server and a skill. The server, `npx -y genter-cli@0.4 mcp`, searches the project Claude
+Code runs in and your notes, with no key. The `genter` skill tells the agent when and how to use it: when it needs what
+the project decided or how something works, it calls `search` first, cites the `[id]` and place each answer comes
+from, repeats a mark as the quote Genter shows (never as its own verdict), and reads a place whole with `read`. The
+server ranks by words; with `GENTER_SEMANTIC=1` and an embeddings key in the environment you start Claude Code from, it
+ranks by meaning too.
+
+> **The server needs genter-cli 0.4, which is not on npm yet.** 0.4 is published once npm trusted publishing is set up
+> for this repository. The `genter-cli` on npm today, 0.3, is the old engine: its server has neither `search` nor
+> `read`, so the plugin does not fall back to it. Until 0.4 is out, `/mcp` shows the plugin's server failing to
+> connect. The skill already works with [Genter Cloud](#genter-cloud-your-teams-apps), which serves the same two
+> tools, and the local server runs from a clone of this repository:
+> `claude mcp add genter -- node <clone>/bin/genter.js mcp`.
+
+The same marketplace lists [harden](#with-harden): `/plugin install harden@genter`. If you also added Genter with
+`genter install`, Claude Code has two `genter` servers with the same tools: keep one (`/mcp` turns the plugin's off,
+`genter install --undo` removes the other).
+
+**Search first at every prompt (optional).** The plugin runs no hook. To remind the agent at every prompt, add the
+hook in [`plugins/genter/search-first.json`](plugins/genter/search-first.json) to `~/.claude/settings.json` (every
+project) or `.claude/settings.json` (one project), next to any `hooks` already there. It only prints one line, which
+Claude Code adds to your prompt: "Genter: before you answer what this project decided or how something works, call
+search first, cite the [id] and place it returns, and repeat a mark as the quote Genter shows."
+
+**Other agents.** The skill on its own: `npx skills add Genterai/genter` (Cursor, Codex, Gemini CLI and more), beside
+the local server (`npx genter-cli install`, from 0.4) or Genter Cloud. `skills` is Vercel's command, not Genter's; it
+sends anonymous usage data unless `DO_NOT_TRACK=1` is set.
 
 ## Choose how you run it
 
@@ -246,10 +284,10 @@ marks in the same format.
 ## With harden
 
 [harden](https://github.com/Genterai/harden) has the agent write a brief before code: what the change is for, where
-the truth lives and what must not break. Its Claude Code plugin brings Genter with it. Before the agent asks the owner
-a question, it searches with Genter's `search`, and a question the code or the docs already answer becomes a Source in
-the brief instead of reaching the owner. With Genter Cloud connected, the decision behind the code (a ticket, a thread)
-becomes a Source too.
+the truth lives and what must not break. Its Claude Code plugin is in this repository's marketplace too
+(`/plugin install harden@genter`). Before the agent asks the owner a question, it searches with genter-cli, and a
+question the code or the docs already answer becomes a Source in the brief instead of reaching the owner. With Genter
+Cloud connected, the decision behind the code (a ticket, a thread) becomes a Source too.
 
 ## How it resolves, and why it stays current
 
