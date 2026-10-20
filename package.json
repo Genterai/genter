@@ -1,6 +1,6 @@
 {
   "name": "genter-cli",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "mcpName": "io.github.Genterai/genter",
   "description": "Your AI stops quoting the old answer. Genter shows your AI what your team decided, where it is written and when, and marks what was replaced since. CLI, MCP server and library: no key, no dependencies.",
   "keywords": [
