@@ -43,9 +43,9 @@ function git(cwd, args) {
   return out.stdout;
 }
 
-// The repository's files a reader can take, at `commit` (else at its HEAD): { dir, commit, committed, tree }.
-// A name is owner/name and a commit a full hash, so neither can reach git as an option.
-export function checkout(cache, repo, commit) {
+// The repository's tree at `commit` (else at its HEAD), its files' names only, nothing checked out: { dir, commit,
+// committed, tree }. A name is owner/name and a commit a full hash, so neither can reach git as an option.
+export function treeOf(cache, repo, commit) {
   if (!/^[\w.-]+\/[\w.-]+$/.test(repo) || repo.includes("..")) throw new Error(`not a repository's owner/name: ${repo}`);
   if (commit !== undefined && !/^[0-9a-f]{40}$/.test(commit)) throw new Error(`not a commit: ${commit}`);
   const dir = join(cache, repo.replace("/", "__"));
@@ -60,10 +60,17 @@ export function checkout(cache, repo, commit) {
     want = git(dir, ["rev-parse", "FETCH_HEAD^{commit}"]).trim();
   }
   if (spawnSync("git", ["cat-file", "-e", `${want}^{commit}`], { cwd: dir }).status !== 0) git(dir, ["fetch", "-q", "--depth", "1", "--filter=blob:none", "origin", want]);
-  git(dir, ["sparse-checkout", "set", "--no-cone", ...SPARSE]);
-  git(dir, ["checkout", "-q", "--detach", want]);
   const tree = git(dir, ["ls-tree", "-r", "-z", "--name-only", want]).split("\0").filter(Boolean);
   return { dir, commit: want, committed: git(dir, ["show", "-s", "--format=%cI", want]).trim(), tree };
+}
+
+// The repository's files a reader can take, checked out at `commit` (else at its HEAD): treeOf's { dir, commit,
+// committed, tree }.
+export function checkout(cache, repo, commit) {
+  const co = treeOf(cache, repo, commit);
+  git(co.dir, ["sparse-checkout", "set", "--no-cone", ...SPARSE]);
+  git(co.dir, ["checkout", "-q", "--detach", co.commit]);
+  return co;
 }
 
 // A file's text as the engine reads it (local.js readText): none over its size limit, binary or holding a private key.
@@ -81,13 +88,11 @@ export function textOf(path) {
   }
 }
 
-// A file's whole text for a group's check, whatever its size ("" when it cannot be read).
-function readOr(path) {
-  try {
-    return readFileSync(path, "utf8");
-  } catch {
-    return "";
-  }
+// A file's whole text at a commit, for a group's check, whatever its size ("" when it cannot be read): the one blob
+// fetched, nothing checked out. The path comes from the commit's own tree.
+function readAt(dir, commit, path) {
+  const out = spawnSync("git", ["cat-file", "blob", `${commit}:${path}`], { cwd: dir, encoding: "utf8", timeout: 300_000, maxBuffer: 1 << 28 });
+  return out.status === 0 ? out.stdout : "";
 }
 
 // A mark's place, as the engine resolves it: a relative link to a file that is there, from the marked document's folder
@@ -331,36 +336,45 @@ export function resultsMd(results) {
   return `${lines.join("\n").replace(/\n+$/, "")}\n`;
 }
 
-// The first `take` of each group that pass its check, from the candidates given; `skip`: repositories never taken.
-function pick(cache, groups, skip = new Set()) {
+// The first `take` of each group that pass its check, from the candidates given, each pinned at the commit it was
+// checked at, and every candidate checked and not taken, with why; `skip`: repositories never taken (the first 50, for
+// the held-out sample), and none is taken twice. The check reads the tree's file names, and for a changelog the
+// changelog files' text, never what a reader finds.
+export function pick(cache, groups, skip = new Set(), { tree = treeOf, read = readAt } = {}) {
   const picked = [];
+  const skipped = [];
   for (const g of groups) {
     let taken = 0;
     for (const c of g.candidates) {
       if (taken >= g.take) break;
-      if (skip.has(c.repo)) {
-        console.log(`${g.id} ${c.repo}: skipped, in the first 50`);
+      if (skip.has(c.repo) || picked.some((p) => p.repo === c.repo)) {
+        const why = skip.has(c.repo) ? "in the first 50" : "taken by an earlier group";
+        console.log(`${g.id} ${c.repo}: skipped, ${why}`);
+        skipped.push({ repo: c.repo, group: g.id, why });
         continue;
       }
       let why;
       let co;
       try {
-        co = checkout(cache, c.repo);
+        co = tree(cache, c.repo);
         if (g.changelog) {
-          const logs = co.tree.filter((p) => CHANGELOG.test(p)).filter((p) => /deprecat/i.test(readOr(join(co.dir, p))));
-          if (!logs.length) why = "no changelog that says deprecat";
+          const logs = co.tree.filter((p) => CHANGELOG.test(p));
+          if (!logs.some((p) => /deprecat/i.test(read(co.dir, co.commit, p)))) why = "no changelog that says deprecat";
         } else if (!co.tree.some((p) => new RegExp(c.records).test(p))) why = `no ${c.what} (${c.records})`;
       } catch (e) {
         why = e.message;
       }
       console.log(`${g.id} ${c.repo}: ${why ? `skipped, ${why}` : `taken at ${co.commit.slice(0, 7)}`}`);
-      if (why) continue;
+      if (why) {
+        skipped.push({ repo: c.repo, group: g.id, why: why.slice(0, 200) });
+        continue;
+      }
       picked.push({ repo: c.repo, group: g.id, stars: c.stars, commit: co.commit, committed: co.committed });
       taken++;
     }
     if (taken < g.take) console.log(`${g.id}: only ${taken} of ${g.take} passed`);
   }
-  return picked;
+  return { picked, skipped };
 }
 
 // One sample over its pinned commits: a row per repository.
@@ -400,9 +414,9 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     const heldout = args.includes("--heldout");
     const first = heldout ? JSON.parse(readFileSync(join(here, "repos.json"), "utf8")).repos : [];
     const groups = heldout ? candidates.heldout.groups.map((g) => ({ ...candidates.groups.find((x) => x.id === g.id), ...g })) : candidates.groups;
-    const picked = pick(cache, groups, new Set(first.map((r) => r.repo)));
+    const { picked, skipped } = pick(cache, groups, new Set(first.map((r) => r.repo)));
     const file = heldout ? "heldout.json" : "repos.json";
-    writeFileSync(join(here, file), `${JSON.stringify({ picked_on: new Date().toISOString().slice(0, 10), stars_on: (heldout ? candidates.heldout : candidates).stars_on, repos: picked }, null, 2)}\n`);
+    writeFileSync(join(here, file), `${JSON.stringify({ picked_on: new Date().toISOString().slice(0, 10), stars_on: (heldout ? candidates.heldout : candidates).stars_on, repos: picked, skipped }, null, 2)}\n`);
     console.log(`${file}: ${picked.length} repositories`);
   } else {
     const { readers } = loadReaders();
