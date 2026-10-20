@@ -66,5 +66,11 @@ jobs:
           # The readers and language rules ship with it, and load whole.
           node --input-type=module -e 'const { loadReaders, loadRules } = await import("genter-cli/readers"); const r = loadReaders(); const l = loadRules(); if (r.problems.length || l.problems.length || r.readers.length < 6 || !l.phrases.length) { console.error(r.problems, l.problems); process.exit(1) }'
           npx --no-install genter --version
+      - name: The demo runs from the packed package
+        # The README's first run, from the tarball in the clean folder: offline, and the last line says what to run next.
+        run: |
+          cd "$RUNNER_TEMP/clean"
+          npx --no-install genter demo > demo.txt
+          tail -n 1 demo.txt | grep -F "Next: npx genter-cli install"
       - name: The command starts
         run: node bin/genter.js
