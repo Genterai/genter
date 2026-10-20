@@ -1,0 +1,9 @@
+{
+  "name": "genter",
+  "description": "Your agent searches what your project decided before it answers: the local Genter server (search and read over this project's files and your notes, read again at every question, no key) and the genter skill, which cites the [id] and place of each answer and repeats Genter's marks as quotes.",
+  "author": { "name": "Genterai", "url": "https://github.com/Genterai" },
+  "homepage": "https://github.com/Genterai/genter",
+  "repository": "https://github.com/Genterai/genter",
+  "license": "Apache-2.0",
+  "keywords": ["genter", "mcp", "search", "decisions", "docs", "memory"]
+}
