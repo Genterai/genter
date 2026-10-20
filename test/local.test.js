@@ -379,7 +379,7 @@ describe("the genter command", () => {
     }
   });
 
-  it("[rl:cli/cloud-own-server] never reaches Genter Cloud: no token read, ask and mcp answer from this computer, login names the MCP address", async () => {
+  it("[rl:cli/cloud-own-server] never reaches Genter Cloud: no token read or kept, ask and mcp answer from this computer, login, logout and --cloud name the MCP address", async () => {
     // A stand-in for the old token API, and a token where 0.3 looked for one: in the env and in config.json.
     const seen = [];
     const server = createServer((req, res) => {
@@ -391,29 +391,48 @@ describe("the genter command", () => {
     try {
       const token = `gnt_${"a".repeat(43)}`;
       const env = { GENTER_TOKEN: token, GENTER_URL: `http://127.0.0.1:${server.address().port}` };
+      const file = join(pkg.home, "config.json");
+      const config = () => JSON.parse(readFileSync(file, "utf8"));
+      // What 0.3's genter login left: the token beside the rest of the config, which stays as it is.
+      const signedIn = () => writeFileSync(file, JSON.stringify({ ...config(), cloud: { token, url: env.GENTER_URL, workspace: "Acme" } }), { mode: 0o600 });
       mkdirSync(pkg.home, { recursive: true });
-      writeFileSync(join(pkg.home, "config.json"), JSON.stringify({ cloud: { token, url: env.GENTER_URL, workspace: "Acme" } }), { mode: 0o600 });
+      writeFileSync(file, "{}");
+      signedIn();
 
       const asked = await pkg.start(["ask", "production"], { env });
       assert.equal(asked.status, 0, asked.stderr);
       assert.match(asked.stdout, /docs\/deploy\.md/);
-      assert.doesNotMatch(asked.stdout + asked.stderr, /Genter Cloud|From the cloud/);
+      assert.doesNotMatch(asked.stdout, /Genter Cloud|From the cloud/);
+      assert.match(asked.stderr, /removed the Genter Cloud token genter 0\.3 kept in .*config\.json/);
+      assert.equal(config().cloud, undefined);
+      assert.ok(config().secret, "the rest of the config is kept");
+      if (process.platform !== "win32") assert.equal(statSync(file).mode & 0o777, 0o600);
+      const again = await pkg.start(["ask", "production"], { env });
+      assert.doesNotMatch(again.stderr, /Genter Cloud/);
 
+      signedIn();
       const rpc = (id, method, params) => `${JSON.stringify({ jsonrpc: "2.0", id, method, params })}\n`;
       const mcp = await pkg.start(["mcp"], { env, input: rpc(1, "initialize", { protocolVersion: "2025-06-18" }) + rpc(2, "tools/list") + rpc(3, "tools/call", { name: "genter_find", arguments: { question: "production" } }) });
       const [init, list, found] = mcp.stdout.trim().split("\n").map((l) => JSON.parse(l));
       assert.doesNotMatch(JSON.stringify([init, list]), /Genter Cloud|workspace/);
       assert.match(found.result.content[0].text, /docs\/deploy\.md/);
       assert.doesNotMatch(found.result.content[0].text, /Genter Cloud|From the cloud/);
+      assert.equal(config().cloud, undefined);
+      // 0.3's --local changes nothing now; its --cloud is gone like login.
+      const only = await pkg.start(["mcp", "--local"], { env, input: rpc(1, "initialize", { protocolVersion: "2025-06-18" }) });
+      assert.equal(JSON.parse(only.stdout.trim()).result.serverInfo.name, init.result.serverInfo.name, only.stderr);
+      assert.equal(JSON.parse((await pkg.start(["ask", "--json", "--local", "production"], { env })).stdout).question, "production");
       assert.deepEqual(seen, []);
 
-      for (const command of ["login", "logout"]) {
-        const out = await pkg.start([command, token], { env });
-        assert.equal(out.status, 1);
-        assert.match(out.stderr, new RegExp(`genter ${command} is gone[\\s\\S]*OAuth[\\s\\S]*https://genter\\.ai/api/mcp`));
+      for (const args of [["login", token], ["logout"], ["ask", "production", "--cloud"]]) {
+        signedIn();
+        const out = await pkg.start(args, { env });
+        assert.equal(out.status, 1, args.join(" "));
+        assert.equal(out.stdout, "");
+        assert.match(out.stderr, new RegExp(`${args[0] === "ask" ? "--cloud" : `genter ${args[0]}`} is gone[\\s\\S]*OAuth[\\s\\S]*https://genter\\.ai/api/mcp`));
+        assert.equal(config().cloud, undefined, args.join(" "));
       }
       assert.deepEqual(seen, []);
-      assert.deepEqual(JSON.parse(readFileSync(join(pkg.home, "config.json"), "utf8")).cloud.workspace, "Acme"); // left as it was, never read
     } finally {
       server.close();
       pkg.done();

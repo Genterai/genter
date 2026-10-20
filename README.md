@@ -137,7 +137,7 @@ No dependencies. A docs assistant that answers from your folder and cites the fi
 [`examples/answer-with-sources.mjs`](examples/answer-with-sources.mjs):
 
 ```js
-import { createLocal, embedderFor, embeddingProvider } from "genter-cli"; // the same as "genter-cli/local"
+import { createLocal, embedderFor, embeddingProvider } from "genter-cli/local";
 
 const genter = createLocal({ embed: embedderFor(embeddingProvider()) }); // meaning: the first key set, else Ollama
 await genter.add("./docs");
@@ -190,8 +190,8 @@ claude mcp add --transport http genter-cloud https://genter.ai/api/mcp
 
 Claude, ChatGPT, Cursor, VS Code and other clients that take a remote MCP server add the same address. The client signs
 you in with OAuth the first time. Nothing is kept on your disk for it: genter-cli never calls Genter Cloud and holds no
-token. Your agent then asks `genter_find` about your folders and Genter Cloud's `search` and `read` about your apps,
-each with the places it cites.
+token (the first command removes the one 0.3's `genter login` kept). Your agent then asks `genter_find` about your
+folders and Genter Cloud's `search` and `read` about your apps, each with the places it cites.
 
 | | `genter-cli` | Genter Cloud |
 | -- | -- | -- |

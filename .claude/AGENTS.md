@@ -56,7 +56,5 @@ and the app takes it.
 
 ## Rules
 
-- No app has its own Anchor workflow: fields are found by name; per-app read and write helpers are an open question (the
-  archive's `what/writing.md`).
 - Nothing Genter reads is ever run: no `child_process`, `vm`, `eval`, `new Function` or `worker_threads` in `src/`.
 - No runtime dependencies and no peers: `genter-cli` installs alone.

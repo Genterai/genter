@@ -38,19 +38,24 @@ Decided:
   last two); the areas mcp, retrieval, search-agent, areas and area-listing and the cli lines [app-packages] and
   [ac-app-no-packages] are retired (the owner, 2026-10-20, plan step 0.2)
 * No version bump here: 0.4.0 is raised once Phase 0 is done, so this merge publishes nothing (plan, Phase 0)
+* No Genter Cloud token sits on the person's disk, the one 0.3 kept included: the first command after the upgrade
+  (`genter logout` among them) removes the `cloud` entry from `~/.genter/config.json`, keeps every other key and mode
+  0600, and says so in one line on stderr; nothing reads or sends that token any more, and the token API it was for
+  answers 404 (the owner, 2026-10-20, plan step 0.1)
+* 0.3's `--local` is accepted and changes nothing, since this computer is the only place `ask` and `mcp` look; an
+  MCP config with `genter mcp --local` keeps starting. 0.3's `--cloud` exits 1 naming the MCP address, like `login`,
+  so a question meant only for the apps never gets a silent local answer (plan step 0.1)
 Open:
-* A Genter Cloud token that 0.3's `genter login` kept in `~/.genter/config.json` stays there untouched: nothing reads
-  or sends it any more, and the token API it was for answers 404. Proposal: leave the person's file as it is in this
-  step, and decide with the 0.4.0 release whether genter drops the old `cloud` entry on its first run, with a one-line
-  notice [non-blocking: nothing new is kept and nothing is sent]
 * `src/drift.js` keeps four exports only the apps engine used (`signalsOf`, `areaStats`, `sourceCount`,
   `sourcesLine`). Proposal: steps 0.4 and 0.5, which change `src/drift.js`, drop them, so two open pull requests do
   not edit the same lines [non-blocking]
 * harden's finding-truth.md names `genter-cli@0.3 login` and `GENTER_TOKEN`. Proposal: rewritten when harden's pin
   moves to 0.4, in the release that moves it (plan step 0.2) [non-blocking]
 Proof: `test/local.test.js` "[rl:cli/cloud-own-server]": a token in the env and in config.json, and a stand-in for the
-old token API, then `ask` and `genter mcp` answer from the folder and the stand-in sees no request; `login` and
-`logout` exit 1 naming the MCP address (it fails on 9aa0384) / "[rl:cli/help]": the help ends with the MCP address
+old token API, then `ask` and `genter mcp` answer from the folder and the stand-in sees no request; the first command
+removes the config's token, keeps its secret and mode 0600, and says so once; `mcp --local` answers `initialize`;
+`login`, `logout` and `ask x --cloud` exit 1 naming the MCP address and remove the token (it fails on 9aa0384 and on
+this PR's first commit) / "[rl:cli/help]": the help ends with the MCP address
 and names no login, token or dashboard; app commands are unknown / `test/anchor.test.js` "[rl:local-search/ids-stable]"
 pins ids and digests made by 0.3.0, and a one-off script found `src/anchor.js` equal to 0.3.0's helpers on every file
 of this repository and of Genterai/harden (779 checks) / `test.yml` packs the package, installs the tarball in a clean
@@ -59,9 +64,10 @@ folder and imports the three exports (on 0.3.0 `genter-cli` fails with ERR_MODUL
 
 ## Red lines after
 
-* cli/cloud-own-server: new, Genter Cloud is its own MCP server; genter-cli never calls it and keeps no token
+* cli/cloud-own-server: new, Genter Cloud is its own MCP server; genter-cli never calls it and keeps no token, the
+  first command removes the one 0.3 kept; `--local` changes nothing, `--cloud` exits 1 like `login` and `logout`
 * cli/no-packages: text changed, the commands no longer include `login` and `logout`
 * cli/help: text changed, the help's last line is Genter Cloud's MCP address, not genter.ai
 * local-search/ids-stable: new, an upgrade keeps a place's id and digest
-* security/never-run: text changed, nothing Genter reads is run (skills left with the apps engine); the test scans all
-  of `src/`
+* security/never-run: text changed, nothing Genter reads is run (skills left with the apps engine); the test scans
+  every file under `src/`, subfolders included, and catches `vm` however it is imported

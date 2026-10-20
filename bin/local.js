@@ -1,6 +1,6 @@
 // The genter command, with no keys and no packages: folders, files, websites and notes (src/local.js), and the same as
 // an MCP server over stdio (src/mcp-server.js).
-import { readFileSync } from "node:fs";
+import { readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { runDemo } from "../src/demo.js";
 import { createLocal, embedderFor, embeddingProvider, findText, genterHome } from "../src/local.js";
@@ -9,7 +9,7 @@ import { serveMcp } from "../src/mcp-server.js";
 const version = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")).version;
 
 // Genter Cloud is not reached from here: it is its own MCP server in the person's AI tool, which signs in with OAuth,
-// so no token is kept on this computer.
+// so no token is kept on this computer (the one 0.3's genter login kept is dropped, below).
 const CLOUD = "https://genter.ai/api/mcp";
 const CLOUD_LINE = `Genter Cloud finds in your team's apps (GitHub, Slack, Notion and 500 more): add it to your AI tool as its own MCP
 server, next to genter mcp. The tool signs in with OAuth, and nothing is kept on this computer: ${CLOUD}`;
@@ -44,7 +44,8 @@ function parse(argv) {
     else if (a.startsWith("--provider=")) flags.provider = a.slice(11);
     else if (a === "--limit" || a === "--depth") flags[a.slice(2)] = Number(argv[++i]);
     else if (a.startsWith("--limit=") || a.startsWith("--depth=")) flags[a.slice(2, 7)] = Number(a.slice(8));
-    else words.push(a);
+    else if (a === "--cloud") flags.cloud = true;
+    else if (a !== "--local") words.push(a); // 0.3's --local: this computer is the only place now
   }
   return { flags, words };
 }
@@ -57,6 +58,22 @@ function config(home) {
   }
 }
 
+// 0.3's genter login kept a Genter Cloud token in config.json. Nothing reads it now, so the first command drops it and
+// keeps the rest of the file, still readable by its owner only.
+function dropCloudToken(home, c) {
+  if (!c.cloud) return c;
+  const { cloud, ...rest } = c;
+  const file = join(home, "config.json");
+  try {
+    writeFileSync(`${file}.${process.pid}.tmp`, JSON.stringify(rest, null, 2), { mode: 0o600 });
+    renameSync(`${file}.${process.pid}.tmp`, file);
+    console.error(`genter: removed the Genter Cloud token genter 0.3 kept in ${file}; nothing uses it now`);
+  } catch (error) {
+    console.error(`genter: delete "cloud" from ${file}: it holds the Genter Cloud token genter 0.3 kept, which nothing uses now (${error.message})`);
+  }
+  return rest;
+}
+
 const say = (flags, data, text) => console.log(flags.json ? JSON.stringify(data, null, 2) : text);
 
 export async function local(argv) {
@@ -65,19 +82,17 @@ export async function local(argv) {
   if (command === "--version" || command === "-v") return console.log(version);
   if (["help", "--help", "-h"].includes(command)) return console.log(HELP);
   if (command === "demo") return runDemo();
-  if (command === "login" || command === "logout") {
-    console.error(`genter ${command} is gone.\n${CLOUD_LINE}`);
-    process.exitCode = 1;
-    return;
-  }
-  if (!["add", "ask", "remember", "forget", "sources", "mcp"].includes(command)) {
+  if (!["add", "ask", "remember", "forget", "sources", "mcp", "login", "logout"].includes(command)) {
     console.error(`Unknown command: ${command}\n\n${HELP}`);
     process.exitCode = 1;
     return;
   }
+  // 0.3's ways to Genter Cloud: it is its own MCP server now.
+  const gone = command === "login" || command === "logout" ? `genter ${command}` : flags.cloud ? "--cloud" : null;
   try {
     const home = genterHome();
-    const c = config(home);
+    const c = dropCloudToken(home, config(home));
+    if (gone) throw new Error(`${gone} is gone.\n${CLOUD_LINE}`);
     const semantic = flags.semantic || Boolean(flags.provider) || process.env.GENTER_SEMANTIC === "1" || c.semantic === true;
     const embed = semantic ? embedderFor(embeddingProvider({ env: process.env, config: c, name: flags.provider })) : undefined;
     const g = createLocal({ home, userId: process.env.GENTER_USER_ID || c.user_id || "default", embed });

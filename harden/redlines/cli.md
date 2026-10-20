@@ -25,8 +25,10 @@ keys), [cloud-own-server] (no token on the person's disk), and the local MCP con
 ### Genter Cloud
 
 * **[cloud-own-server]** Genter Cloud is its own MCP server in the person's AI tool (`https://genter.ai/api/mcp`, the
-  tool signs in with OAuth): genter-cli never calls it, reads no token for it and keeps nothing for it; `ask` and
-  `mcp` answer from this computer only, and `genter login` and `genter logout` exit 1 naming that address.
+  tool signs in with OAuth): genter-cli never calls it, reads no token for it and keeps nothing for it, and the first
+  command removes the token 0.3's `genter login` kept in the config, saying so on stderr; `ask` and `mcp` answer from
+  this computer only (0.3's `--local` changes nothing), and `genter login`, `genter logout` and `--cloud` exit 1
+  naming that address.
 
 ### The local MCP server
 
