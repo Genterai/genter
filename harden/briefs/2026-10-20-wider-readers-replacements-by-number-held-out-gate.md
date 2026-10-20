@@ -53,7 +53,11 @@ explicit-only and local-search/current-first name the new paths without changing
 readers/declarative, restricted-patterns, no-network, secrets-never-read, off-honoured, contract-tested (every new reader
 has fixtures and expected output, checked by `genter reader check` and `test/readers.test.js` in CI);
 local-search/current-first (a replacement is brought first only for a file inside the project this search reads);
-driftbench/old-first; zero runtime dependencies; nothing in `src/` spawns a process; old-answer/never-worse holds again
+driftbench/old-first; contract/marks (a replacement named by its id is a place this project reads, so the mark names
+it by its number, as a link's place is named); serve/async-reads (finding the file an id names lists a folder's names,
+a synchronous metadata call, and reads no text); remote/anchors-not-copies (only files inside the project are looked
+for by id; an MCP server's documents are read as before); zero runtime dependencies; nothing in `src/` spawns a
+process; old-answer/never-worse holds again
 (no loss with the chain rule), its guard now failing on any loss. old-answer/counts changed (a question's current
 answer includes its chain, both counts published) and old-answer/questions-reviewed (`later`).
 Decided:
