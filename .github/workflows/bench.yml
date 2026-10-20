@@ -1,9 +1,10 @@
 name: bench
-# DriftBench in public, every week and on demand (Genterai/specs quality/driftbench.md, scheduled-run): the arms that need
-# no key (genter, an index built once, an index re-synced every 15 and every 60 minutes) and what it takes, on a fresh
-# runner. The results are kept as an artifact of the run. The run fails when genter answers any stale fact after the
-# edits, at any time after them, or its current share falls more than 5 points below the README's. It does not run on
-# pull requests: whether it blocks a merge is not decided.
+# DriftBench and the old-answer test in public, every week and on demand (Genterai/specs quality/driftbench.md,
+# scheduled-run): DriftBench's arms that need no key (genter, an index built once, an index re-synced every 15 and every
+# 60 minutes) and what it takes, on a fresh runner; the old-answer test in its own job below. The results are kept as
+# an artifact of the run. The run fails when genter answers any stale fact after the edits, at any time after them, or
+# its current share falls more than 5 points below the README's. It does not run on pull requests: whether it blocks a
+# merge is not decided.
 on:
   schedule:
     - cron: "17 6 * * 1" # Mondays, 06:17 UTC
@@ -35,5 +36,28 @@ jobs:
         if: ${{ !cancelled() }}
         with:
           name: driftbench-${{ github.run_number }}
+          path: out/
+          retention-days: 90
+  old-answer:
+    # The old-answer test (bench/old-answer): plain ranking and genter over the same sections of DriftBench's deprecated
+    # kind and three public archives, each at the commit questions.json names (fetched with git from github.com). The
+    # run fails when genter leaves a replaced answer unmarked in its first five or does worse than plain ranking.
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with: { node-version: 22 }
+      - name: The old-answer test
+        run: |
+          mkdir -p out
+          node bench/old-answer/run.mjs --cache "$RUNNER_TEMP/repos" --out "out/old-answer-$(date -u +%F).json" --md "out/old-answer-$(date -u +%F).md" --guard
+      - name: Report
+        if: ${{ !cancelled() }}
+        run: cat out/*.md >> "$GITHUB_STEP_SUMMARY" || true
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: old-answer-${{ github.run_number }}
           path: out/
           retention-days: 90

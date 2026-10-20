@@ -1,0 +1,1363 @@
+{
+  "date": "2026-10-20",
+  "version": "0.3.1",
+  "k": 5,
+  "offline": false,
+  "skipped": [],
+  "totals": {
+    "plain": {
+      "n": 39,
+      "old_first": 8,
+      "old_unmarked": 31,
+      "current_first": 20,
+      "current_top5": 32
+    },
+    "genter": {
+      "n": 39,
+      "old_first": 7,
+      "old_unmarked": 0,
+      "current_first": 21,
+      "current_top5": 32
+    }
+  },
+  "lead": {
+    "plain_current_first": 0.5128205128205128,
+    "local_picture_leads": true
+  },
+  "sources": [
+    {
+      "id": "driftbench",
+      "title": "DriftBench, deprecated kind",
+      "url": "https://github.com/Genterai/genter/tree/main/bench/drift",
+      "sections": 341,
+      "plain": {
+        "n": 5,
+        "old_first": 1,
+        "old_unmarked": 5,
+        "current_first": 4,
+        "current_top5": 5
+      },
+      "genter": {
+        "n": 5,
+        "old_first": 0,
+        "old_unmarked": 0,
+        "current_first": 5,
+        "current_top5": 5
+      }
+    },
+    {
+      "id": "python/peps",
+      "title": "Python Enhancement Proposals",
+      "url": "https://github.com/python/peps/tree/1317769c334c658db28aa5336d910f58443049eb",
+      "commit": "1317769c334c658db28aa5336d910f58443049eb",
+      "committed": "2026-10-20T11:02:49-07:00",
+      "sections": 11228,
+      "plain": {
+        "n": 31,
+        "old_first": 7,
+        "old_unmarked": 24,
+        "current_first": 13,
+        "current_top5": 24
+      },
+      "genter": {
+        "n": 31,
+        "old_first": 7,
+        "old_unmarked": 0,
+        "current_first": 13,
+        "current_top5": 24
+      }
+    },
+    {
+      "id": "kubernetes/enhancements",
+      "title": "Kubernetes Enhancement Proposals",
+      "url": "https://github.com/kubernetes/enhancements/tree/5b503a75369bdfdd494a2c2c72107a41bf6dd1a8",
+      "commit": "5b503a75369bdfdd494a2c2c72107a41bf6dd1a8",
+      "committed": "2026-10-17T20:21:36+00:00",
+      "sections": 17666,
+      "plain": {
+        "n": 1,
+        "old_first": 0,
+        "old_unmarked": 1,
+        "current_first": 1,
+        "current_top5": 1
+      },
+      "genter": {
+        "n": 1,
+        "old_first": 0,
+        "old_unmarked": 0,
+        "current_first": 1,
+        "current_top5": 1
+      }
+    },
+    {
+      "id": "jaegertracing/jaeger",
+      "title": "Jaeger's RFCs and ADRs",
+      "url": "https://github.com/jaegertracing/jaeger/tree/ca047c72f34cf413c16d1118e19c7419de04bbab",
+      "commit": "ca047c72f34cf413c16d1118e19c7419de04bbab",
+      "committed": "2026-10-19T20:11:12-04:00",
+      "sections": 1337,
+      "plain": {
+        "n": 2,
+        "old_first": 0,
+        "old_unmarked": 1,
+        "current_first": 2,
+        "current_top5": 2
+      },
+      "genter": {
+        "n": 2,
+        "old_first": 0,
+        "old_unmarked": 0,
+        "current_first": 2,
+        "current_top5": 2
+      }
+    }
+  ],
+  "questions": [
+    {
+      "id": "driftbench/q38",
+      "source": "driftbench",
+      "question": "Where do responders meet for the live call during a SEV1?",
+      "replaced": "ops/incident-response.md",
+      "current": "ops/incident-management.md",
+      "reviewed": "DriftBench's own question (bench/drift/questions.json)",
+      "plain": {
+        "old_first": true,
+        "old_unmarked": true,
+        "current_first": false,
+        "current_top5": true,
+        "first": "ops/incident-response.md"
+      },
+      "genter": {
+        "old_first": false,
+        "old_unmarked": false,
+        "current_first": true,
+        "current_top5": true,
+        "first": "ops/incident-management.md",
+        "first_marked": false,
+        "top": [
+          "ops/incident-management.md",
+          "ops/incident-response.md (marked)",
+          "ops/incident-management.md",
+          "ops/incident-response.md (marked)",
+          "ops/oncall-eu.md"
+        ]
+      }
+    },
+    {
+      "id": "driftbench/q39",
+      "source": "driftbench",
+      "question": "How many business days after a SEV1 is closed is its written review due?",
+      "replaced": "ops/incident-response.md",
+      "current": "ops/incident-management.md",
+      "reviewed": "DriftBench's own question (bench/drift/questions.json)",
+      "plain": {
+        "old_first": false,
+        "old_unmarked": true,
+        "current_first": true,
+        "current_top5": true,
+        "first": "ops/incident-management.md"
+      },
+      "genter": {
+        "old_first": false,
+        "old_unmarked": false,
+        "current_first": true,
+        "current_top5": true,
+        "first": "ops/incident-management.md",
+        "first_marked": false,
+        "top": [
+          "ops/incident-management.md",
+          "ops/incident-response.md (marked)",
+          "ops/incident-management.md",
+          "ops/incident-response.md (marked)",
+          "support/escalation.md"
+        ]
+      }
+    },
+    {
+      "id": "driftbench/q40",
+      "source": "driftbench",
+      "question": "Which system do our services evaluate feature flags against?",
+      "replaced": "engineering/feature-flags.md",
+      "current": "engineering/feature-flags-openfeature.md",
+      "reviewed": "DriftBench's own question (bench/drift/questions.json)",
+      "plain": {
+        "old_first": false,
+        "old_unmarked": true,
+        "current_first": true,
+        "current_top5": true,
+        "first": "engineering/feature-flags-openfeature.md"
+      },
+      "genter": {
+        "old_first": false,
+        "old_unmarked": false,
+        "current_first": true,
+        "current_top5": true,
+        "first": "engineering/feature-flags-openfeature.md",
+        "first_marked": false,
+        "top": [
+          "engineering/feature-flags-openfeature.md",
+          "ops/deploy-staging.md",
+          "engineering/feature-flags-openfeature.md",
+          "engineering/feature-flags.md (marked)",
+          "engineering/feature-flags.md (marked)"
+        ]
+      }
+    },
+    {
+      "id": "driftbench/q41",
+      "source": "driftbench",
+      "question": "Which CI service runs the checks on every pull request?",
+      "replaced": "engineering/ci.md",
+      "current": "engineering/ci-pipeline.md",
+      "reviewed": "DriftBench's own question (bench/drift/questions.json)",
+      "plain": {
+        "old_first": false,
+        "old_unmarked": true,
+        "current_first": true,
+        "current_top5": true,
+        "first": "engineering/ci-pipeline.md"
+      },
+      "genter": {
+        "old_first": false,
+        "old_unmarked": false,
+        "current_first": true,
+        "current_top5": true,
+        "first": "engineering/ci-pipeline.md",
+        "first_marked": false,
+        "top": [
+          "engineering/ci-pipeline.md",
+          "engineering/ci.md (marked)",
+          "engineering/ci.md (marked)",
+          "engineering/ci-pipeline.md",
+          "engineering/code-review.md"
+        ]
+      }
+    },
+    {
+      "id": "driftbench/q42",
+      "source": "driftbench",
+      "question": "When are customer-hosted private probe locations expected to become generally available?",
+      "replaced": "product/roadmap-2026.md",
+      "current": "product/roadmap-2027.md",
+      "reviewed": "DriftBench's own question (bench/drift/questions.json)",
+      "plain": {
+        "old_first": false,
+        "old_unmarked": true,
+        "current_first": true,
+        "current_top5": true,
+        "first": "product/roadmap-2027.md"
+      },
+      "genter": {
+        "old_first": false,
+        "old_unmarked": false,
+        "current_first": true,
+        "current_top5": true,
+        "first": "product/roadmap-2027.md",
+        "first_marked": false,
+        "top": [
+          "product/roadmap-2027.md",
+          "product/roadmap-2027.md",
+          "product/roadmap-2026.md (marked)",
+          "product/roadmap-2026.md (marked)",
+          "engineering/architecture.md"
+        ]
+      }
+    },
+    {
+      "id": "peps/0005",
+      "source": "python/peps",
+      "question": "How long must a deprecated Python feature keep warning before it can be removed?",
+      "replaced": "peps/pep-0005.rst",
+      "current": "peps/pep-0387.rst",
+      "pair": "peps/pep-0005.rst says \"Superseded-By: 387\" in its header (the rfc reader's mark names PEP 387 by number, not by place)",
+      "current_says": "Wait for the warning to appear in at least two minor Python releases.",
+      "reviewed": "pending owner",
+      "plain": {
+        "old_first": false,
+        "old_unmarked": true,
+        "current_first": false,
+        "current_top5": false,
+        "first": "peps/pep-2026.rst"
+      },
+      "genter": {
+        "old_first": false,
+        "old_unmarked": false,
+        "current_first": false,
+        "current_top5": false,
+        "first": "peps/pep-2026.rst",
+        "first_marked": false,
+        "top": [
+          "peps/pep-2026.rst",
+          "peps/pep-0608.rst",
+          "peps/pep-0005.rst (marked)",
+          "peps/pep-0749.rst",
+          "peps/pep-0606.rst"
+        ]
+      }
+    },
+    {
+      "id": "peps/0102",
+      "source": "python/peps",
+      "question": "What steps does the release manager follow to make a Python bugfix release?",
+      "replaced": "peps/pep-0102.rst",
+      "current": "peps/pep-0101.rst",
+      "pair": "peps/pep-0102.rst says \"Superseded-By: 101\" in its header (the rfc reader's mark names PEP 101 by number, not by place)",
+      "current_says": "The release manager's checklist for every release.",
+      "reviewed": "pending owner",
+      "plain": {
+        "old_first": false,
+        "old_unmarked": true,
+        "current_first": true,
+        "current_top5": true,
+        "first": "peps/pep-0101.rst"
+      },
+      "genter": {
+        "old_first": false,
+        "old_unmarked": false,
+        "current_first": true,
+        "current_top5": true,
+        "first": "peps/pep-0101.rst",
+        "first_marked": false,
+        "top": [
+          "peps/pep-0101.rst",
+          "peps/api/index.rst",
+          "peps/pep-0102.rst (marked)",
+          "peps/pep-0602.rst",
+          "peps/pep-0101.rst"
+        ]
+      }
+    },
+    {
+      "id": "peps/0215",
+      "source": "python/peps",
+      "question": "How do I substitute $name placeholders in a string with values from a mapping?",
+      "replaced": "peps/pep-0215.rst",
+      "current": "peps/pep-0292.rst",
+      "pair": "peps/pep-0215.rst says \"Superseded-By: 292\" in its header (the rfc reader's mark names PEP 292 by number, not by place)",
+      "current_says": "string.Template with $-substitution.",
+      "reviewed": "pending owner",
+      "plain": {
+        "old_first": false,
+        "old_unmarked": false,
+        "current_first": true,
+        "current_top5": true,
+        "first": "peps/pep-0292.rst"
+      },
+      "genter": {
+        "old_first": false,
+        "old_unmarked": false,
+        "current_first": true,
+        "current_top5": true,
+        "first": "peps/pep-0292.rst",
+        "first_marked": false,
+        "top": [
+          "peps/pep-0292.rst",
+          "peps/pep-0292.rst",
+          "peps/pep-0804.rst",
+          "peps/pep-0804.rst",
+          "peps/pep-0498.rst"
+        ]
+      }
+    },
+    {
+      "id": "peps/0216",
+      "source": "python/peps",
+      "question": "Which markup should be used to write structured Python docstrings?",
+      "replaced": "peps/pep-0216.rst",
+      "current": "peps/pep-0287.rst",
+      "pair": "peps/pep-0216.rst says \"Superseded-By: 287\" in its header (the rfc reader's mark names PEP 287 by number, not by place)",
+      "current_says": "reStructuredText.",
+      "reviewed": "pending owner",
+      "plain": {
+        "old_first": false,
+        "old_unmarked": true,
+        "current_first": true,
+        "current_top5": true,
+        "first": "peps/pep-0287.rst"
+      },
+      "genter": {
+        "old_first": false,
+        "old_unmarked": false,
+        "current_first": true,
+        "current_top5": true,
+        "first": "peps/pep-0287.rst",
+        "first_marked": false,
+        "top": [
+          "peps/pep-0287.rst",
+          "peps/pep-0287.rst",
+          "peps/pep-0216.rst (marked)",
+          "peps/pep-0257.rst",
+          "peps/pep-0256.rst"
+        ]
+      }
+    },
+    {
+      "id": "peps/0241",
+      "source": "python/peps",
+      "question": "Which metadata fields say what a package requires, provides and obsoletes?",
+      "replaced": "peps/pep-0241.rst",
+      "current": "peps/pep-0314.rst",
+      "pair": "peps/pep-0241.rst says \"Superseded-By: 314\" in its header (the rfc reader's mark names PEP 314 by number, not by place)",
+      "current_says": "Requires, Provides and Obsoletes, added in metadata 1.1.",
+      "reviewed": "pending owner",
+      "plain": {
+        "old_first": false,
+        "old_unmarked": false,
+        "current_first": true,
+        "current_top5": true,
+        "first": "peps/pep-0314.rst"
+      },
+      "genter": {
+        "old_first": false,
+        "old_unmarked": false,
+        "current_first": true,
+        "current_top5": true,
+        "first": "peps/pep-0314.rst",
+        "first_marked": true,
+        "top": [
+          "peps/pep-0314.rst (marked)",
+          "peps/pep-0345.rst (marked)",
+          "peps/pep-0345.rst (marked)",
+          "peps/pep-0725.rst",
+          "peps/pep-0725.rst"
+        ]
+      }
+    },
+    {
+      "id": "peps/0248",
+      "source": "python/peps",
+      "question": "What does the Python database API require a driver module to define at module level?",
+      "replaced": "peps/pep-0248.rst",
+      "current": "peps/pep-0249.rst",
+      "pair": "peps/pep-0248.rst says \"Superseded-By: 249\" in its header (the rfc reader's mark names PEP 249 by number, not by place)",
+      "current_says": "apilevel, threadsafety and paramstyle (DB-API 2.0).",
+      "reviewed": "pending owner",
+      "plain": {
+        "old_first": false,
+        "old_unmarked": true,
+        "current_first": false,
+        "current_top5": true,
+        "first": "peps/pep-0426.rst"
+      },
+      "genter": {
+        "old_first": false,
+        "old_unmarked": false,
+        "current_first": false,
+        "current_top5": true,
+        "first": "peps/pep-0426.rst",
+        "first_marked": true,
+        "top": [
+          "peps/pep-0426.rst (marked)",
+          "peps/pep-0249.rst",
+          "peps/pep-0831.rst",
+          "peps/pep-0248.rst (marked)",
+          "peps/pep-0249.rst"
+        ]
+      }
+    },
+    {
+      "id": "peps/0291",
+      "source": "python/peps",
+      "question": "Which backward compatibility rules apply when changing a standard library module?",
+      "replaced": "peps/pep-0291.rst",
+      "current": "peps/pep-0387.rst",
+      "pair": "peps/pep-0291.rst says \"Superseded-By: 387\" in its header (the rfc reader's mark names PEP 387 by number, not by place)",
+      "current_says": "The general backwards compatibility policy.",
+      "reviewed": "pending owner",
+      "plain": {
+        "old_first": false,
+        "old_unmarked": true,
+        "current_first": true,
+        "current_top5": true,
+        "first": "peps/pep-0387.rst"
+      },
+      "genter": {
+        "old_first": false,
+        "old_unmarked": false,
+        "current_first": true,
+        "current_top5": true,
+        "first": "peps/pep-0387.rst",
+        "first_marked": false,
+        "top": [
+          "peps/pep-0387.rst",
+          "peps/pep-0497.rst",
+          "peps/pep-0842.rst",
+          "peps/pep-0291.rst (marked)",
+          "peps/pep-0387.rst"
+        ]
+      }
+    },
+    {
+      "id": "peps/0314",
+      "source": "python/peps",
+      "question": "How does a package's metadata say which Python versions it supports?",
+      "replaced": "peps/pep-0314.rst",
+      "current": "peps/pep-0345.rst",
+      "pair": "peps/pep-0314.rst says \"Superseded-By: 345\" in its header (the rfc reader's mark names PEP 345 by number, not by place)",
+      "current_says": "Requires-Python (metadata 1.2).",
+      "reviewed": "pending owner",
+      "plain": {
+        "old_first": false,
+        "old_unmarked": false,
+        "current_first": false,
+        "current_top5": false,
+        "first": "peps/pep-0808.rst"
+      },
+      "genter": {
+        "old_first": false,
+        "old_unmarked": false,
+        "current_first": false,
+        "current_top5": false,
+        "first": "peps/pep-0808.rst",
+        "first_marked": false,
+        "top": [
+          "peps/pep-0808.rst",
+          "peps/pep-0825/appendix-metadata-consistency.rst",
+          "peps/pep-0723.rst",
+          "peps/pep-0808.rst",
+          "peps/pep-0621.rst"
+        ]
+      }
+    },
+    {
+      "id": "peps/0333",
+      "source": "python/peps",
+      "question": "How should a WSGI application handle bytes and strings for the response body on Python 3?",
+      "replaced": "peps/pep-0333.rst",
+      "current": "peps/pep-3333.rst",
+      "pair": "peps/pep-0333.rst says \"Superseded-By: 3333\" in its header (the rfc reader's mark names PEP 3333 by number, not by place)",
+      "current_says": "WSGI 1.0.1: bytestrings for bodies, native strings for headers.",
+      "reviewed": "pending owner",
+      "plain": {
+        "old_first": false,
+        "old_unmarked": true,
+        "current_first": true,
+        "current_top5": true,
+        "first": "peps/pep-3333.rst"
+      },
+      "genter": {
+        "old_first": false,
+        "old_unmarked": false,
+        "current_first": true,
+        "current_top5": true,
+        "first": "peps/pep-3333.rst",
+        "first_marked": false,
+        "top": [
+          "peps/pep-3333.rst",
+          "peps/pep-0444.rst",
+          "peps/pep-0444.rst",
+          "peps/pep-0333.rst (marked)",
+          "peps/pep-3333.rst"
+        ]
+      }
+    },
+    {
+      "id": "peps/0345",
+      "source": "python/peps",
+      "question": "How does package metadata declare the markup format of the long description?",
+      "replaced": "peps/pep-0345.rst",
+      "current": "peps/pep-0566.rst",
+      "pair": "peps/pep-0345.rst says \"Superseded-By: 566\" in its header (the rfc reader's mark names PEP 566 by number, not by place)",
+      "current_says": "Description-Content-Type (metadata 2.1).",
+      "reviewed": "pending owner",
+      "plain": {
+        "old_first": false,
+        "old_unmarked": true,
+        "current_first": true,
+        "current_top5": true,
+        "first": "peps/pep-0566.rst"
+      },
+      "genter": {
+        "old_first": false,
+        "old_unmarked": false,
+        "current_first": true,
+        "current_top5": true,
+        "first": "peps/pep-0566.rst",
+        "first_marked": false,
+        "top": [
+          "peps/pep-0566.rst",
+          "peps/pep-0621.rst",
+          "peps/pep-0345.rst (marked)",
+          "peps/pep-0314.rst (marked)",
+          "peps/pep-0566.rst"
+        ]
+      }
+    },
+    {
+      "id": "peps/0354",
+      "source": "python/peps",
+      "question": "How do I define an enumeration type with the standard library?",
+      "replaced": "peps/pep-0354.rst",
+      "current": "peps/pep-0435.rst",
+      "pair": "peps/pep-0354.rst says \"Superseded-By: 435\" in its header (the rfc reader's mark names PEP 435 by number, not by place)",
+      "current_says": "The enum module (Enum, IntEnum).",
+      "reviewed": "pending owner",
+      "plain": {
+        "old_first": false,
+        "old_unmarked": true,
+        "current_first": true,
+        "current_top5": true,
+        "first": "peps/pep-0435.rst"
+      },
+      "genter": {
+        "old_first": false,
+        "old_unmarked": false,
+        "current_first": true,
+        "current_top5": true,
+        "first": "peps/pep-0435.rst",
+        "first_marked": false,
+        "top": [
+          "peps/pep-0435.rst",
+          "peps/pep-0354.rst (marked)",
+          "peps/pep-0435.rst",
+          "peps/pep-0354.rst (marked)",
+          "peps/pep-0543.rst (marked)"
+        ]
+      }
+    },
+    {
+      "id": "peps/0386",
+      "source": "python/peps",
+      "question": "How are pre-release and post-release versions of a Python package numbered and ordered?",
+      "replaced": "peps/pep-0386.rst",
+      "current": "peps/pep-0440.rst",
+      "pair": "peps/pep-0386.rst says \"Superseded-By: 440\" in its header (the rfc reader's mark names PEP 440 by number, not by place)",
+      "current_says": "The version scheme of PEP 440.",
+      "reviewed": "pending owner",
+      "plain": {
+        "old_first": false,
+        "old_unmarked": true,
+        "current_first": true,
+        "current_top5": true,
+        "first": "peps/pep-0440.rst"
+      },
+      "genter": {
+        "old_first": false,
+        "old_unmarked": false,
+        "current_first": true,
+        "current_top5": true,
+        "first": "peps/pep-0440.rst",
+        "first_marked": false,
+        "top": [
+          "peps/pep-0440.rst",
+          "peps/pep-0440.rst",
+          "peps/pep-0386.rst (marked)",
+          "peps/pep-0386.rst (marked)",
+          "peps/pep-0345.rst (marked)"
+        ]
+      }
+    },
+    {
+      "id": "peps/0409",
+      "source": "python/peps",
+      "question": "How does raise ... from None suppress the context of a chained exception, and where is that recorded?",
+      "replaced": "peps/pep-0409.rst",
+      "current": "peps/pep-0415.rst",
+      "pair": "peps/pep-0409.rst says \"Superseded-By: 415\" in its header (the rfc reader's mark names PEP 415 by number, not by place)",
+      "current_says": "The __suppress_context__ attribute.",
+      "reviewed": "pending owner",
+      "plain": {
+        "old_first": false,
+        "old_unmarked": true,
+        "current_first": false,
+        "current_top5": false,
+        "first": "peps/pep-0344.rst"
+      },
+      "genter": {
+        "old_first": false,
+        "old_unmarked": false,
+        "current_first": false,
+        "current_top5": false,
+        "first": "peps/pep-0344.rst",
+        "first_marked": false,
+        "top": [
+          "peps/pep-0344.rst",
+          "peps/pep-3134.rst",
+          "peps/pep-0490.rst",
+          "peps/pep-0409.rst (marked)",
+          "peps/pep-0377.rst"
+        ]
+      }
+    },
+    {
+      "id": "peps/0426",
+      "source": "python/peps",
+      "question": "Which version of the core metadata format should packaging tools write, and can it be expressed as JSON?",
+      "replaced": "peps/pep-0426.rst",
+      "current": "peps/pep-0566.rst",
+      "pair": "peps/pep-0426.rst says \"Superseded-By: 566\" in its header (the rfc reader's mark names PEP 566 by number, not by place)",
+      "current_says": "Metadata 2.1, with a JSON-compatible form.",
+      "reviewed": "pending owner",
+      "plain": {
+        "old_first": false,
+        "old_unmarked": false,
+        "current_first": false,
+        "current_top5": false,
+        "first": "peps/pep-0819.rst"
+      },
+      "genter": {
+        "old_first": false,
+        "old_unmarked": false,
+        "current_first": false,
+        "current_top5": false,
+        "first": "peps/pep-0819.rst",
+        "first_marked": false,
+        "top": [
+          "peps/pep-0819.rst",
+          "peps/pep-0825.rst",
+          "peps/pep-0819.rst",
+          "peps/pep-0725.rst",
+          "peps/pep-0825.rst"
+        ]
+      }
+    },
+    {
+      "id": "peps/0431",
+      "source": "python/peps",
+      "question": "How can I get time zone information from the IANA database in the standard library?",
+      "replaced": "peps/pep-0431.rst",
+      "current": "peps/pep-0615.rst",
+      "pair": "peps/pep-0431.rst says \"Superseded-By: 615\" in its header (the rfc reader's mark names PEP 615 by number, not by place)",
+      "current_says": "The zoneinfo module.",
+      "reviewed": "pending owner",
+      "plain": {
+        "old_first": false,
+        "old_unmarked": true,
+        "current_first": true,
+        "current_top5": true,
+        "first": "peps/pep-0615.rst"
+      },
+      "genter": {
+        "old_first": false,
+        "old_unmarked": false,
+        "current_first": true,
+        "current_top5": true,
+        "first": "peps/pep-0615.rst",
+        "first_marked": false,
+        "top": [
+          "peps/pep-0615.rst",
+          "peps/pep-0615.rst",
+          "peps/pep-0431.rst (marked)",
+          "peps/pep-0596.rst",
+          "peps/pep-0431.rst (marked)"
+        ]
+      }
+    },
+    {
+      "id": "peps/0433",
+      "source": "python/peps",
+      "question": "Are file descriptors that Python opens inherited by child processes?",
+      "replaced": "peps/pep-0433.rst",
+      "current": "peps/pep-0446.rst",
+      "pair": "peps/pep-0433.rst says \"Superseded-By: 446\" in its header (the rfc reader's mark names PEP 446 by number, not by place)",
+      "current_says": "New file descriptors are non-inheritable.",
+      "reviewed": "pending owner",
+      "plain": {
+        "old_first": false,
+        "old_unmarked": true,
+        "current_first": true,
+        "current_top5": true,
+        "first": "peps/pep-0446.rst"
+      },
+      "genter": {
+        "old_first": false,
+        "old_unmarked": false,
+        "current_first": true,
+        "current_top5": true,
+        "first": "peps/pep-0446.rst",
+        "first_marked": false,
+        "top": [
+          "peps/pep-0446.rst",
+          "peps/pep-0446.rst",
+          "peps/pep-0433.rst (marked)",
+          "peps/pep-0433.rst (marked)",
+          "peps/pep-0324.rst"
+        ]
+      }
+    },
+    {
+      "id": "peps/0438",
+      "source": "python/peps",
+      "question": "Can a project on PyPI host its release files on an external site?",
+      "replaced": "peps/pep-0438.rst",
+      "current": "peps/pep-0470.rst",
+      "pair": "peps/pep-0438.rst says \"Superseded-By: 470\" in its header (the rfc reader's mark names PEP 470 by number, not by place)",
+      "current_says": "External hosting support is removed.",
+      "reviewed": "pending owner",
+      "plain": {
+        "old_first": true,
+        "old_unmarked": true,
+        "current_first": false,
+        "current_top5": true,
+        "first": "peps/pep-0438.rst"
+      },
+      "genter": {
+        "old_first": true,
+        "old_unmarked": false,
+        "current_first": false,
+        "current_top5": true,
+        "first": "peps/pep-0438.rst",
+        "first_marked": true,
+        "top": [
+          "peps/pep-0438.rst (marked)",
+          "peps/pep-0759.rst",
+          "peps/pep-0438.rst (marked)",
+          "peps/pep-0759.rst",
+          "peps/pep-0470.rst"
+        ]
+      }
+    },
+    {
+      "id": "peps/0501",
+      "source": "python/peps",
+      "question": "How can a string literal's interpolations be handed to my own function instead of being formatted right away?",
+      "replaced": "peps/pep-0501.rst",
+      "current": "peps/pep-0750.rst",
+      "pair": "peps/pep-0501.rst says \"Superseded-By: 750\" in its header (the rfc reader's mark names PEP 750 by number, not by place)",
+      "current_says": "Template strings (t-strings).",
+      "reviewed": "pending owner",
+      "plain": {
+        "old_first": true,
+        "old_unmarked": true,
+        "current_first": false,
+        "current_top5": true,
+        "first": "peps/pep-0501.rst"
+      },
+      "genter": {
+        "old_first": true,
+        "old_unmarked": false,
+        "current_first": false,
+        "current_top5": true,
+        "first": "peps/pep-0501.rst",
+        "first_marked": true,
+        "top": [
+          "peps/pep-0501.rst (marked)",
+          "peps/pep-0501.rst (marked)",
+          "peps/pep-0750.rst",
+          "peps/pep-0635.rst",
+          "peps/pep-0750.rst"
+        ]
+      }
+    },
+    {
+      "id": "peps/0509",
+      "source": "python/peps",
+      "question": "Can code rely on the private version tag that dictionaries carry?",
+      "replaced": "peps/pep-0509.rst",
+      "current": "peps/pep-0699.rst",
+      "pair": "peps/pep-0509.rst says \"Superseded-By: 699\" in its header (the rfc reader's mark names PEP 699 by number, not by place)",
+      "current_says": "The ma_version_tag field is removed.",
+      "reviewed": "pending owner",
+      "plain": {
+        "old_first": false,
+        "old_unmarked": true,
+        "current_first": true,
+        "current_top5": true,
+        "first": "peps/pep-0699.rst"
+      },
+      "genter": {
+        "old_first": false,
+        "old_unmarked": false,
+        "current_first": true,
+        "current_top5": true,
+        "first": "peps/pep-0699.rst",
+        "first_marked": false,
+        "top": [
+          "peps/pep-0699.rst",
+          "peps/pep-0825.rst",
+          "peps/pep-0699.rst",
+          "peps/pep-0509.rst (marked)",
+          "peps/pep-0509.rst (marked)"
+        ]
+      }
+    },
+    {
+      "id": "peps/0513",
+      "source": "python/peps",
+      "question": "Which platform tag should a portable Linux wheel carry?",
+      "replaced": "peps/pep-0513.rst",
+      "current": "peps/pep-0600.rst",
+      "pair": "peps/pep-0513.rst says \"Superseded-By: 600\" in its header (the rfc reader's mark names PEP 600 by number, not by place)",
+      "current_says": "manylinux_x_y tags (perennial manylinux).",
+      "reviewed": "pending owner",
+      "plain": {
+        "old_first": true,
+        "old_unmarked": true,
+        "current_first": false,
+        "current_top5": true,
+        "first": "peps/pep-0513.rst"
+      },
+      "genter": {
+        "old_first": true,
+        "old_unmarked": false,
+        "current_first": false,
+        "current_top5": true,
+        "first": "peps/pep-0513.rst",
+        "first_marked": true,
+        "top": [
+          "peps/pep-0513.rst (marked)",
+          "peps/pep-0600.rst",
+          "peps/pep-0513.rst (marked)",
+          "peps/pep-0817.rst",
+          "peps/pep-0817.rst"
+        ]
+      }
+    },
+    {
+      "id": "peps/0543",
+      "source": "python/peps",
+      "question": "How is a TLS client configured with the unified TLS API for Python?",
+      "replaced": "peps/pep-0543.rst",
+      "current": "peps/pep-0748.rst",
+      "pair": "peps/pep-0543.rst says \"Superseded-By: 748\" in its header (the rfc reader's mark names PEP 748 by number, not by place)",
+      "current_says": "TLSClientConfiguration.",
+      "reviewed": "pending owner",
+      "plain": {
+        "old_first": true,
+        "old_unmarked": true,
+        "current_first": false,
+        "current_top5": true,
+        "first": "peps/pep-0543.rst"
+      },
+      "genter": {
+        "old_first": true,
+        "old_unmarked": false,
+        "current_first": false,
+        "current_top5": true,
+        "first": "peps/pep-0543.rst",
+        "first_marked": true,
+        "top": [
+          "peps/pep-0543.rst (marked)",
+          "peps/pep-0543.rst (marked)",
+          "peps/pep-0748.rst",
+          "peps/pep-0748.rst",
+          "peps/pep-0741.rst"
+        ]
+      }
+    },
+    {
+      "id": "peps/0554",
+      "source": "python/peps",
+      "question": "How do I create another interpreter and run code in it from the standard library?",
+      "replaced": "peps/pep-0554.rst",
+      "current": "peps/pep-0734.rst",
+      "pair": "peps/pep-0554.rst says \"Superseded-By: 734\" in its header (the rfc reader's mark names PEP 734 by number, not by place)",
+      "current_says": "concurrent.interpreters.",
+      "reviewed": "pending owner",
+      "plain": {
+        "old_first": false,
+        "old_unmarked": false,
+        "current_first": false,
+        "current_top5": true,
+        "first": "peps/pep-0413.rst"
+      },
+      "genter": {
+        "old_first": false,
+        "old_unmarked": false,
+        "current_first": false,
+        "current_top5": true,
+        "first": "peps/pep-0413.rst",
+        "first_marked": false,
+        "top": [
+          "peps/pep-0413.rst",
+          "peps/pep-3151.rst",
+          "peps/pep-0734.rst",
+          "peps/pep-0734.rst",
+          "peps/pep-0413.rst"
+        ]
+      }
+    },
+    {
+      "id": "peps/0563",
+      "source": "python/peps",
+      "question": "When are function annotations evaluated in Python, and are they kept as strings?",
+      "replaced": "peps/pep-0563.rst",
+      "current": [
+        "peps/pep-0649.rst",
+        "peps/pep-0749.rst"
+      ],
+      "pair": "peps/pep-0563.rst says \"Superseded-By: 649, 749\" in its header (the rfc reader's mark names PEP 649 by number, not by place)",
+      "current_says": "Deferred evaluation through __annotate__ (PEP 649; PEP 749 implements it).",
+      "reviewed": "pending owner",
+      "plain": {
+        "old_first": false,
+        "old_unmarked": true,
+        "current_first": false,
+        "current_top5": true,
+        "first": "peps/pep-0484.rst"
+      },
+      "genter": {
+        "old_first": false,
+        "old_unmarked": false,
+        "current_first": false,
+        "current_top5": true,
+        "first": "peps/pep-0484.rst",
+        "first_marked": false,
+        "top": [
+          "peps/pep-0484.rst",
+          "peps/pep-0563.rst (marked)",
+          "peps/pep-0563.rst (marked)",
+          "peps/pep-0849.rst",
+          "peps/pep-0749.rst"
+        ]
+      }
+    },
+    {
+      "id": "peps/0571",
+      "source": "python/peps",
+      "question": "What does the manylinux2010 platform tag mean today?",
+      "replaced": "peps/pep-0571.rst",
+      "current": "peps/pep-0600.rst",
+      "pair": "peps/pep-0571.rst says \"Superseded-By: 600\" in its header (the rfc reader's mark names PEP 600 by number, not by place)",
+      "current_says": "An alias of manylinux_2_12.",
+      "reviewed": "pending owner",
+      "plain": {
+        "old_first": true,
+        "old_unmarked": true,
+        "current_first": false,
+        "current_top5": true,
+        "first": "peps/pep-0571.rst"
+      },
+      "genter": {
+        "old_first": true,
+        "old_unmarked": false,
+        "current_first": false,
+        "current_top5": true,
+        "first": "peps/pep-0571.rst",
+        "first_marked": true,
+        "top": [
+          "peps/pep-0571.rst (marked)",
+          "peps/pep-0571.rst (marked)",
+          "peps/pep-0599.rst (marked)",
+          "peps/pep-0600.rst",
+          "peps/pep-0599.rst (marked)"
+        ]
+      }
+    },
+    {
+      "id": "peps/0599",
+      "source": "python/peps",
+      "question": "Which glibc version does the manylinux2014 platform tag stand for?",
+      "replaced": "peps/pep-0599.rst",
+      "current": "peps/pep-0600.rst",
+      "pair": "peps/pep-0599.rst says \"Superseded-By: 600\" in its header (the rfc reader's mark names PEP 600 by number, not by place)",
+      "current_says": "An alias of manylinux_2_17 (glibc 2.17).",
+      "reviewed": "pending owner",
+      "plain": {
+        "old_first": true,
+        "old_unmarked": true,
+        "current_first": false,
+        "current_top5": true,
+        "first": "peps/pep-0599.rst"
+      },
+      "genter": {
+        "old_first": true,
+        "old_unmarked": false,
+        "current_first": false,
+        "current_top5": true,
+        "first": "peps/pep-0599.rst",
+        "first_marked": true,
+        "top": [
+          "peps/pep-0599.rst (marked)",
+          "peps/pep-0599.rst (marked)",
+          "peps/pep-0600.rst",
+          "peps/pep-0600.rst",
+          "peps/pep-0571.rst (marked)"
+        ]
+      }
+    },
+    {
+      "id": "peps/0601",
+      "source": "python/peps",
+      "question": "Is a return statement that leaves a finally block allowed?",
+      "replaced": "peps/pep-0601.rst",
+      "current": "peps/pep-0765.rst",
+      "pair": "peps/pep-0601.rst says \"Superseded-By: 765\" in its header (the rfc reader's mark names PEP 765 by number, not by place)",
+      "current_says": "A SyntaxWarning for return, break or continue that exits a finally block.",
+      "reviewed": "pending owner",
+      "plain": {
+        "old_first": false,
+        "old_unmarked": false,
+        "current_first": false,
+        "current_top5": false,
+        "first": "peps/pep-0346.rst"
+      },
+      "genter": {
+        "old_first": false,
+        "old_unmarked": false,
+        "current_first": false,
+        "current_top5": false,
+        "first": "peps/pep-0346.rst",
+        "first_marked": false,
+        "top": [
+          "peps/pep-0346.rst",
+          "peps/pep-0255.rst",
+          "peps/pep-0788.rst",
+          "peps/pep-0340.rst",
+          "peps/pep-0342.rst"
+        ]
+      }
+    },
+    {
+      "id": "peps/0622",
+      "source": "python/peps",
+      "question": "What is the syntax and behaviour of the match statement?",
+      "replaced": "peps/pep-0622.rst",
+      "current": "peps/pep-0634.rst",
+      "pair": "peps/pep-0622.rst says \"Superseded-By: 634\" in its header (the rfc reader's mark names PEP 634 by number, not by place)",
+      "current_says": "The specification of structural pattern matching.",
+      "reviewed": "pending owner",
+      "plain": {
+        "old_first": false,
+        "old_unmarked": true,
+        "current_first": false,
+        "current_top5": false,
+        "first": "peps/pep-0642.rst"
+      },
+      "genter": {
+        "old_first": false,
+        "old_unmarked": false,
+        "current_first": false,
+        "current_top5": false,
+        "first": "peps/pep-0642.rst",
+        "first_marked": false,
+        "top": [
+          "peps/pep-0642.rst",
+          "peps/pep-0642.rst",
+          "peps/pep-0275.rst",
+          "peps/pep-0622.rst (marked)",
+          "peps/pep-0601.rst (marked)"
+        ]
+      }
+    },
+    {
+      "id": "peps/0631",
+      "source": "python/peps",
+      "question": "How do I list my project's dependencies in pyproject.toml?",
+      "replaced": "peps/pep-0631.rst",
+      "current": "peps/pep-0621.rst",
+      "pair": "peps/pep-0631.rst says \"Superseded-By: 621\" in its header (the rfc reader's mark names PEP 621 by number, not by place)",
+      "current_says": "The dependencies array of the [project] table.",
+      "reviewed": "pending owner",
+      "plain": {
+        "old_first": false,
+        "old_unmarked": false,
+        "current_first": false,
+        "current_top5": false,
+        "first": "peps/pep-0735.rst"
+      },
+      "genter": {
+        "old_first": false,
+        "old_unmarked": false,
+        "current_first": false,
+        "current_top5": false,
+        "first": "peps/pep-0735.rst",
+        "first_marked": false,
+        "top": [
+          "peps/pep-0735.rst",
+          "peps/pep-0735.rst",
+          "peps/pep-0751.rst",
+          "peps/pep-0518.rst",
+          "peps/pep-0725.rst"
+        ]
+      }
+    },
+    {
+      "id": "peps/0665",
+      "source": "python/peps",
+      "question": "What file format records Python dependencies for reproducible installs?",
+      "replaced": "peps/pep-0665.rst",
+      "current": "peps/pep-0751.rst",
+      "pair": "peps/pep-0665.rst says \"Superseded-By: 751\" in its header (the rfc reader's mark names PEP 751 by number, not by place)",
+      "current_says": "pylock.toml.",
+      "reviewed": "pending owner",
+      "plain": {
+        "old_first": false,
+        "old_unmarked": true,
+        "current_first": true,
+        "current_top5": true,
+        "first": "peps/pep-0751.rst"
+      },
+      "genter": {
+        "old_first": false,
+        "old_unmarked": false,
+        "current_first": true,
+        "current_top5": true,
+        "first": "peps/pep-0751.rst",
+        "first_marked": false,
+        "top": [
+          "peps/pep-0751.rst",
+          "peps/pep-0665.rst (marked)",
+          "peps/pep-0665.rst (marked)",
+          "peps/pep-0610.rst",
+          "peps/pep-0751.rst"
+        ]
+      }
+    },
+    {
+      "id": "peps/0722",
+      "source": "python/peps",
+      "question": "How does a single-file script declare the dependencies it needs, inside the script?",
+      "replaced": "peps/pep-0722.rst",
+      "current": "peps/pep-0723.rst",
+      "pair": "peps/pep-0722.rst says \"Superseded-By: 723\" in its header (the rfc reader's mark names PEP 723 by number, not by place)",
+      "current_says": "Inline script metadata in a # /// script block.",
+      "reviewed": "pending owner",
+      "plain": {
+        "old_first": true,
+        "old_unmarked": true,
+        "current_first": false,
+        "current_top5": true,
+        "first": "peps/pep-0722.rst"
+      },
+      "genter": {
+        "old_first": true,
+        "old_unmarked": false,
+        "current_first": false,
+        "current_top5": true,
+        "first": "peps/pep-0722.rst",
+        "first_marked": true,
+        "top": [
+          "peps/pep-0722.rst (marked)",
+          "peps/pep-0722.rst (marked)",
+          "peps/pep-0723.rst",
+          "peps/pep-0723.rst",
+          "peps/pep-0735.rst"
+        ]
+      }
+    },
+    {
+      "id": "peps/3153",
+      "source": "python/peps",
+      "question": "Which standard library module provides an event loop for asynchronous IO?",
+      "replaced": "peps/pep-3153.rst",
+      "current": "peps/pep-3156.rst",
+      "pair": "peps/pep-3153.rst says \"Superseded-By: 3156\" in its header (the rfc reader's mark names PEP 3156 by number, not by place)",
+      "current_says": "asyncio.",
+      "reviewed": "pending owner",
+      "plain": {
+        "old_first": false,
+        "old_unmarked": true,
+        "current_first": false,
+        "current_top5": true,
+        "first": "peps/pep-0492.rst"
+      },
+      "genter": {
+        "old_first": false,
+        "old_unmarked": false,
+        "current_first": false,
+        "current_top5": true,
+        "first": "peps/pep-0492.rst",
+        "first_marked": false,
+        "top": [
+          "peps/pep-0492.rst",
+          "peps/pep-3156.rst",
+          "peps/pep-3153.rst (marked)",
+          "peps/pep-0546.rst",
+          "peps/pep-0818.rst"
+        ]
+      }
+    },
+    {
+      "id": "keps/2451",
+      "source": "kubernetes/enhancements",
+      "question": "What file permissions does a projected service account token file get in a pod?",
+      "replaced": "keps/sig-storage/2451-service-account-token-volumes/README.md",
+      "current": "keps/sig-auth/1205-bound-service-account-tokens/README.md",
+      "pair": "keps/sig-storage/2451-service-account-token-volumes/README.md says in its title \"[Replaced by [Bound Service Account Tokens](https://github.com/kubernetes/enhancements/tree/master/keps/sig-auth/1205-bound-service-account-tokens)]\" (the banners reader's mark names the replacing KEP by its address on github.com, not by place)",
+      "current_says": "TokenRequestProjection › File Permission, in the Bound Service Account Tokens KEP.",
+      "reviewed": "pending owner",
+      "plain": {
+        "old_first": false,
+        "old_unmarked": true,
+        "current_first": true,
+        "current_top5": true,
+        "first": "keps/sig-auth/1205-bound-service-account-tokens/README.md"
+      },
+      "genter": {
+        "old_first": false,
+        "old_unmarked": false,
+        "current_first": true,
+        "current_top5": true,
+        "first": "keps/sig-auth/1205-bound-service-account-tokens/README.md",
+        "first_marked": false,
+        "top": [
+          "keps/sig-auth/1205-bound-service-account-tokens/README.md",
+          "keps/sig-storage/2451-service-account-token-volumes/README.md (marked)",
+          "keps/sig-storage/5936-atomic-write-volume-user-fields/README.md",
+          "keps/sig-storage/1855-csi-driver-service-account-token/README.md",
+          "keps/sig-storage/2451-service-account-token-volumes/README.md (marked)"
+        ]
+      }
+    },
+    {
+      "id": "jaeger/rfc-0002",
+      "source": "jaegertracing/jaeger",
+      "question": "How are the browser's UI tools delivered to the agent sidecar and called by it in Jaeger's AI chat?",
+      "replaced": "docs/rfc/0002-ai-gateway-contextual-tools.md",
+      "current": "docs/rfc/0008-ai-gateway-mcp-tool-routing.md",
+      "pair": "docs/rfc/0002-ai-gateway-contextual-tools.md says in its Status line \"the §5 tool-routing decision is superseded by [RFC 0008](./0008-ai-gateway-mcp-tool-routing.md)\" (the banners reader's mark links the replacing RFC)",
+      "current_says": "Over the gateway-hosted, turn-scoped MCP endpoint, UI tools named ui__<name>; RFC 0002 chose an ACP extension method.",
+      "note": "RFC 0002 says only its §5 is superseded; Genter's mark is on the whole document, as quoted.",
+      "reviewed": "pending owner",
+      "plain": {
+        "old_first": false,
+        "old_unmarked": true,
+        "current_first": true,
+        "current_top5": true,
+        "first": "docs/rfc/0008-ai-gateway-mcp-tool-routing.md"
+      },
+      "genter": {
+        "old_first": false,
+        "old_unmarked": false,
+        "current_first": true,
+        "current_top5": true,
+        "first": "docs/rfc/0008-ai-gateway-mcp-tool-routing.md",
+        "first_marked": false,
+        "top": [
+          "docs/rfc/0008-ai-gateway-mcp-tool-routing.md",
+          "docs/rfc/0002-ai-gateway-contextual-tools.md (marked)",
+          "docs/rfc/0008-ai-gateway-mcp-tool-routing.md",
+          "cmd/jaeger/internal/extension/jaegerquery/internal/jaegerai/README.md",
+          "cmd/jaeger/internal/extension/jaegerquery/internal/jaegerai/README.md"
+        ]
+      }
+    },
+    {
+      "id": "jaeger/rfc-0012",
+      "source": "jaegertracing/jaeger",
+      "question": "Which address does an external MCP client such as Cursor use to reach Jaeger's MCP tools?",
+      "replaced": "docs/rfc/0012-mcp-server-extension.md",
+      "current": [
+        "docs/rfc/0008-ai-gateway-mcp-tool-routing.md",
+        "cmd/jaeger/internal/extension/jaegerquery/internal/mcptools/README.md"
+      ],
+      "pair": "docs/rfc/0012-mcp-server-extension.md says in its Status line \"tool routing superseded by [RFC 0008](./0008-ai-gateway-mcp-tool-routing.md)\" (the banners reader's mark links the replacing RFC)",
+      "current_says": "The shared /api/ai/mcp/ path on the query port; RFC 0012 proposed a standalone extension on :16687. The mcptools README says the same (\"It serves at `<basePath>/api/ai/mcp/` on the query port\").",
+      "note": "RFC 0012 says only its tool routing is superseded; Genter's mark is on the whole document, as quoted. docs/adr/002-mcp-server.md states the current answer too (\"served under `<base_path>/api/ai/mcp/` on the query port\") but carries a superseded mark of its own (its Status line: \"Decisions 2 and 3 are superseded\"); whether it counts as a current document is the owner's call.",
+      "reviewed": "pending owner",
+      "plain": {
+        "old_first": false,
+        "old_unmarked": false,
+        "current_first": true,
+        "current_top5": true,
+        "first": "cmd/jaeger/internal/extension/jaegerquery/internal/mcptools/README.md"
+      },
+      "genter": {
+        "old_first": false,
+        "old_unmarked": false,
+        "current_first": true,
+        "current_top5": true,
+        "first": "cmd/jaeger/internal/extension/jaegerquery/internal/mcptools/README.md",
+        "first_marked": false,
+        "top": [
+          "cmd/jaeger/internal/extension/jaegerquery/internal/mcptools/README.md",
+          "docs/rfc/0008-ai-gateway-mcp-tool-routing.md",
+          "docs/rfc/0008-ai-gateway-mcp-tool-routing.md",
+          "cmd/jaeger/internal/extension/jaegerquery/internal/jaegerai/README.md",
+          "cmd/jaeger/internal/extension/jaegerquery/internal/mcptools/README.md"
+        ]
+      }
+    }
+  ]
+}

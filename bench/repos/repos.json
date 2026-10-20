@@ -1,0 +1,356 @@
+{
+  "picked_on": "2026-10-20",
+  "stars_on": "2026-10-20",
+  "repos": [
+    {
+      "repo": "tc39/proposals",
+      "group": "archives",
+      "stars": 19199,
+      "commit": "07002d4d999558b9c7326f98e5134e0222b13808",
+      "committed": "2026-10-14T15:31:58-06:00"
+    },
+    {
+      "repo": "swiftlang/swift-evolution",
+      "group": "archives",
+      "stars": 15885,
+      "commit": "58a9986b616a427a9cf6584219cb6cb1a12cc1fe",
+      "committed": "2026-10-20T09:11:56-07:00"
+    },
+    {
+      "repo": "ethereum/EIPs",
+      "group": "archives",
+      "stars": 14036,
+      "commit": "cd7b26d2cf39d2eb071a26e1890e331f58767079",
+      "committed": "2026-10-20T10:54:43-06:00"
+    },
+    {
+      "repo": "dotnet/csharplang",
+      "group": "archives",
+      "stars": 12719,
+      "commit": "80f71ebeb01cb9d973611929834599fdaaf171ba",
+      "committed": "2026-10-17T14:11:33-04:00"
+    },
+    {
+      "repo": "WebAssembly/design",
+      "group": "archives",
+      "stars": 11628,
+      "commit": "6e43416ebc8becd6cdf5d91d9ae7d3712111df32",
+      "committed": "2025-10-21T19:46:22-07:00"
+    },
+    {
+      "repo": "bitcoin/bips",
+      "group": "archives",
+      "stars": 10979,
+      "commit": "130b8e0fa7f30fa45532f080b87b8db27a79e46e",
+      "committed": "2026-10-19T14:21:00-07:00"
+    },
+    {
+      "repo": "rust-lang/rfcs",
+      "group": "archives",
+      "stars": 6612,
+      "commit": "f63a7efbb9d83ae0616cf752c000cd3df4ca5d3e",
+      "committed": "2026-10-20T15:49:39+02:00"
+    },
+    {
+      "repo": "reactjs/rfcs",
+      "group": "archives",
+      "stars": 5818,
+      "commit": "c15bc9df5afa8fd1dca6e5fd1c2ed073f7a9bd79",
+      "committed": "2023-11-03T17:05:20+00:00"
+    },
+    {
+      "repo": "python/peps",
+      "group": "archives",
+      "stars": 5029,
+      "commit": "1317769c334c658db28aa5336d910f58443049eb",
+      "committed": "2026-10-20T11:02:49-07:00"
+    },
+    {
+      "repo": "vuejs/rfcs",
+      "group": "archives",
+      "stars": 4927,
+      "commit": "2c62d12d0b8dc53018ed6ab6fbc5aea336d8eea6",
+      "committed": "2023-10-13T13:24:21+02:00"
+    },
+    {
+      "repo": "kubernetes/enhancements",
+      "group": "archives",
+      "stars": 3972,
+      "commit": "5b503a75369bdfdd494a2c2c72107a41bf6dd1a8",
+      "committed": "2026-10-17T20:21:36+00:00"
+    },
+    {
+      "repo": "Kotlin/KEEP",
+      "group": "archives",
+      "stars": 3774,
+      "commit": "b6d5dc8b53db82ee3dc561c935bd8f2073bb90a2",
+      "committed": "2026-10-20T09:54:57+02:00"
+    },
+    {
+      "repo": "golang/proposal",
+      "group": "archives",
+      "stars": 3459,
+      "commit": "83ee2aaf9fdcc1a1cf4bb4d20216fc979635cf04",
+      "committed": "2026-10-16T09:55:23-07:00"
+    },
+    {
+      "repo": "nostr-protocol/nips",
+      "group": "archives",
+      "stars": 3120,
+      "commit": "0b5532c0355ab27f447e071a93c09cf3a2b4aad5",
+      "committed": "2026-10-19T22:09:36-03:00"
+    },
+    {
+      "repo": "dart-lang/language",
+      "group": "archives",
+      "stars": 2936,
+      "commit": "d78725f3797b115dbb8b1ce922843e925706e564",
+      "committed": "2026-10-19T16:25:31-07:00"
+    },
+    {
+      "repo": "tensorflow/community",
+      "group": "archives",
+      "stars": 1289,
+      "commit": "185530183d8f3734795beb520d02b8265c230a12",
+      "committed": "2024-02-13T14:41:33-08:00"
+    },
+    {
+      "repo": "matrix-org/matrix-spec-proposals",
+      "group": "archives",
+      "stars": 1261,
+      "commit": "927e20f5115681ea5a28394d53d2928ccf8f5949",
+      "committed": "2026-10-18T22:54:32-06:00"
+    },
+    {
+      "repo": "WebAssembly/proposals",
+      "group": "archives",
+      "stars": 1139,
+      "commit": "df6a2aca1cd9d779eb4f2f3e19dae8277f336015",
+      "committed": "2026-10-06T17:30:57-07:00"
+    },
+    {
+      "repo": "microsoft/terminal",
+      "group": "in-tree",
+      "stars": 105195,
+      "commit": "9e6cf223ddb7d62eba85254ed88f8e2d663a172e",
+      "committed": "2026-10-19T17:17:23-05:00"
+    },
+    {
+      "repo": "pingcap/tidb",
+      "group": "in-tree",
+      "stars": 40660,
+      "commit": "88d75cb0335509f29fba343d17ee668282e0d5e8",
+      "committed": "2026-10-20T13:50:50+00:00"
+    },
+    {
+      "repo": "backstage/backstage",
+      "group": "in-tree",
+      "stars": 34678,
+      "commit": "b29d944884849e0f108f4cc2463c5c23b0a34b6a",
+      "committed": "2026-10-20T20:17:49+02:00"
+    },
+    {
+      "repo": "carbon-language/carbon-lang",
+      "group": "in-tree",
+      "stars": 33922,
+      "commit": "505c4ae308c0fe4e18eafddbab47a848b8731019",
+      "committed": "2026-10-19T21:10:56+00:00"
+    },
+    {
+      "repo": "numpy/numpy",
+      "group": "in-tree",
+      "stars": 33063,
+      "commit": "a43563f6d7e6424a5dea38181982af284eede2d7",
+      "committed": "2026-10-20T12:19:50+03:00"
+    },
+    {
+      "repo": "cockroachdb/cockroach",
+      "group": "in-tree",
+      "stars": 32575,
+      "commit": "d30c905fff79ef825adc96bcc647f1872a90f2ff",
+      "committed": "2026-09-23T09:47:07-04:00"
+    },
+    {
+      "repo": "opentofu/opentofu",
+      "group": "in-tree",
+      "stars": 30550,
+      "commit": "42f15c9bfc27b5e59e0f324466824338d5abb2a2",
+      "committed": "2026-10-19T09:00:54-07:00"
+    },
+    {
+      "repo": "grafana/loki",
+      "group": "in-tree",
+      "stars": 29049,
+      "commit": "610e593d485de7fc32ccc33f1e2c8b856da2ebb5",
+      "committed": "2026-10-20T14:43:13-04:00"
+    },
+    {
+      "repo": "argoproj/argo-cd",
+      "group": "in-tree",
+      "stars": 24440,
+      "commit": "5f6569ec51bdb7c88a7402f9ea1395a21fe7f540",
+      "committed": "2026-10-20T11:22:08-04:00"
+    },
+    {
+      "repo": "jaegertracing/jaeger",
+      "group": "in-tree",
+      "stars": 23319,
+      "commit": "ca047c72f34cf413c16d1118e19c7419de04bbab",
+      "committed": "2026-10-19T20:11:12-04:00"
+    },
+    {
+      "repo": "vectordotdev/vector",
+      "group": "in-tree",
+      "stars": 22737,
+      "commit": "3884947e662e004eceda87c9838038b26fb1a795",
+      "committed": "2026-10-20T16:52:40+00:00"
+    },
+    {
+      "repo": "gravitational/teleport",
+      "group": "in-tree",
+      "stars": 21006,
+      "commit": "1283425b60ec5f60d509ba4c791183d452923ff7",
+      "committed": "2026-08-25T11:35:10-05:00"
+    },
+    {
+      "repo": "quarkusio/quarkus",
+      "group": "in-tree",
+      "stars": 15950,
+      "commit": "637cff27027d2c5f2521ee9cd100bb6ced96390a",
+      "committed": "2026-10-20T13:17:29-05:00"
+    },
+    {
+      "repo": "apache/pulsar",
+      "group": "in-tree",
+      "stars": 15351,
+      "commit": "5307d760114dd23528dd33c16b5446f93de37abb",
+      "committed": "2026-10-20T10:03:43-07:00"
+    },
+    {
+      "repo": "thanos-io/thanos",
+      "group": "in-tree",
+      "stars": 14240,
+      "commit": "777ac4173c8cddb009db8aed9e4215b45549f497",
+      "committed": "2026-10-20T06:59:25+00:00"
+    },
+    {
+      "repo": "crossplane/crossplane",
+      "group": "in-tree",
+      "stars": 12182,
+      "commit": "6dbabf1e17b5f5f2b9866742c0ee11ed6668f8c7",
+      "committed": "2026-10-20T11:37:16+02:00"
+    },
+    {
+      "repo": "axios/axios",
+      "group": "changelogs",
+      "stars": 109303,
+      "commit": "fceeb10997ea71778ad8bc9671ad53e9195a707c",
+      "committed": "2026-10-20T20:17:44+02:00"
+    },
+    {
+      "repo": "angular/angular",
+      "group": "changelogs",
+      "stars": 101107,
+      "commit": "ea43e6c3934a8cf6b9d420505611096db3bb435c",
+      "committed": "2026-10-20T11:21:54-07:00"
+    },
+    {
+      "repo": "tailwindlabs/tailwindcss",
+      "group": "changelogs",
+      "stars": 97948,
+      "commit": "8cc0551b1217d36dc565840b90920964d37cb46c",
+      "committed": "2026-10-19T17:50:54+02:00"
+    },
+    {
+      "repo": "puppeteer/puppeteer",
+      "group": "changelogs",
+      "stars": 95727,
+      "commit": "4dd58bc1625e5c0a33b8f1f0419fb23975d5aac4",
+      "committed": "2026-10-20T20:08:08+02:00"
+    },
+    {
+      "repo": "vitejs/vite",
+      "group": "changelogs",
+      "stars": 83418,
+      "commit": "2601eed4d764f21809652dbba745d0f38b47146c",
+      "committed": "2026-10-20T16:55:08+09:00"
+    },
+    {
+      "repo": "prometheus/prometheus",
+      "group": "changelogs",
+      "stars": 66675,
+      "commit": "afa1fdebab3d56eab4527a1a1d5bc9f31a6978d6",
+      "committed": "2026-10-20T18:25:49+02:00"
+    },
+    {
+      "repo": "traefik/traefik",
+      "group": "changelogs",
+      "stars": 65293,
+      "commit": "a804fea41db3f5ed12335114f470d959b37f6737",
+      "committed": "2026-10-20T11:00:35+02:00"
+    },
+    {
+      "repo": "socketio/socket.io",
+      "group": "changelogs",
+      "stars": 63226,
+      "commit": "1eaa582d3b453e3e6f522300ed05b10da0a0799b",
+      "committed": "2026-09-29T11:18:46+02:00"
+    },
+    {
+      "repo": "vuejs/core",
+      "group": "changelogs",
+      "stars": 54696,
+      "commit": "ef81ddcfc94399c043b349a986a1b231b6bac7d6",
+      "committed": "2026-10-20T16:40:51+08:00"
+    },
+    {
+      "repo": "hashicorp/terraform",
+      "group": "changelogs",
+      "stars": 49985,
+      "commit": "79307e8a06d49af948cf28ef3c67212eb8574919",
+      "committed": "2026-10-20T15:10:59+01:00"
+    },
+    {
+      "repo": "babel/babel",
+      "group": "changelogs",
+      "stars": 44059,
+      "commit": "6cd3db7d9c125ec5100093f4ed7e6f6db570c409",
+      "committed": "2026-10-20T19:17:15+02:00"
+    },
+    {
+      "repo": "typeorm/typeorm",
+      "group": "changelogs",
+      "stars": 36662,
+      "commit": "fe92394287516feeada6e9c308ebe22deca2458e",
+      "committed": "2026-10-11T13:56:27+02:00"
+    },
+    {
+      "repo": "date-fns/date-fns",
+      "group": "changelogs",
+      "stars": 36645,
+      "commit": "717ce0a807ea4c6b540d015b5c408723175b2838",
+      "committed": "2026-09-22T14:58:48+08:00"
+    },
+    {
+      "repo": "laravel/framework",
+      "group": "changelogs",
+      "stars": 34967,
+      "commit": "31dbc2b9b0fc775ae3bbc87ae2387e88693ad2ff",
+      "committed": "2026-10-20T11:31:11-04:00"
+    },
+    {
+      "repo": "hashicorp/consul",
+      "group": "changelogs",
+      "stars": 30088,
+      "commit": "75e6642edbaf82074dab46c48c44a9258bb4d7a7",
+      "committed": "2026-10-19T23:43:34+05:30"
+    },
+    {
+      "repo": "pydantic/pydantic",
+      "group": "changelogs",
+      "stars": 29108,
+      "commit": "8d975e607ca3225699f81ce3c91ee689a71d3ea4",
+      "committed": "2026-10-20T12:32:23+00:00"
+    }
+  ]
+}

@@ -1,0 +1,5160 @@
+{
+  "date": "2026-10-20",
+  "version": "0.3.1",
+  "file": "results/2026-10-20.json",
+  "readers": [
+    "adr",
+    "changelog",
+    "decisions",
+    "rfc",
+    "banners",
+    "obsidian"
+  ],
+  "rule": "Public GitHub repositories that keep decision records or deprecation notices, in three groups. In each group the candidates are every repository of that kind we could name with the group's minimum of stars, most stars first, and the first `take` that pass the group's check are taken: the check looks only at whether the records named are in the tree, never at what the readers find in them.",
+  "groups": [
+    {
+      "id": "archives",
+      "title": "Decision archives",
+      "rule": "A repository that holds the proposals of a language, framework or protocol (PEPs, RFCs, KEPs, EIPs, BIPs, NIPs, MSCs, design documents, or a tracking list of them), 1,000 stars or more. Check: a file of the records named is in the tree.",
+      "take": 18
+    },
+    {
+      "id": "in-tree",
+      "title": "Decision records in a project's own tree",
+      "rule": "A well-known project, 1,000 stars or more, that keeps its own decision records (ADRs, RFCs, RFDs, design proposals or specs) in a folder of its main repository. Check: a record in that folder is in the tree.",
+      "take": 16
+    },
+    {
+      "id": "changelogs",
+      "title": "Deprecation notices in a changelog",
+      "rule": "A well-known project, 10,000 stars or more, that keeps deprecation notices in a changelog: a file named CHANGELOG, CHANGES, HISTORY or RELEASES (any extension, any folder) whose text says \"deprecat\" at least once. Check: such a file is in the tree.",
+      "take": 16
+    }
+  ],
+  "gate": {
+    "records": 5,
+    "marked": 15
+  },
+  "verdict": {
+    "repos": 50,
+    "ran": 50,
+    "median_records": 0,
+    "median_present": 33,
+    "with_marks": 28,
+    "with_kind": {
+      "superseded": 14,
+      "moved": 12,
+      "deprecated": 16,
+      "obsolete": 4,
+      "archived": 0,
+      "removed": 0,
+      "unmaintained": 0
+    },
+    "with_replaced": 22,
+    "with_placed_marks": 7,
+    "passes": false,
+    "records_ok": false,
+    "marks_ok": true,
+    "by_group": {
+      "archives": {
+        "repos": 18,
+        "median_records": 0,
+        "median_present": 124,
+        "with_marks": 10,
+        "with_placed_marks": 2
+      },
+      "in-tree": {
+        "repos": 16,
+        "median_records": 0,
+        "median_present": 57,
+        "with_marks": 14,
+        "with_placed_marks": 4
+      },
+      "changelogs": {
+        "repos": 16,
+        "median_records": 0,
+        "median_present": 0,
+        "with_marks": 4,
+        "with_placed_marks": 1
+      }
+    },
+    "picks": [
+      "jaegertracing/jaeger",
+      "python/peps",
+      "kubernetes/enhancements"
+    ]
+  },
+  "repos": [
+    {
+      "repo": "tc39/proposals",
+      "group": "archives",
+      "stars": 19199,
+      "commit": "07002d4d999558b9c7326f98e5134e0222b13808",
+      "committed": "2026-10-14T15:31:58-06:00",
+      "tree_readable": 11,
+      "present": 3,
+      "what": "tracking lists of ECMAScript proposals",
+      "pattern": "^(README|finished-proposals|inactive-proposals)\\.md$",
+      "files": 11,
+      "complete": true,
+      "records": 0,
+      "dated": 0,
+      "marked": 0,
+      "superseded": 0,
+      "named": 0,
+      "placed": 0,
+      "changelog_deprecations": 0,
+      "by_reader": {},
+      "by_kind": {},
+      "marks": [],
+      "pairs": []
+    },
+    {
+      "repo": "swiftlang/swift-evolution",
+      "group": "archives",
+      "stars": 15885,
+      "commit": "58a9986b616a427a9cf6584219cb6cb1a12cc1fe",
+      "committed": "2026-10-20T09:11:56-07:00",
+      "tree_readable": 611,
+      "present": 559,
+      "what": "Swift Evolution proposals",
+      "pattern": "^proposals/\\d{4}-.+\\.md$",
+      "files": 611,
+      "complete": true,
+      "records": 0,
+      "dated": 0,
+      "marked": 0,
+      "superseded": 0,
+      "named": 0,
+      "placed": 0,
+      "changelog_deprecations": 0,
+      "by_reader": {},
+      "by_kind": {},
+      "marks": [],
+      "pairs": []
+    },
+    {
+      "repo": "ethereum/EIPs",
+      "group": "archives",
+      "stars": 14036,
+      "commit": "cd7b26d2cf39d2eb071a26e1890e331f58767079",
+      "committed": "2026-10-20T10:54:43-06:00",
+      "tree_readable": 1173,
+      "present": 966,
+      "what": "Ethereum Improvement Proposals",
+      "pattern": "^EIPS/eip-\\d+\\.md$",
+      "files": 1024,
+      "complete": true,
+      "records": 0,
+      "dated": 601,
+      "marked": 366,
+      "superseded": 0,
+      "named": 365,
+      "placed": 0,
+      "changelog_deprecations": 0,
+      "by_reader": {
+        "obsidian": 967,
+        "banners": 366
+      },
+      "by_kind": {
+        "moved": 365,
+        "deprecated": 1
+      },
+      "marks": [
+        {
+          "doc": "EIPS/eip-1046.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1046.md"
+        },
+        {
+          "doc": "EIPS/eip-1056.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1056.md"
+        },
+        {
+          "doc": "EIPS/eip-1062.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1062.md"
+        },
+        {
+          "doc": "EIPS/eip-1066.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1066.md"
+        },
+        {
+          "doc": "EIPS/eip-1077.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1077.md"
+        },
+        {
+          "doc": "EIPS/eip-1078.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1078.md"
+        },
+        {
+          "doc": "EIPS/eip-1080.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1080.md"
+        },
+        {
+          "doc": "EIPS/eip-1081.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1081.md"
+        },
+        {
+          "doc": "EIPS/eip-1123.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1123.md"
+        },
+        {
+          "doc": "EIPS/eip-1129.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1129.md"
+        },
+        {
+          "doc": "EIPS/eip-1132.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1132.md"
+        },
+        {
+          "doc": "EIPS/eip-1154.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1154.md"
+        },
+        {
+          "doc": "EIPS/eip-1155.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1155.md"
+        },
+        {
+          "doc": "EIPS/eip-1167.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1167.md"
+        },
+        {
+          "doc": "EIPS/eip-1175.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1175.md"
+        },
+        {
+          "doc": "EIPS/eip-1178.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1178.md"
+        },
+        {
+          "doc": "EIPS/eip-1185.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1185.md"
+        },
+        {
+          "doc": "EIPS/eip-1191.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1191.md"
+        },
+        {
+          "doc": "EIPS/eip-1202.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1202.md"
+        },
+        {
+          "doc": "EIPS/eip-1203.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1203.md"
+        },
+        {
+          "doc": "EIPS/eip-1207.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1207.md"
+        },
+        {
+          "doc": "EIPS/eip-1261.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1261.md"
+        },
+        {
+          "doc": "EIPS/eip-1271.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1271.md"
+        },
+        {
+          "doc": "EIPS/eip-1319.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1319.md"
+        },
+        {
+          "doc": "EIPS/eip-1328.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1328.md"
+        },
+        {
+          "doc": "EIPS/eip-1337.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1337.md"
+        },
+        {
+          "doc": "EIPS/eip-1363.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1363.md"
+        },
+        {
+          "doc": "EIPS/eip-137.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-137.md"
+        },
+        {
+          "doc": "EIPS/eip-1386.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1386.md"
+        },
+        {
+          "doc": "EIPS/eip-1387.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1387.md"
+        },
+        {
+          "doc": "EIPS/eip-1388.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1388.md"
+        },
+        {
+          "doc": "EIPS/eip-1417.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1417.md"
+        },
+        {
+          "doc": "EIPS/eip-1438.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1438.md"
+        },
+        {
+          "doc": "EIPS/eip-1444.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1444.md"
+        },
+        {
+          "doc": "EIPS/eip-1450.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1450.md"
+        },
+        {
+          "doc": "EIPS/eip-1462.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1462.md"
+        },
+        {
+          "doc": "EIPS/eip-1484.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1484.md"
+        },
+        {
+          "doc": "EIPS/eip-1491.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1491.md"
+        },
+        {
+          "doc": "EIPS/eip-1504.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1504.md"
+        },
+        {
+          "doc": "EIPS/eip-1523.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1523.md"
+        },
+        {
+          "doc": "EIPS/eip-1538.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1538.md"
+        },
+        {
+          "doc": "EIPS/eip-1577.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1577.md"
+        },
+        {
+          "doc": "EIPS/eip-1581.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1581.md"
+        },
+        {
+          "doc": "EIPS/eip-1592.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1592.md"
+        },
+        {
+          "doc": "EIPS/eip-1613.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1613.md"
+        },
+        {
+          "doc": "EIPS/eip-1616.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1616.md"
+        },
+        {
+          "doc": "EIPS/eip-162.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-162.md"
+        },
+        {
+          "doc": "EIPS/eip-1620.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1620.md"
+        },
+        {
+          "doc": "EIPS/eip-1633.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1633.md"
+        },
+        {
+          "doc": "EIPS/eip-165.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-165.md"
+        },
+        {
+          "doc": "EIPS/eip-1710.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1710.md"
+        },
+        {
+          "doc": "EIPS/eip-173.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-173.md"
+        },
+        {
+          "doc": "EIPS/eip-1753.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1753.md"
+        },
+        {
+          "doc": "EIPS/eip-1761.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1761.md"
+        },
+        {
+          "doc": "EIPS/eip-1775.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1775.md"
+        },
+        {
+          "doc": "EIPS/eip-181.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-181.md"
+        },
+        {
+          "doc": "EIPS/eip-1812.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1812.md"
+        },
+        {
+          "doc": "EIPS/eip-1820.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1820.md"
+        },
+        {
+          "doc": "EIPS/eip-1822.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1822.md"
+        },
+        {
+          "doc": "EIPS/eip-1844.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1844.md"
+        },
+        {
+          "doc": "EIPS/eip-190.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-190.md"
+        },
+        {
+          "doc": "EIPS/eip-1900.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1900.md"
+        },
+        {
+          "doc": "EIPS/eip-191.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-191.md"
+        },
+        {
+          "doc": "EIPS/eip-1921.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1921.md"
+        },
+        {
+          "doc": "EIPS/eip-1922.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1922.md"
+        },
+        {
+          "doc": "EIPS/eip-1923.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1923.md"
+        },
+        {
+          "doc": "EIPS/eip-1948.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1948.md"
+        },
+        {
+          "doc": "EIPS/eip-1967.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1967.md"
+        },
+        {
+          "doc": "EIPS/eip-1973.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1973.md"
+        },
+        {
+          "doc": "EIPS/eip-1996.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-1996.md"
+        },
+        {
+          "doc": "EIPS/eip-20.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-20.md"
+        },
+        {
+          "doc": "EIPS/eip-2009.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-2009.md"
+        },
+        {
+          "doc": "EIPS/eip-2018.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-2018.md"
+        },
+        {
+          "doc": "EIPS/eip-2019.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-2019.md"
+        },
+        {
+          "doc": "EIPS/eip-2020.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-2020.md"
+        },
+        {
+          "doc": "EIPS/eip-2021.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-2021.md"
+        },
+        {
+          "doc": "EIPS/eip-205.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-205.md"
+        },
+        {
+          "doc": "EIPS/eip-2098.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-2098.md"
+        },
+        {
+          "doc": "EIPS/eip-2135.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-2135.md"
+        },
+        {
+          "doc": "EIPS/eip-2157.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-2157.md"
+        },
+        {
+          "doc": "EIPS/eip-2193.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-2193.md"
+        },
+        {
+          "doc": "EIPS/eip-223.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-223.md"
+        },
+        {
+          "doc": "EIPS/eip-2266.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-2266.md"
+        },
+        {
+          "doc": "EIPS/eip-2304.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-2304.md"
+        },
+        {
+          "doc": "EIPS/eip-2309.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-2309.md"
+        },
+        {
+          "doc": "EIPS/eip-2333.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-2333.md"
+        },
+        {
+          "doc": "EIPS/eip-2334.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-2334.md"
+        },
+        {
+          "doc": "EIPS/eip-2335.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-2335.md"
+        },
+        {
+          "doc": "EIPS/eip-2386.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-2386.md"
+        },
+        {
+          "doc": "EIPS/eip-2390.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-2390.md"
+        },
+        {
+          "doc": "EIPS/eip-2400.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-2400.md"
+        },
+        {
+          "doc": "EIPS/eip-2470.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-2470.md"
+        },
+        {
+          "doc": "EIPS/eip-2477.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-2477.md"
+        },
+        {
+          "doc": "EIPS/eip-2494.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-2494.md"
+        },
+        {
+          "doc": "EIPS/eip-2520.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-2520.md"
+        },
+        {
+          "doc": "EIPS/eip-2525.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-2525.md"
+        },
+        {
+          "doc": "EIPS/eip-2535.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-2535.md"
+        },
+        {
+          "doc": "EIPS/eip-2544.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-2544.md"
+        },
+        {
+          "doc": "EIPS/eip-2569.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-2569.md"
+        },
+        {
+          "doc": "EIPS/eip-2612.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-2612.md"
+        },
+        {
+          "doc": "EIPS/eip-2615.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-2615.md"
+        },
+        {
+          "doc": "EIPS/eip-2645.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-2645.md"
+        },
+        {
+          "doc": "EIPS/eip-2678.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-2678.md"
+        },
+        {
+          "doc": "EIPS/eip-2680.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-2680.md"
+        },
+        {
+          "doc": "EIPS/eip-2746.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-2746.md"
+        },
+        {
+          "doc": "EIPS/eip-2767.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-2767.md"
+        },
+        {
+          "doc": "EIPS/eip-2770.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-2770.md"
+        },
+        {
+          "doc": "EIPS/eip-2771.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-2771.md"
+        },
+        {
+          "doc": "EIPS/eip-2848.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-2848.md"
+        },
+        {
+          "doc": "EIPS/eip-2876.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-2876.md"
+        },
+        {
+          "doc": "EIPS/eip-2917.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-2917.md"
+        },
+        {
+          "doc": "EIPS/eip-2942.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-2942.md"
+        },
+        {
+          "doc": "EIPS/eip-2980.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-2980.md"
+        },
+        {
+          "doc": "EIPS/eip-2981.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-2981.md"
+        },
+        {
+          "doc": "EIPS/eip-3000.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-3000.md"
+        },
+        {
+          "doc": "EIPS/eip-3005.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-3005.md"
+        },
+        {
+          "doc": "EIPS/eip-3009.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-3009.md"
+        },
+        {
+          "doc": "EIPS/eip-3135.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-3135.md"
+        },
+        {
+          "doc": "EIPS/eip-3156.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-3156.md"
+        },
+        {
+          "doc": "EIPS/eip-3224.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-3224.md"
+        },
+        {
+          "doc": "EIPS/eip-3234.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-3234.md"
+        },
+        {
+          "doc": "EIPS/eip-3386.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-3386.md"
+        },
+        {
+          "doc": "EIPS/eip-3440.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-3440.md"
+        },
+        {
+          "doc": "EIPS/eip-3448.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-3448.md"
+        },
+        {
+          "doc": "EIPS/eip-3450.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-3450.md"
+        },
+        {
+          "doc": "EIPS/eip-3475.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-3475.md"
+        },
+        {
+          "doc": "EIPS/eip-3525.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-3525.md"
+        },
+        {
+          "doc": "EIPS/eip-3561.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-3561.md"
+        },
+        {
+          "doc": "EIPS/eip-3569.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-3569.md"
+        },
+        {
+          "doc": "EIPS/eip-3589.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-3589.md"
+        },
+        {
+          "doc": "EIPS/eip-3643.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-3643.md"
+        },
+        {
+          "doc": "EIPS/eip-3668.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-3668.md"
+        },
+        {
+          "doc": "EIPS/eip-3722.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-3722.md"
+        },
+        {
+          "doc": "EIPS/eip-3754.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-3754.md"
+        },
+        {
+          "doc": "EIPS/eip-3770.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-3770.md"
+        },
+        {
+          "doc": "EIPS/eip-3772.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-3772.md"
+        },
+        {
+          "doc": "EIPS/eip-4337.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-4337.md"
+        },
+        {
+          "doc": "EIPS/eip-4341.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-4341.md"
+        },
+        {
+          "doc": "EIPS/eip-4353.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-4353.md"
+        },
+        {
+          "doc": "EIPS/eip-4361.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-4361.md"
+        },
+        {
+          "doc": "EIPS/eip-4393.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-4393.md"
+        },
+        {
+          "doc": "EIPS/eip-4400.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-4400.md"
+        },
+        {
+          "doc": "EIPS/eip-4430.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-4430.md"
+        },
+        {
+          "doc": "EIPS/eip-4494.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-4494.md"
+        },
+        {
+          "doc": "EIPS/eip-4519.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-4519.md"
+        },
+        {
+          "doc": "EIPS/eip-4521.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-4521.md"
+        },
+        {
+          "doc": "EIPS/eip-4524.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-4524.md"
+        },
+        {
+          "doc": "EIPS/eip-4527.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-4527.md"
+        },
+        {
+          "doc": "EIPS/eip-4546.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-4546.md"
+        },
+        {
+          "doc": "EIPS/eip-4626.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-4626.md"
+        },
+        {
+          "doc": "EIPS/eip-4671.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-4671.md"
+        },
+        {
+          "doc": "EIPS/eip-4675.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-4675.md"
+        },
+        {
+          "doc": "EIPS/eip-4799.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-4799.md"
+        },
+        {
+          "doc": "EIPS/eip-4804.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-4804.md"
+        },
+        {
+          "doc": "EIPS/eip-4824.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-4824.md"
+        },
+        {
+          "doc": "EIPS/eip-4834.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-4834.md"
+        },
+        {
+          "doc": "EIPS/eip-4883.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-4883.md"
+        },
+        {
+          "doc": "EIPS/eip-4885.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-4885.md"
+        },
+        {
+          "doc": "EIPS/eip-4886.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-4886.md"
+        },
+        {
+          "doc": "EIPS/eip-4906.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-4906.md"
+        },
+        {
+          "doc": "EIPS/eip-4907.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-4907.md"
+        },
+        {
+          "doc": "EIPS/eip-4910.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-4910.md"
+        },
+        {
+          "doc": "EIPS/eip-4931.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-4931.md"
+        },
+        {
+          "doc": "EIPS/eip-4944.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-4944.md"
+        },
+        {
+          "doc": "EIPS/eip-4950.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-4950.md"
+        },
+        {
+          "doc": "EIPS/eip-4955.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-4955.md"
+        },
+        {
+          "doc": "EIPS/eip-4972.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-4972.md"
+        },
+        {
+          "doc": "EIPS/eip-4973.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-4973.md"
+        },
+        {
+          "doc": "EIPS/eip-4974.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-4974.md"
+        },
+        {
+          "doc": "EIPS/eip-4987.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-4987.md"
+        },
+        {
+          "doc": "EIPS/eip-5005.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5005.md"
+        },
+        {
+          "doc": "EIPS/eip-5006.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5006.md"
+        },
+        {
+          "doc": "EIPS/eip-5007.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5007.md"
+        },
+        {
+          "doc": "EIPS/eip-5008.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5008.md"
+        },
+        {
+          "doc": "EIPS/eip-5018.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5018.md"
+        },
+        {
+          "doc": "EIPS/eip-5023.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5023.md"
+        },
+        {
+          "doc": "EIPS/eip-5050.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5050.md"
+        },
+        {
+          "doc": "EIPS/eip-5058.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5058.md"
+        },
+        {
+          "doc": "EIPS/eip-5094.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5094.md"
+        },
+        {
+          "doc": "EIPS/eip-5095.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5095.md"
+        },
+        {
+          "doc": "EIPS/eip-5114.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5114.md"
+        },
+        {
+          "doc": "EIPS/eip-5115.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5115.md"
+        },
+        {
+          "doc": "EIPS/eip-5131.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5131.md"
+        },
+        {
+          "doc": "EIPS/eip-5139.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5139.md"
+        },
+        {
+          "doc": "EIPS/eip-5143.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5143.md"
+        },
+        {
+          "doc": "EIPS/eip-5164.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5164.md"
+        },
+        {
+          "doc": "EIPS/eip-5169.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5169.md"
+        },
+        {
+          "doc": "EIPS/eip-5173.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5173.md"
+        },
+        {
+          "doc": "EIPS/eip-5185.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5185.md"
+        },
+        {
+          "doc": "EIPS/eip-5187.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5187.md"
+        },
+        {
+          "doc": "EIPS/eip-5189.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5189.md"
+        },
+        {
+          "doc": "EIPS/eip-5192.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5192.md"
+        },
+        {
+          "doc": "EIPS/eip-5202.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5202.md"
+        },
+        {
+          "doc": "EIPS/eip-5216.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5216.md"
+        },
+        {
+          "doc": "EIPS/eip-5218.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5218.md"
+        },
+        {
+          "doc": "EIPS/eip-5219.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5219.md"
+        },
+        {
+          "doc": "EIPS/eip-5247.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5247.md"
+        },
+        {
+          "doc": "EIPS/eip-5252.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5252.md"
+        },
+        {
+          "doc": "EIPS/eip-5267.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5267.md"
+        },
+        {
+          "doc": "EIPS/eip-5269.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5269.md"
+        },
+        {
+          "doc": "EIPS/eip-5289.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5289.md"
+        },
+        {
+          "doc": "EIPS/eip-5298.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5298.md"
+        },
+        {
+          "doc": "EIPS/eip-5313.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5313.md"
+        },
+        {
+          "doc": "EIPS/eip-5334.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5334.md"
+        },
+        {
+          "doc": "EIPS/eip-5375.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5375.md"
+        },
+        {
+          "doc": "EIPS/eip-5380.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5380.md"
+        },
+        {
+          "doc": "EIPS/eip-5409.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5409.md"
+        },
+        {
+          "doc": "EIPS/eip-5437.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5437.md"
+        },
+        {
+          "doc": "EIPS/eip-5453.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5453.md"
+        },
+        {
+          "doc": "EIPS/eip-5484.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5484.md"
+        },
+        {
+          "doc": "EIPS/eip-5485.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5485.md"
+        },
+        {
+          "doc": "EIPS/eip-5489.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5489.md"
+        },
+        {
+          "doc": "EIPS/eip-5496.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5496.md"
+        },
+        {
+          "doc": "EIPS/eip-55.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-55.md"
+        },
+        {
+          "doc": "EIPS/eip-5501.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5501.md"
+        },
+        {
+          "doc": "EIPS/eip-5505.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5505.md"
+        },
+        {
+          "doc": "EIPS/eip-5507.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5507.md"
+        },
+        {
+          "doc": "EIPS/eip-5516.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5516.md"
+        },
+        {
+          "doc": "EIPS/eip-5521.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5521.md"
+        },
+        {
+          "doc": "EIPS/eip-5528.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5528.md"
+        },
+        {
+          "doc": "EIPS/eip-5539.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5539.md"
+        },
+        {
+          "doc": "EIPS/eip-5553.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5553.md"
+        },
+        {
+          "doc": "EIPS/eip-5554.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5554.md"
+        },
+        {
+          "doc": "EIPS/eip-5559.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5559.md"
+        },
+        {
+          "doc": "EIPS/eip-5560.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5560.md"
+        },
+        {
+          "doc": "EIPS/eip-5564.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5564.md"
+        },
+        {
+          "doc": "EIPS/eip-5568.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5568.md"
+        },
+        {
+          "doc": "EIPS/eip-5570.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5570.md"
+        },
+        {
+          "doc": "EIPS/eip-5573.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5573.md"
+        },
+        {
+          "doc": "EIPS/eip-5585.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5585.md"
+        },
+        {
+          "doc": "EIPS/eip-5604.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5604.md"
+        },
+        {
+          "doc": "EIPS/eip-5606.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5606.md"
+        },
+        {
+          "doc": "EIPS/eip-5615.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5615.md"
+        },
+        {
+          "doc": "EIPS/eip-5625.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5625.md"
+        },
+        {
+          "doc": "EIPS/eip-5630.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5630.md"
+        },
+        {
+          "doc": "EIPS/eip-5633.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5633.md"
+        },
+        {
+          "doc": "EIPS/eip-5635.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5635.md"
+        },
+        {
+          "doc": "EIPS/eip-5639.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5639.md"
+        },
+        {
+          "doc": "EIPS/eip-5643.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5643.md"
+        },
+        {
+          "doc": "EIPS/eip-5646.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5646.md"
+        },
+        {
+          "doc": "EIPS/eip-5679.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5679.md"
+        },
+        {
+          "doc": "EIPS/eip-5700.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5700.md"
+        },
+        {
+          "doc": "EIPS/eip-5719.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5719.md"
+        },
+        {
+          "doc": "EIPS/eip-5725.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5725.md"
+        },
+        {
+          "doc": "EIPS/eip-5727.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5727.md"
+        },
+        {
+          "doc": "EIPS/eip-5732.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5732.md"
+        },
+        {
+          "doc": "EIPS/eip-5744.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5744.md"
+        },
+        {
+          "doc": "EIPS/eip-5750.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5750.md"
+        },
+        {
+          "doc": "EIPS/eip-5753.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5753.md"
+        },
+        {
+          "doc": "EIPS/eip-5773.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5773.md"
+        },
+        {
+          "doc": "EIPS/eip-5791.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5791.md"
+        },
+        {
+          "doc": "EIPS/eip-5805.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5805.md"
+        },
+        {
+          "doc": "EIPS/eip-5827.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5827.md"
+        },
+        {
+          "doc": "EIPS/eip-5850.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5850.md"
+        },
+        {
+          "doc": "EIPS/eip-5851.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5851.md"
+        },
+        {
+          "doc": "EIPS/eip-5883.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5883.md"
+        },
+        {
+          "doc": "EIPS/eip-5902.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5902.md"
+        },
+        {
+          "doc": "EIPS/eip-5982.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-5982.md"
+        },
+        {
+          "doc": "EIPS/eip-600.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-600.md"
+        },
+        {
+          "doc": "EIPS/eip-601.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-601.md"
+        },
+        {
+          "doc": "EIPS/eip-6047.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6047.md"
+        },
+        {
+          "doc": "EIPS/eip-6059.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6059.md"
+        },
+        {
+          "doc": "EIPS/eip-6065.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6065.md"
+        },
+        {
+          "doc": "EIPS/eip-6066.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6066.md"
+        },
+        {
+          "doc": "EIPS/eip-6093.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6093.md"
+        },
+        {
+          "doc": "EIPS/eip-6105.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6105.md"
+        },
+        {
+          "doc": "EIPS/eip-6120.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6120.md"
+        },
+        {
+          "doc": "EIPS/eip-6123.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6123.md"
+        },
+        {
+          "doc": "EIPS/eip-6147.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6147.md"
+        },
+        {
+          "doc": "EIPS/eip-6150.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6150.md"
+        },
+        {
+          "doc": "EIPS/eip-6170.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6170.md"
+        },
+        {
+          "doc": "EIPS/eip-6220.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6220.md"
+        },
+        {
+          "doc": "EIPS/eip-6224.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6224.md"
+        },
+        {
+          "doc": "EIPS/eip-6239.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6239.md"
+        },
+        {
+          "doc": "EIPS/eip-6268.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6268.md"
+        },
+        {
+          "doc": "EIPS/eip-6315.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6315.md"
+        },
+        {
+          "doc": "EIPS/eip-6327.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6327.md"
+        },
+        {
+          "doc": "EIPS/eip-634.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-634.md"
+        },
+        {
+          "doc": "EIPS/eip-6353.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6353.md"
+        },
+        {
+          "doc": "EIPS/eip-6357.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6357.md"
+        },
+        {
+          "doc": "EIPS/eip-6358.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6358.md"
+        },
+        {
+          "doc": "EIPS/eip-6366.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6366.md"
+        },
+        {
+          "doc": "EIPS/eip-6372.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6372.md"
+        },
+        {
+          "doc": "EIPS/eip-6381.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6381.md"
+        },
+        {
+          "doc": "EIPS/eip-6384.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6384.md"
+        },
+        {
+          "doc": "EIPS/eip-6454.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6454.md"
+        },
+        {
+          "doc": "EIPS/eip-6464.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6464.md"
+        },
+        {
+          "doc": "EIPS/eip-6492.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6492.md"
+        },
+        {
+          "doc": "EIPS/eip-6506.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6506.md"
+        },
+        {
+          "doc": "EIPS/eip-6538.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6538.md"
+        },
+        {
+          "doc": "EIPS/eip-6551.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6551.md"
+        },
+        {
+          "doc": "EIPS/eip-6596.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6596.md"
+        },
+        {
+          "doc": "EIPS/eip-6604.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6604.md"
+        },
+        {
+          "doc": "EIPS/eip-6617.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6617.md"
+        },
+        {
+          "doc": "EIPS/eip-6662.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6662.md"
+        },
+        {
+          "doc": "EIPS/eip-6672.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6672.md"
+        },
+        {
+          "doc": "EIPS/eip-6682.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6682.md"
+        },
+        {
+          "doc": "EIPS/eip-67.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-67.md"
+        },
+        {
+          "doc": "EIPS/eip-6734.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6734.md"
+        },
+        {
+          "doc": "EIPS/eip-6735.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6735.md"
+        },
+        {
+          "doc": "EIPS/eip-6785.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6785.md"
+        },
+        {
+          "doc": "EIPS/eip-6786.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6786.md"
+        },
+        {
+          "doc": "EIPS/eip-6787.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6787.md"
+        },
+        {
+          "doc": "EIPS/eip-6806.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6806.md"
+        },
+        {
+          "doc": "EIPS/eip-6808.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6808.md"
+        },
+        {
+          "doc": "EIPS/eip-6809.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6809.md"
+        },
+        {
+          "doc": "EIPS/eip-681.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-681.md"
+        },
+        {
+          "doc": "EIPS/eip-6821.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6821.md"
+        },
+        {
+          "doc": "EIPS/eip-6823.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6823.md"
+        },
+        {
+          "doc": "EIPS/eip-6860.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6860.md"
+        },
+        {
+          "doc": "EIPS/eip-6864.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6864.md"
+        },
+        {
+          "doc": "EIPS/eip-6865.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6865.md"
+        },
+        {
+          "doc": "EIPS/eip-6900.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6900.md"
+        },
+        {
+          "doc": "EIPS/eip-6909.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6909.md"
+        },
+        {
+          "doc": "EIPS/eip-6944.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6944.md"
+        },
+        {
+          "doc": "EIPS/eip-6956.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6956.md"
+        },
+        {
+          "doc": "EIPS/eip-6960.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6960.md"
+        },
+        {
+          "doc": "EIPS/eip-6981.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6981.md"
+        },
+        {
+          "doc": "EIPS/eip-6982.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6982.md"
+        },
+        {
+          "doc": "EIPS/eip-6997.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-6997.md"
+        },
+        {
+          "doc": "EIPS/eip-7007.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-7007.md"
+        },
+        {
+          "doc": "EIPS/eip-7015.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-7015.md"
+        },
+        {
+          "doc": "EIPS/eip-7053.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-7053.md"
+        },
+        {
+          "doc": "EIPS/eip-7066.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-7066.md"
+        },
+        {
+          "doc": "EIPS/eip-7085.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-7085.md"
+        },
+        {
+          "doc": "EIPS/eip-7092.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-7092.md"
+        },
+        {
+          "doc": "EIPS/eip-7093.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-7093.md"
+        },
+        {
+          "doc": "EIPS/eip-7144.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-7144.md"
+        },
+        {
+          "doc": "EIPS/eip-7160.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-7160.md"
+        },
+        {
+          "doc": "EIPS/eip-7201.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-7201.md"
+        },
+        {
+          "doc": "EIPS/eip-721.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-721.md"
+        },
+        {
+          "doc": "EIPS/eip-7231.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-7231.md"
+        },
+        {
+          "doc": "EIPS/eip-725.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-725.md"
+        },
+        {
+          "doc": "EIPS/eip-7303.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-7303.md"
+        },
+        {
+          "doc": "EIPS/eip-7401.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-7401.md"
+        },
+        {
+          "doc": "EIPS/eip-7405.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-7405.md"
+        },
+        {
+          "doc": "EIPS/eip-7406.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-7406.md"
+        },
+        {
+          "doc": "EIPS/eip-7409.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-7409.md"
+        },
+        {
+          "doc": "EIPS/eip-7412.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-7412.md"
+        },
+        {
+          "doc": "EIPS/eip-7417.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-7417.md"
+        },
+        {
+          "doc": "EIPS/eip-7425.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-7425.md"
+        },
+        {
+          "doc": "EIPS/eip-7432.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-7432.md"
+        },
+        {
+          "doc": "EIPS/eip-7444.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-7444.md"
+        },
+        {
+          "doc": "EIPS/eip-7484.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-7484.md"
+        },
+        {
+          "doc": "EIPS/eip-7507.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-7507.md"
+        },
+        {
+          "doc": "EIPS/eip-7508.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-7508.md"
+        },
+        {
+          "doc": "EIPS/eip-7511.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-7511.md"
+        },
+        {
+          "doc": "EIPS/eip-7512.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-7512.md"
+        },
+        {
+          "doc": "EIPS/eip-7521.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-7521.md"
+        },
+        {
+          "doc": "EIPS/eip-7522.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-7522.md"
+        },
+        {
+          "doc": "EIPS/eip-7528.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-7528.md"
+        },
+        {
+          "doc": "EIPS/eip-777.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-777.md"
+        },
+        {
+          "doc": "EIPS/eip-801.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-801.md"
+        },
+        {
+          "doc": "EIPS/eip-820.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-820.md"
+        },
+        {
+          "doc": "EIPS/eip-823.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-823.md"
+        },
+        {
+          "doc": "EIPS/eip-831.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-831.md"
+        },
+        {
+          "doc": "EIPS/eip-875.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-875.md"
+        },
+        {
+          "doc": "EIPS/eip-884.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-884.md"
+        },
+        {
+          "doc": "EIPS/eip-897.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-897.md"
+        },
+        {
+          "doc": "EIPS/eip-900.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-900.md"
+        },
+        {
+          "doc": "EIPS/eip-902.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-902.md"
+        },
+        {
+          "doc": "EIPS/eip-908.md",
+          "kind": "deprecated",
+          "reader": "banners",
+          "line": 12,
+          "quote": "## A reward for running a full node is deprecated, but the proposal for a reward for clients remains"
+        },
+        {
+          "doc": "EIPS/eip-918.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-918.md"
+        },
+        {
+          "doc": "EIPS/eip-926.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-926.md"
+        },
+        {
+          "doc": "EIPS/eip-927.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-927.md"
+        },
+        {
+          "doc": "EIPS/eip-998.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 7,
+          "quote": "This file was moved to https://github.com/ethereum/ercs/blob/master/ERCS/erc-998.md"
+        }
+      ],
+      "pairs": []
+    },
+    {
+      "repo": "dotnet/csharplang",
+      "group": "archives",
+      "stars": 12719,
+      "commit": "80f71ebeb01cb9d973611929834599fdaaf171ba",
+      "committed": "2026-10-17T14:11:33-04:00",
+      "tree_readable": 909,
+      "present": 216,
+      "what": "C# language proposals",
+      "pattern": "^proposals/.+\\.md$",
+      "files": 906,
+      "complete": true,
+      "records": 0,
+      "dated": 0,
+      "marked": 25,
+      "superseded": 1,
+      "named": 25,
+      "placed": 1,
+      "changelog_deprecations": 0,
+      "by_reader": {
+        "banners": 25
+      },
+      "by_kind": {
+        "moved": 23,
+        "obsolete": 1,
+        "superseded": 1
+      },
+      "marks": [
+        {
+          "doc": "meetings/working-groups/discriminated-unions/Case Classes.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 1,
+          "quote": "This proposal has moved to: https://github.com/dotnet/csharplang/blob/main/proposals/case-declarations.md"
+        },
+        {
+          "doc": "meetings/working-groups/discriminated-unions/Closed Enums.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 1,
+          "quote": "This proposal has moved to: https://github.com/dotnet/csharplang/blob/main/proposals/closed-enums.md"
+        },
+        {
+          "doc": "meetings/working-groups/discriminated-unions/Closed Hierarchies.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 1,
+          "quote": "This proposal has moved to: https://github.com/dotnet/csharplang/blob/main/proposals/csharp-15.0/closed-hierarchies.md"
+        },
+        {
+          "doc": "meetings/working-groups/discriminated-unions/Nominal Type Unions.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 1,
+          "quote": "This proposal has moved to: https://github.com/dotnet/csharplang/blob/main/proposals/case-declarations.md"
+        },
+        {
+          "doc": "proposals/csharp-8.0/obsolete-accessor.md",
+          "kind": "obsolete",
+          "reader": "banners",
+          "line": 1,
+          "quote": "## Obsolete on property accessor"
+        },
+        {
+          "doc": "proposals/csharp-8.0/obsolete-accessor.md",
+          "kind": "obsolete",
+          "reader": "banners",
+          "line": 5,
+          "quote": "In C# 8.0, we added support for declaring a property accessor `[Obsolete]`. This is a placeholder for the specification."
+        },
+        {
+          "doc": "proposals/rejected/static-delegates.md",
+          "kind": "superseded",
+          "reader": "banners",
+          "line": 1,
+          "quote": "# Static Delegates (superseded by [../csharp-9.0/function-pointers.md](../csharp-9.0/function-pointers.md))"
+        },
+        {
+          "doc": "spec/README.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 1,
+          "quote": "This content has moved to the [`dotnet/csharpstandard`](https://github.com/dotnet/csharpstandard) repository."
+        },
+        {
+          "doc": "spec/arrays.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 3,
+          "quote": "This content has moved to the [`dotnet/csharpstandard`](https://github.com/dotnet/csharpstandard) repository."
+        },
+        {
+          "doc": "spec/attributes.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 3,
+          "quote": "This content has moved to the [`dotnet/csharpstandard`](https://github.com/dotnet/csharpstandard) repository."
+        },
+        {
+          "doc": "spec/basic-concepts.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 3,
+          "quote": "This content has moved to the [`dotnet/csharpstandard`](https://github.com/dotnet/csharpstandard) repository."
+        },
+        {
+          "doc": "spec/classes.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 3,
+          "quote": "This content has moved to the [`dotnet/csharpstandard`](https://github.com/dotnet/csharpstandard) repository."
+        },
+        {
+          "doc": "spec/conversions.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 3,
+          "quote": "This content has moved to the [`dotnet/csharpstandard`](https://github.com/dotnet/csharpstandard) repository."
+        },
+        {
+          "doc": "spec/delegates.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 3,
+          "quote": "This content has moved to the [`dotnet/csharpstandard`](https://github.com/dotnet/csharpstandard) repository."
+        },
+        {
+          "doc": "spec/documentation-comments.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 3,
+          "quote": "This content has moved to the [`dotnet/csharpstandard`](https://github.com/dotnet/csharpstandard) repository."
+        },
+        {
+          "doc": "spec/enums.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 3,
+          "quote": "This content has moved to the [`dotnet/csharpstandard`](https://github.com/dotnet/csharpstandard) repository."
+        },
+        {
+          "doc": "spec/exceptions.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 3,
+          "quote": "This content has moved to the [`dotnet/csharpstandard`](https://github.com/dotnet/csharpstandard) repository."
+        },
+        {
+          "doc": "spec/expressions.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 3,
+          "quote": "This content has moved to the [`dotnet/csharpstandard`](https://github.com/dotnet/csharpstandard) repository."
+        },
+        {
+          "doc": "spec/interfaces.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 3,
+          "quote": "This content has moved to the [`dotnet/csharpstandard`](https://github.com/dotnet/csharpstandard) repository."
+        },
+        {
+          "doc": "spec/lexical-structure.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 3,
+          "quote": "This content has moved to the [`dotnet/csharpstandard`](https://github.com/dotnet/csharpstandard) repository."
+        },
+        {
+          "doc": "spec/namespaces.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 3,
+          "quote": "This content has moved to the [`dotnet/csharpstandard`](https://github.com/dotnet/csharpstandard) repository."
+        },
+        {
+          "doc": "spec/statements.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 3,
+          "quote": "This content has moved to the [`dotnet/csharpstandard`](https://github.com/dotnet/csharpstandard) repository."
+        },
+        {
+          "doc": "spec/structs.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 3,
+          "quote": "This content has moved to the [`dotnet/csharpstandard`](https://github.com/dotnet/csharpstandard) repository."
+        },
+        {
+          "doc": "spec/types.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 3,
+          "quote": "This content has moved to the [`dotnet/csharpstandard`](https://github.com/dotnet/csharpstandard) repository."
+        },
+        {
+          "doc": "spec/unsafe-code.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 3,
+          "quote": "This content has moved to the [`dotnet/csharpstandard`](https://github.com/dotnet/csharpstandard) repository."
+        },
+        {
+          "doc": "spec/variables.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 3,
+          "quote": "This content has moved to the [`dotnet/csharpstandard`](https://github.com/dotnet/csharpstandard) repository."
+        }
+      ],
+      "pairs": [
+        {
+          "replaced": "proposals/rejected/static-delegates.md",
+          "by": "proposals/csharp-9.0/function-pointers.md",
+          "kind": "superseded",
+          "reader": "banners",
+          "line": 1,
+          "quote": "# Static Delegates (superseded by [../csharp-9.0/function-pointers.md](../csharp-9.0/function-pointers.md))"
+        }
+      ]
+    },
+    {
+      "repo": "WebAssembly/design",
+      "group": "archives",
+      "stars": 11628,
+      "commit": "6e43416ebc8becd6cdf5d91d9ae7d3712111df32",
+      "committed": "2025-10-21T19:46:22-07:00",
+      "tree_readable": 26,
+      "present": 25,
+      "what": "WebAssembly design documents",
+      "pattern": "^[^/]+\\.md$",
+      "files": 25,
+      "complete": true,
+      "records": 0,
+      "dated": 0,
+      "marked": 1,
+      "superseded": 0,
+      "named": 1,
+      "placed": 0,
+      "changelog_deprecations": 0,
+      "by_reader": {
+        "banners": 1
+      },
+      "by_kind": {
+        "moved": 1
+      },
+      "marks": [
+        {
+          "doc": "CodeOfConduct.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 1,
+          "quote": "The code of conduct has moved to https://github.com/WebAssembly/meetings/blob/main/CODE_OF_CONDUCT.md."
+        }
+      ],
+      "pairs": []
+    },
+    {
+      "repo": "bitcoin/bips",
+      "group": "archives",
+      "stars": 10979,
+      "commit": "130b8e0fa7f30fa45532f080b87b8db27a79e46e",
+      "committed": "2026-10-19T14:21:00-07:00",
+      "tree_readable": 177,
+      "present": 213,
+      "what": "Bitcoin Improvement Proposals",
+      "pattern": "^bip-\\d+\\.(mediawiki|md)$",
+      "files": 43,
+      "complete": true,
+      "records": 0,
+      "dated": 3,
+      "marked": 0,
+      "superseded": 0,
+      "named": 0,
+      "placed": 0,
+      "changelog_deprecations": 0,
+      "by_reader": {
+        "changelog": 3
+      },
+      "by_kind": {},
+      "marks": [],
+      "pairs": []
+    },
+    {
+      "repo": "rust-lang/rfcs",
+      "group": "archives",
+      "stars": 6612,
+      "commit": "f63a7efbb9d83ae0616cf752c000cd3df4ca5d3e",
+      "committed": "2026-10-20T15:49:39+02:00",
+      "tree_readable": 660,
+      "present": 652,
+      "what": "Rust RFCs",
+      "pattern": "^text/\\d{4}-.+\\.md$",
+      "files": 657,
+      "complete": true,
+      "records": 0,
+      "dated": 0,
+      "marked": 1,
+      "superseded": 0,
+      "named": 1,
+      "placed": 1,
+      "changelog_deprecations": 0,
+      "by_reader": {
+        "banners": 1
+      },
+      "by_kind": {
+        "moved": 1
+      },
+      "marks": [
+        {
+          "doc": "text/2071-impl-trait-type-alias.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 1,
+          "quote": "Moved to [2071-impl-trait-existential-types.md](2071-impl-trait-existential-types.md)."
+        }
+      ],
+      "pairs": [
+        {
+          "replaced": "text/2071-impl-trait-type-alias.md",
+          "by": "text/2071-impl-trait-existential-types.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 1,
+          "quote": "Moved to [2071-impl-trait-existential-types.md](2071-impl-trait-existential-types.md)."
+        }
+      ]
+    },
+    {
+      "repo": "reactjs/rfcs",
+      "group": "archives",
+      "stars": 5818,
+      "commit": "c15bc9df5afa8fd1dca6e5fd1c2ed073f7a9bd79",
+      "committed": "2023-11-03T17:05:20+00:00",
+      "tree_readable": 24,
+      "present": 19,
+      "what": "React RFCs",
+      "pattern": "^text/\\d{4}-.+\\.md$",
+      "files": 24,
+      "complete": true,
+      "records": 0,
+      "dated": 0,
+      "marked": 0,
+      "superseded": 0,
+      "named": 0,
+      "placed": 0,
+      "changelog_deprecations": 0,
+      "by_reader": {},
+      "by_kind": {},
+      "marks": [],
+      "pairs": []
+    },
+    {
+      "repo": "python/peps",
+      "group": "archives",
+      "stars": 5029,
+      "commit": "1317769c334c658db28aa5336d910f58443049eb",
+      "committed": "2026-10-20T11:02:49-07:00",
+      "tree_readable": 851,
+      "present": 745,
+      "what": "Python Enhancement Proposals",
+      "pattern": "^peps/pep-\\d{4}\\.rst$",
+      "files": 772,
+      "complete": true,
+      "records": 746,
+      "dated": 745,
+      "marked": 31,
+      "superseded": 31,
+      "named": 31,
+      "placed": 0,
+      "changelog_deprecations": 0,
+      "by_reader": {
+        "rfc": 746
+      },
+      "by_kind": {
+        "superseded": 31
+      },
+      "marks": [
+        {
+          "doc": "peps/pep-0005.rst",
+          "kind": "superseded",
+          "reader": "rfc",
+          "line": 8,
+          "quote": "Superseded-By: 387"
+        },
+        {
+          "doc": "peps/pep-0102.rst",
+          "kind": "superseded",
+          "reader": "rfc",
+          "line": 10,
+          "quote": "Superseded-By: 101"
+        },
+        {
+          "doc": "peps/pep-0215.rst",
+          "kind": "superseded",
+          "reader": "rfc",
+          "line": 9,
+          "quote": "Superseded-By: 292"
+        },
+        {
+          "doc": "peps/pep-0216.rst",
+          "kind": "superseded",
+          "reader": "rfc",
+          "line": 8,
+          "quote": "Superseded-By: 287"
+        },
+        {
+          "doc": "peps/pep-0241.rst",
+          "kind": "superseded",
+          "reader": "rfc",
+          "line": 10,
+          "quote": "Superseded-By: 314"
+        },
+        {
+          "doc": "peps/pep-0248.rst",
+          "kind": "superseded",
+          "reader": "rfc",
+          "line": 9,
+          "quote": "Superseded-By: 249"
+        },
+        {
+          "doc": "peps/pep-0291.rst",
+          "kind": "superseded",
+          "reader": "rfc",
+          "line": 9,
+          "quote": "Superseded-By: 387"
+        },
+        {
+          "doc": "peps/pep-0314.rst",
+          "kind": "superseded",
+          "reader": "rfc",
+          "line": 12,
+          "quote": "Superseded-By: 345"
+        },
+        {
+          "doc": "peps/pep-0333.rst",
+          "kind": "superseded",
+          "reader": "rfc",
+          "line": 9,
+          "quote": "Superseded-By: 3333"
+        },
+        {
+          "doc": "peps/pep-0345.rst",
+          "kind": "superseded",
+          "reader": "rfc",
+          "line": 12,
+          "quote": "Superseded-By: 566"
+        },
+        {
+          "doc": "peps/pep-0354.rst",
+          "kind": "superseded",
+          "reader": "rfc",
+          "line": 9,
+          "quote": "Superseded-By:  435"
+        },
+        {
+          "doc": "peps/pep-0386.rst",
+          "kind": "superseded",
+          "reader": "rfc",
+          "line": 8,
+          "quote": "Superseded-By: 440"
+        },
+        {
+          "doc": "peps/pep-0409.rst",
+          "kind": "superseded",
+          "reader": "rfc",
+          "line": 9,
+          "quote": "Superseded-By: 415"
+        },
+        {
+          "doc": "peps/pep-0426.rst",
+          "kind": "superseded",
+          "reader": "rfc",
+          "line": 17,
+          "quote": "Superseded-By: 566"
+        },
+        {
+          "doc": "peps/pep-0431.rst",
+          "kind": "superseded",
+          "reader": "rfc",
+          "line": 9,
+          "quote": "Superseded-By: 615"
+        },
+        {
+          "doc": "peps/pep-0433.rst",
+          "kind": "superseded",
+          "reader": "rfc",
+          "line": 8,
+          "quote": "Superseded-By: 446"
+        },
+        {
+          "doc": "peps/pep-0438.rst",
+          "kind": "superseded",
+          "reader": "rfc",
+          "line": 11,
+          "quote": "Superseded-By: 470"
+        },
+        {
+          "doc": "peps/pep-0501.rst",
+          "kind": "superseded",
+          "reader": "rfc",
+          "line": 13,
+          "quote": "Superseded-By: 750"
+        },
+        {
+          "doc": "peps/pep-0509.rst",
+          "kind": "superseded",
+          "reader": "rfc",
+          "line": 12,
+          "quote": "Superseded-By: 699"
+        },
+        {
+          "doc": "peps/pep-0513.rst",
+          "kind": "superseded",
+          "reader": "rfc",
+          "line": 11,
+          "quote": "Superseded-By: 600"
+        },
+        {
+          "doc": "peps/pep-0543.rst",
+          "kind": "superseded",
+          "reader": "rfc",
+          "line": 10,
+          "quote": "Superseded-By: 748"
+        },
+        {
+          "doc": "peps/pep-0554.rst",
+          "kind": "superseded",
+          "reader": "rfc",
+          "line": 16,
+          "quote": "Superseded-By: 734"
+        },
+        {
+          "doc": "peps/pep-0563.rst",
+          "kind": "superseded",
+          "reader": "rfc",
+          "line": 11,
+          "quote": "Superseded-By: 649, 749"
+        },
+        {
+          "doc": "peps/pep-0571.rst",
+          "kind": "superseded",
+          "reader": "rfc",
+          "line": 13,
+          "quote": "Superseded-By: 600"
+        },
+        {
+          "doc": "peps/pep-0599.rst",
+          "kind": "superseded",
+          "reader": "rfc",
+          "line": 12,
+          "quote": "Superseded-By: 600"
+        },
+        {
+          "doc": "peps/pep-0601.rst",
+          "kind": "superseded",
+          "reader": "rfc",
+          "line": 11,
+          "quote": "Superseded-By: 765"
+        },
+        {
+          "doc": "peps/pep-0622.rst",
+          "kind": "superseded",
+          "reader": "rfc",
+          "line": 16,
+          "quote": "Superseded-By: 634"
+        },
+        {
+          "doc": "peps/pep-0631.rst",
+          "kind": "superseded",
+          "reader": "rfc",
+          "line": 11,
+          "quote": "Superseded-By: 621"
+        },
+        {
+          "doc": "peps/pep-0665.rst",
+          "kind": "superseded",
+          "reader": "rfc",
+          "line": 13,
+          "quote": "Superseded-By: 751"
+        },
+        {
+          "doc": "peps/pep-0722.rst",
+          "kind": "superseded",
+          "reader": "rfc",
+          "line": 11,
+          "quote": "Superseded-By: 723"
+        },
+        {
+          "doc": "peps/pep-3153.rst",
+          "kind": "superseded",
+          "reader": "rfc",
+          "line": 8,
+          "quote": "Superseded-By: 3156"
+        }
+      ],
+      "pairs": []
+    },
+    {
+      "repo": "vuejs/rfcs",
+      "group": "archives",
+      "stars": 4927,
+      "commit": "2c62d12d0b8dc53018ed6ab6fbc5aea336d8eea6",
+      "committed": "2023-10-13T13:24:21+02:00",
+      "tree_readable": 45,
+      "present": 43,
+      "what": "Vue RFCs",
+      "pattern": "^active-rfcs/\\d{4}-.+\\.md$",
+      "files": 45,
+      "complete": true,
+      "records": 0,
+      "dated": 0,
+      "marked": 0,
+      "superseded": 0,
+      "named": 0,
+      "placed": 0,
+      "changelog_deprecations": 0,
+      "by_reader": {},
+      "by_kind": {},
+      "marks": [],
+      "pairs": []
+    },
+    {
+      "repo": "kubernetes/enhancements",
+      "group": "archives",
+      "stars": 3972,
+      "commit": "5b503a75369bdfdd494a2c2c72107a41bf6dd1a8",
+      "committed": "2026-10-17T20:21:36+00:00",
+      "tree_readable": 1987,
+      "present": 686,
+      "what": "Kubernetes Enhancement Proposals",
+      "pattern": "^keps/.+/kep\\.yaml$",
+      "files": 1433,
+      "complete": true,
+      "records": 691,
+      "dated": 675,
+      "marked": 2,
+      "superseded": 1,
+      "named": 2,
+      "placed": 0,
+      "changelog_deprecations": 0,
+      "by_reader": {
+        "banners": 2,
+        "rfc": 691
+      },
+      "by_kind": {
+        "moved": 1,
+        "superseded": 1
+      },
+      "marks": [
+        {
+          "doc": "EXCEPTIONS.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 1,
+          "quote": "This file has moved to https://git.k8s.io/sig-release/releases/EXCEPTIONS.md."
+        },
+        {
+          "doc": "keps/sig-storage/2451-service-account-token-volumes/README.md",
+          "kind": "superseded",
+          "reader": "banners",
+          "line": 1,
+          "quote": "# Service Account Token Volumes [Replaced by [Bound Service Account Tokens](https://github.com/kubernetes/enhancements/tree/master/keps/sig-auth/1205-bound-service-account-tokens)]"
+        }
+      ],
+      "pairs": []
+    },
+    {
+      "repo": "Kotlin/KEEP",
+      "group": "archives",
+      "stars": 3774,
+      "commit": "b6d5dc8b53db82ee3dc561c935bd8f2073bb90a2",
+      "committed": "2026-10-20T09:54:57+02:00",
+      "tree_readable": 138,
+      "present": 121,
+      "what": "Kotlin Evolution and Enhancement Process",
+      "pattern": "^proposals/.+\\.md$",
+      "files": 134,
+      "complete": true,
+      "records": 0,
+      "dated": 0,
+      "marked": 0,
+      "superseded": 0,
+      "named": 0,
+      "placed": 0,
+      "changelog_deprecations": 0,
+      "by_reader": {},
+      "by_kind": {},
+      "marks": [],
+      "pairs": []
+    },
+    {
+      "repo": "golang/proposal",
+      "group": "archives",
+      "stars": 3459,
+      "commit": "83ee2aaf9fdcc1a1cf4bb4d20216fc979635cf04",
+      "committed": "2026-10-16T09:55:23-07:00",
+      "tree_readable": 140,
+      "present": 91,
+      "what": "Go design documents",
+      "pattern": "^design/\\d+-.+\\.md$",
+      "files": 133,
+      "complete": true,
+      "records": 0,
+      "dated": 0,
+      "marked": 2,
+      "superseded": 0,
+      "named": 2,
+      "placed": 0,
+      "changelog_deprecations": 0,
+      "by_reader": {
+        "banners": 2
+      },
+      "by_kind": {
+        "moved": 2
+      },
+      "marks": [
+        {
+          "doc": "design/25530-notary.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 1,
+          "quote": "Moved to [golang.org/design/25530-sumdb](https://golang.org/design/25530-sumdb)."
+        },
+        {
+          "doc": "design/40307-fuzzing.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 1,
+          "quote": "Moved to [golang.org/s/draft-fuzzing-design](https://golang.org/s/draft-fuzzing-design)."
+        }
+      ],
+      "pairs": []
+    },
+    {
+      "repo": "nostr-protocol/nips",
+      "group": "archives",
+      "stars": 3120,
+      "commit": "0b5532c0355ab27f447e071a93c09cf3a2b4aad5",
+      "committed": "2026-10-19T22:09:36-03:00",
+      "tree_readable": 100,
+      "present": 99,
+      "what": "Nostr Implementation Possibilities",
+      "pattern": "^[0-9A-F]{2}\\.md$",
+      "files": 100,
+      "complete": true,
+      "records": 0,
+      "dated": 0,
+      "marked": 1,
+      "superseded": 1,
+      "named": 1,
+      "placed": 0,
+      "changelog_deprecations": 0,
+      "by_reader": {
+        "banners": 1
+      },
+      "by_kind": {
+        "superseded": 1
+      },
+      "marks": [
+        {
+          "doc": "EE.md",
+          "kind": "superseded",
+          "reader": "banners",
+          "line": 1,
+          "quote": "> __Warning__  `unrecommended`: superseded by the [Marmot Protocol](https://github.com/marmot-protocol/marmot)"
+        }
+      ],
+      "pairs": []
+    },
+    {
+      "repo": "dart-lang/language",
+      "group": "archives",
+      "stars": 2936,
+      "commit": "d78725f3797b115dbb8b1ce922843e925706e564",
+      "committed": "2026-10-19T16:25:31-07:00",
+      "tree_readable": 334,
+      "present": 76,
+      "what": "Dart language feature specifications",
+      "pattern": "^accepted/.+\\.md$",
+      "files": 218,
+      "complete": true,
+      "records": 0,
+      "dated": 0,
+      "marked": 5,
+      "superseded": 1,
+      "named": 1,
+      "placed": 0,
+      "changelog_deprecations": 0,
+      "by_reader": {
+        "banners": 5
+      },
+      "by_kind": {
+        "superseded": 1,
+        "obsolete": 3,
+        "moved": 1
+      },
+      "marks": [
+        {
+          "doc": "archive/0036 - Set Literals/0037 - Math-Braced Set Literals - lrhn.md",
+          "kind": "superseded",
+          "reader": "banners",
+          "line": 3,
+          "quote": "Status: Superseded by [design document](https://github.com/dart-lang/language/blob/master/accepted/2.2/set-literals/feature-specification.md) and language specification."
+        },
+        {
+          "doc": "working/1426-extension-types/feature-specification-inline-classes.md",
+          "kind": "obsolete",
+          "reader": "banners",
+          "line": 7,
+          "quote": "**This proposal is now obsolete. The mechanism has been renamed to"
+        },
+        {
+          "doc": "working/1426-extension-types/feature-specification-views.md",
+          "kind": "obsolete",
+          "reader": "banners",
+          "line": 7,
+          "quote": "**This proposal is now obsolete. The mechanism has been renamed to"
+        },
+        {
+          "doc": "working/1426-extension-types/feature-specification.md",
+          "kind": "obsolete",
+          "reader": "banners",
+          "line": 7,
+          "quote": "**This proposal is now obsolete. The mechanism has been renamed multiple times, and the"
+        },
+        {
+          "doc": "working/augmentation-libraries/parts_with_imports.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 3,
+          "quote": "The document has been [moved to a separate proposal](../parts-with-imports/feature-specification.md)."
+        }
+      ],
+      "pairs": []
+    },
+    {
+      "repo": "tensorflow/community",
+      "group": "archives",
+      "stars": 1289,
+      "commit": "185530183d8f3734795beb520d02b8265c230a12",
+      "committed": "2024-02-13T14:41:33-08:00",
+      "tree_readable": 263,
+      "present": 127,
+      "what": "TensorFlow RFCs",
+      "pattern": "^rfcs/.+\\.md$",
+      "files": 167,
+      "complete": true,
+      "records": 0,
+      "dated": 0,
+      "marked": 0,
+      "superseded": 0,
+      "named": 0,
+      "placed": 0,
+      "changelog_deprecations": 0,
+      "by_reader": {},
+      "by_kind": {},
+      "marks": [],
+      "pairs": []
+    },
+    {
+      "repo": "matrix-org/matrix-spec-proposals",
+      "group": "archives",
+      "stars": 1261,
+      "commit": "927e20f5115681ea5a28394d53d2928ccf8f5949",
+      "committed": "2026-10-18T22:54:32-06:00",
+      "tree_readable": 279,
+      "present": 272,
+      "what": "Matrix spec change proposals",
+      "pattern": "^proposals/\\d+-.+\\.md$",
+      "files": 277,
+      "complete": true,
+      "records": 0,
+      "dated": 0,
+      "marked": 1,
+      "superseded": 1,
+      "named": 0,
+      "placed": 0,
+      "changelog_deprecations": 0,
+      "by_reader": {
+        "banners": 1
+      },
+      "by_kind": {
+        "superseded": 1,
+        "deprecated": 1
+      },
+      "marks": [
+        {
+          "doc": "proposals/4376-remove-send-join-v1.md",
+          "kind": "superseded",
+          "reader": "banners",
+          "line": 3,
+          "quote": "[/_matrix/federation/v1/send_join/{roomId}/{eventId}] has been superseded by a `v2` endpoint and"
+        },
+        {
+          "doc": "proposals/4376-remove-send-join-v1.md",
+          "kind": "deprecated",
+          "reader": "banners",
+          "line": 4,
+          "quote": "deprecated with [MSC1802] in [r0.1.4] of the federation API in 2020. Given the time elapsed and the"
+        }
+      ],
+      "pairs": []
+    },
+    {
+      "repo": "WebAssembly/proposals",
+      "group": "archives",
+      "stars": 1139,
+      "commit": "df6a2aca1cd9d779eb4f2f3e19dae8277f336015",
+      "committed": "2026-10-06T17:30:57-07:00",
+      "tree_readable": 7,
+      "present": 3,
+      "what": "a tracking list of WebAssembly proposals",
+      "pattern": "^(README|finished-proposals|inactive-proposals)\\.md$",
+      "files": 4,
+      "complete": true,
+      "records": 0,
+      "dated": 0,
+      "marked": 0,
+      "superseded": 0,
+      "named": 0,
+      "placed": 0,
+      "changelog_deprecations": 0,
+      "by_reader": {},
+      "by_kind": {},
+      "marks": [],
+      "pairs": []
+    },
+    {
+      "repo": "microsoft/terminal",
+      "group": "in-tree",
+      "stars": 105195,
+      "commit": "9e6cf223ddb7d62eba85254ed88f8e2d663a172e",
+      "committed": "2026-10-19T17:17:23-05:00",
+      "tree_readable": 1531,
+      "present": 58,
+      "what": "specs",
+      "pattern": "^doc/specs/.+\\.md$",
+      "files": 132,
+      "complete": true,
+      "records": 0,
+      "dated": 0,
+      "marked": 6,
+      "superseded": 2,
+      "named": 4,
+      "placed": 0,
+      "changelog_deprecations": 0,
+      "by_reader": {
+        "banners": 6
+      },
+      "by_kind": {
+        "moved": 4,
+        "superseded": 2
+      },
+      "marks": [
+        {
+          "doc": "doc/cascadia/SettingsSchema.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 1,
+          "quote": "⚠ This document has moved to [the Customize Settings section of the Windows Terminal documentation](https://docs.microsoft.com/windows/terminal/customize-settings/global-settings)."
+        },
+        {
+          "doc": "doc/roadmap-2022.md",
+          "kind": "superseded",
+          "reader": "banners",
+          "line": 5,
+          "quote": "> This document has been superseded by the [Terminal 2023 Roadmap]. Please refer to that document for the updated roadmap."
+        },
+        {
+          "doc": "doc/terminal-v2-roadmap.md",
+          "kind": "superseded",
+          "reader": "banners",
+          "line": 5,
+          "quote": "> This document has been superseded by the [Terminal 2022 Roadmap]. Please refer to that document for the updated roadmap."
+        },
+        {
+          "doc": "doc/user-docs/UsingCommandlineArguments.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 1,
+          "quote": "⚠ This document has moved to [Using command-line arguments for Windows Terminal](https://docs.microsoft.com/windows/terminal/command-line-arguments)."
+        },
+        {
+          "doc": "doc/user-docs/UsingJsonSettings.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 1,
+          "quote": "⚠ This document has moved to [the Customize Settings section of the Windows Terminal documentation](https://docs.microsoft.com/windows/terminal/customize-settings/global-settings)."
+        },
+        {
+          "doc": "doc/user-docs/index.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 1,
+          "quote": "⚠ Our user-facing documentation has moved to the [Windows Terminal documentation page](https://docs.microsoft.com/windows/terminal/)."
+        }
+      ],
+      "pairs": []
+    },
+    {
+      "repo": "pingcap/tidb",
+      "group": "in-tree",
+      "stars": 40660,
+      "commit": "88d75cb0335509f29fba343d17ee668282e0d5e8",
+      "committed": "2026-10-20T13:50:50+00:00",
+      "tree_readable": 6009,
+      "present": 120,
+      "what": "design documents",
+      "pattern": "^docs/design/.+\\.md$",
+      "files": 201,
+      "complete": true,
+      "records": 0,
+      "dated": 0,
+      "marked": 0,
+      "superseded": 0,
+      "named": 0,
+      "placed": 0,
+      "changelog_deprecations": 0,
+      "by_reader": {},
+      "by_kind": {},
+      "marks": [],
+      "pairs": []
+    },
+    {
+      "repo": "backstage/backstage",
+      "group": "in-tree",
+      "stars": 34678,
+      "commit": "b29d944884849e0f108f4cc2463c5c23b0a34b6a",
+      "committed": "2026-10-20T20:17:49+02:00",
+      "tree_readable": 10962,
+      "present": 16,
+      "what": "ADRs",
+      "pattern": "^docs/architecture-decisions/adr\\d+.+\\.md$",
+      "files": 2047,
+      "complete": true,
+      "records": 0,
+      "dated": 0,
+      "marked": 6,
+      "superseded": 3,
+      "named": 3,
+      "placed": 1,
+      "changelog_deprecations": 0,
+      "by_reader": {
+        "obsidian": 16,
+        "banners": 6,
+        "changelog": 232
+      },
+      "by_kind": {
+        "deprecated": 3,
+        "superseded": 3
+      },
+      "marks": [
+        {
+          "doc": "contrib/kubernetes/basic_kubernetes_example_with_helm/README.md",
+          "kind": "deprecated",
+          "reader": "banners",
+          "line": 4,
+          "quote": "> This documentation is deprecated and will be removed at a future date, please use the well-maintained [Backstage Helm Charts](https://github.com/backstage/charts) for this."
+        },
+        {
+          "doc": "docs/architecture-decisions/adr013-use-node-fetch.md",
+          "kind": "superseded",
+          "reader": "banners",
+          "line": 9,
+          "quote": "This ADR has been superseded by [ADR014](./adr014-use-fetch.md) and no longer applies."
+        },
+        {
+          "doc": "docs/architecture-decisions/index.md",
+          "kind": "superseded",
+          "reader": "banners",
+          "line": 12,
+          "quote": "Records are never deleted but can be marked as superseded by new decisions or"
+        },
+        {
+          "doc": "docs/tutorials/react18-migration.md",
+          "kind": "deprecated",
+          "reader": "banners",
+          "line": 9,
+          "quote": "This guide has been updated to include steps for removing support for React 16, as it is now deprecated."
+        },
+        {
+          "doc": "microsite/blog/2020-12-22-stability-index.mdx",
+          "kind": "superseded",
+          "reader": "banners",
+          "line": 7,
+          "quote": "2022-01 update: The stability is now replaced by the [versioning policy](https://backstage.io/docs/overview/versioning-policy)."
+        },
+        {
+          "doc": "plugins/search-backend-module-explore/README.md",
+          "kind": "deprecated",
+          "reader": "banners",
+          "line": 3,
+          "quote": "THIS ENTIRE PACKAGE IS DEPRECATED and has been moved to the Backstage community repository; please use the `@backstage-community/plugin-search-backend-module-explore` package instead."
+        }
+      ],
+      "pairs": [
+        {
+          "replaced": "docs/architecture-decisions/adr013-use-node-fetch.md",
+          "by": "docs/architecture-decisions/adr014-use-fetch.md",
+          "kind": "superseded",
+          "reader": "banners",
+          "line": 9,
+          "quote": "This ADR has been superseded by [ADR014](./adr014-use-fetch.md) and no longer applies."
+        }
+      ]
+    },
+    {
+      "repo": "carbon-language/carbon-lang",
+      "group": "in-tree",
+      "stars": 33922,
+      "commit": "505c4ae308c0fe4e18eafddbab47a848b8731019",
+      "committed": "2026-10-19T21:10:56+00:00",
+      "tree_readable": 1168,
+      "present": 189,
+      "what": "proposals",
+      "pattern": "^proposals/p\\d{4,6}-.+\\.md$",
+      "files": 340,
+      "complete": true,
+      "records": 0,
+      "dated": 0,
+      "marked": 0,
+      "superseded": 0,
+      "named": 0,
+      "placed": 0,
+      "changelog_deprecations": 0,
+      "by_reader": {},
+      "by_kind": {},
+      "marks": [],
+      "pairs": []
+    },
+    {
+      "repo": "numpy/numpy",
+      "group": "in-tree",
+      "stars": 33063,
+      "commit": "a43563f6d7e6424a5dea38181982af284eede2d7",
+      "committed": "2026-10-20T12:19:50+03:00",
+      "tree_readable": 1971,
+      "present": 56,
+      "what": "NumPy Enhancement Proposals",
+      "pattern": "^doc/neps/nep-\\d{4}.+\\.rst$",
+      "files": 672,
+      "complete": true,
+      "records": 0,
+      "dated": 0,
+      "marked": 4,
+      "superseded": 1,
+      "named": 0,
+      "placed": 0,
+      "changelog_deprecations": 0,
+      "by_reader": {
+        "banners": 4
+      },
+      "by_kind": {
+        "superseded": 1,
+        "deprecated": 3
+      },
+      "marks": [
+        {
+          "doc": "doc/C_STYLE_GUIDE.rst",
+          "kind": "superseded",
+          "reader": "banners",
+          "line": 2,
+          "quote": "The \"NumPy C Style Guide\" at this page has been superseded by"
+        },
+        {
+          "doc": "doc/release/upcoming_changes/31931.expired.rst",
+          "kind": "deprecated",
+          "reader": "banners",
+          "line": 1,
+          "quote": "* The ``numpy.typing.mypy_plugin`` mypy plugin (deprecated since NumPy 2.3) did not"
+        },
+        {
+          "doc": "doc/release/upcoming_changes/32015.deprecation.rst",
+          "kind": "deprecated",
+          "reader": "banners",
+          "line": 1,
+          "quote": "``numpy.linalg.lapack_lite`` is deprecated"
+        },
+        {
+          "doc": "doc/release/upcoming_changes/32015.deprecation.rst",
+          "kind": "deprecated",
+          "reader": "banners",
+          "line": 4,
+          "quote": "Importing ``numpy.linalg.lapack_lite`` is deprecated. The module is an"
+        },
+        {
+          "doc": "doc/release/upcoming_changes/32334.c_api.rst",
+          "kind": "deprecated",
+          "reader": "banners",
+          "line": 1,
+          "quote": "``PyArray`` allocator helpers are now deprecated"
+        }
+      ],
+      "pairs": []
+    },
+    {
+      "repo": "cockroachdb/cockroach",
+      "group": "in-tree",
+      "stars": 32575,
+      "commit": "d30c905fff79ef825adc96bcc647f1872a90f2ff",
+      "committed": "2026-09-23T09:47:07-04:00",
+      "tree_readable": 12418,
+      "present": 188,
+      "what": "RFCs",
+      "pattern": "^docs/RFCS/.+\\.md$",
+      "files": 701,
+      "complete": true,
+      "records": 183,
+      "dated": 177,
+      "marked": 4,
+      "superseded": 1,
+      "named": 0,
+      "placed": 0,
+      "changelog_deprecations": 0,
+      "by_reader": {
+        "rfc": 183,
+        "banners": 2,
+        "changelog": 1
+      },
+      "by_kind": {
+        "obsolete": 2,
+        "superseded": 1,
+        "deprecated": 1
+      },
+      "marks": [
+        {
+          "doc": "docs/RFCS/20160706_expressive_zone_config.md",
+          "kind": "obsolete",
+          "reader": "rfc",
+          "line": 2,
+          "quote": "- Status: obsolete"
+        },
+        {
+          "doc": "docs/RFCS/20160824_quiesce_ranges.md",
+          "kind": "obsolete",
+          "reader": "rfc",
+          "line": 2,
+          "quote": "- Status: obsolete"
+        },
+        {
+          "doc": "docs/RFCS/20181003_schemas.md",
+          "kind": "superseded",
+          "reader": "banners",
+          "line": 2,
+          "quote": "- Status: superseded by #48276"
+        },
+        {
+          "doc": "docs/RFCS/README.md",
+          "kind": "deprecated",
+          "reader": "banners",
+          "line": 1,
+          "quote": "This review process is deprecated. Existing docs are left for archival"
+        }
+      ],
+      "pairs": []
+    },
+    {
+      "repo": "opentofu/opentofu",
+      "group": "in-tree",
+      "stars": 30550,
+      "commit": "42f15c9bfc27b5e59e0f324466824338d5abb2a2",
+      "committed": "2026-10-19T09:00:54-07:00",
+      "tree_readable": 4474,
+      "present": 52,
+      "what": "RFCs",
+      "pattern": "^rfc/.+\\.md$",
+      "files": 440,
+      "complete": true,
+      "records": 0,
+      "dated": 0,
+      "marked": 2,
+      "superseded": 1,
+      "named": 2,
+      "placed": 2,
+      "changelog_deprecations": 0,
+      "by_reader": {
+        "changelog": 1,
+        "banners": 2
+      },
+      "by_kind": {
+        "superseded": 1,
+        "deprecated": 1
+      },
+      "marks": [
+        {
+          "doc": "rfc/20251105-use-cobra-instead-of-mitchellh.md",
+          "kind": "superseded",
+          "reader": "banners",
+          "line": 4,
+          "quote": "This RFC has been superseded by [20260807-use-urfave-instead-of-cobra.md](20260807-use-urfave-instead-of-cobra.md)"
+        },
+        {
+          "doc": "website/docs/cli/commands/env.mdx",
+          "kind": "deprecated",
+          "reader": "banners",
+          "line": 9,
+          "quote": "The `tofu env` command is deprecated."
+        }
+      ],
+      "pairs": [
+        {
+          "replaced": "rfc/20251105-use-cobra-instead-of-mitchellh.md",
+          "by": "rfc/20260807-use-urfave-instead-of-cobra.md",
+          "kind": "superseded",
+          "reader": "banners",
+          "line": 4,
+          "quote": "This RFC has been superseded by [20260807-use-urfave-instead-of-cobra.md](20260807-use-urfave-instead-of-cobra.md)"
+        },
+        {
+          "replaced": "website/docs/cli/commands/env.mdx",
+          "by": "website/docs/cli/commands/workspace/index.mdx",
+          "kind": "deprecated",
+          "reader": "banners",
+          "line": 9,
+          "quote": "The `tofu env` command is deprecated."
+        }
+      ]
+    },
+    {
+      "repo": "grafana/loki",
+      "group": "in-tree",
+      "stars": 29049,
+      "commit": "610e593d485de7fc32ccc33f1e2c8b856da2ebb5",
+      "committed": "2026-10-20T14:43:13-04:00",
+      "tree_readable": 16285,
+      "present": 8,
+      "what": "Loki improvement documents",
+      "pattern": "^docs/sources/community/lids/.+\\.md$",
+      "files": 346,
+      "complete": true,
+      "records": 0,
+      "dated": 25,
+      "marked": 4,
+      "superseded": 0,
+      "named": 2,
+      "placed": 0,
+      "changelog_deprecations": 0,
+      "by_reader": {
+        "changelog": 3,
+        "banners": 4,
+        "obsidian": 23
+      },
+      "by_kind": {
+        "deprecated": 2,
+        "moved": 2
+      },
+      "marks": [
+        {
+          "doc": "docs/sources/setup/install/tanka.md",
+          "kind": "deprecated",
+          "reader": "banners",
+          "line": 13,
+          "quote": "deprecated. Tanka is used by Grafana Labs to run Grafana Loki in production."
+        },
+        {
+          "doc": "production/helm/fluent-bit/README.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 3,
+          "quote": "This chart was moved to <https://github.com/grafana/helm-charts>."
+        },
+        {
+          "doc": "production/helm/loki-stack/README.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 3,
+          "quote": "This chart was moved to <https://github.com/grafana/helm-charts>."
+        },
+        {
+          "doc": "tools/deprecated-config-checker/README.md",
+          "kind": "deprecated",
+          "reader": "banners",
+          "line": 1,
+          "quote": "# Deprecated Config Checker"
+        }
+      ],
+      "pairs": []
+    },
+    {
+      "repo": "argoproj/argo-cd",
+      "group": "in-tree",
+      "stars": 24440,
+      "commit": "5f6569ec51bdb7c88a7402f9ea1395a21fe7f540",
+      "committed": "2026-10-20T11:22:08-04:00",
+      "tree_readable": 5285,
+      "present": 36,
+      "what": "proposals",
+      "pattern": "^docs/proposals/.+\\.md$",
+      "files": 512,
+      "complete": true,
+      "records": 0,
+      "dated": 1,
+      "marked": 7,
+      "superseded": 0,
+      "named": 1,
+      "placed": 1,
+      "changelog_deprecations": 0,
+      "by_reader": {
+        "changelog": 1,
+        "banners": 7
+      },
+      "by_kind": {
+        "deprecated": 6,
+        "moved": 1
+      },
+      "marks": [
+        {
+          "doc": "docs/operator-manual/templates/minor_version_upgrade.md",
+          "kind": "deprecated",
+          "reader": "banners",
+          "line": 6,
+          "quote": "Deprecated flags / behavior removals"
+        },
+        {
+          "doc": "docs/operator-manual/upgrading/1.0-1.1.md",
+          "kind": "deprecated",
+          "reader": "banners",
+          "line": 3,
+          "quote": "The v1.1 release does not introduce backward incompatible changes. Please note that Kustomize v1.0 is deprecated and"
+        },
+        {
+          "doc": "docs/operator-manual/upgrading/1.4-1.5.md",
+          "kind": "deprecated",
+          "reader": "banners",
+          "line": 5,
+          "quote": "The `argocd_app_sync_status`, `argocd_app_health_status` and `argocd_app_created_time` prometheus metrics are deprecated"
+        },
+        {
+          "doc": "docs/user-guide/commands/argocd_proj_add-signature-key.md",
+          "kind": "deprecated",
+          "reader": "banners",
+          "line": 5,
+          "quote": "Add GnuPG signature key to project (DEPRECATED)"
+        },
+        {
+          "doc": "docs/user-guide/commands/argocd_proj_remove-signature-key.md",
+          "kind": "deprecated",
+          "reader": "banners",
+          "line": 5,
+          "quote": "Remove GnuPG signature key from project (DEPRECATED)"
+        },
+        {
+          "doc": "docs/user-guide/config-management-plugins.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 3,
+          "quote": "This page has been moved to the [operator manual](../operator-manual/config-management-plugins.md)."
+        },
+        {
+          "doc": "docs/user-guide/gpg-verification.md",
+          "kind": "deprecated",
+          "reader": "banners",
+          "line": 4,
+          "quote": "> **GPG Signature verification is deprecated and will be removed in the next major Argo CD version.**"
+        }
+      ],
+      "pairs": [
+        {
+          "replaced": "docs/user-guide/config-management-plugins.md",
+          "by": "docs/operator-manual/config-management-plugins.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 3,
+          "quote": "This page has been moved to the [operator manual](../operator-manual/config-management-plugins.md)."
+        }
+      ]
+    },
+    {
+      "repo": "jaegertracing/jaeger",
+      "group": "in-tree",
+      "stars": 23319,
+      "commit": "ca047c72f34cf413c16d1118e19c7419de04bbab",
+      "committed": "2026-10-19T20:11:12-04:00",
+      "tree_readable": 1861,
+      "present": 15,
+      "what": "ADRs",
+      "pattern": "^docs/adr/.+\\.md$",
+      "files": 122,
+      "complete": true,
+      "records": 32,
+      "dated": 28,
+      "marked": 3,
+      "superseded": 3,
+      "named": 2,
+      "placed": 2,
+      "changelog_deprecations": 0,
+      "by_reader": {
+        "adr": 14,
+        "banners": 3,
+        "rfc": 18
+      },
+      "by_kind": {
+        "superseded": 3
+      },
+      "marks": [
+        {
+          "doc": "docs/adr/002-mcp-server.md",
+          "kind": "superseded",
+          "reader": "banners",
+          "line": 3,
+          "quote": "* **Status**: Implemented ([#8423](https://github.com/jaegertracing/jaeger/pull/8423)); graduated from [RFC 0012](../rfc/0012-mcp-server-extension.md). Decisions 2 and 3 are superseded — see below"
+        },
+        {
+          "doc": "docs/rfc/0002-ai-gateway-contextual-tools.md",
+          "kind": "superseded",
+          "reader": "banners",
+          "line": 3,
+          "quote": "- **Status:** Implemented — the §5 tool-routing decision is superseded by [RFC 0008](./0008-ai-gateway-mcp-tool-routing.md)"
+        },
+        {
+          "doc": "docs/rfc/0012-mcp-server-extension.md",
+          "kind": "superseded",
+          "reader": "banners",
+          "line": 3,
+          "quote": "- **Status:** Implemented — graduated into [ADR-002](../adr/002-mcp-server.md); tool routing superseded by [RFC 0008](./0008-ai-gateway-mcp-tool-routing.md)"
+        }
+      ],
+      "pairs": [
+        {
+          "replaced": "docs/rfc/0002-ai-gateway-contextual-tools.md",
+          "by": "docs/rfc/0008-ai-gateway-mcp-tool-routing.md",
+          "kind": "superseded",
+          "reader": "banners",
+          "line": 3,
+          "quote": "- **Status:** Implemented — the §5 tool-routing decision is superseded by [RFC 0008](./0008-ai-gateway-mcp-tool-routing.md)"
+        },
+        {
+          "replaced": "docs/rfc/0012-mcp-server-extension.md",
+          "by": "docs/rfc/0008-ai-gateway-mcp-tool-routing.md",
+          "kind": "superseded",
+          "reader": "banners",
+          "line": 3,
+          "quote": "- **Status:** Implemented — graduated into [ADR-002](../adr/002-mcp-server.md); tool routing superseded by [RFC 0008](./0008-ai-gateway-mcp-tool-routing.md)"
+        }
+      ]
+    },
+    {
+      "repo": "vectordotdev/vector",
+      "group": "in-tree",
+      "stars": 22737,
+      "commit": "3884947e662e004eceda87c9838038b26fb1a795",
+      "committed": "2026-10-20T16:52:40+00:00",
+      "tree_readable": 3009,
+      "present": 79,
+      "what": "RFCs",
+      "pattern": "^rfcs/.+\\.md$",
+      "files": 698,
+      "complete": true,
+      "records": 0,
+      "dated": 181,
+      "marked": 11,
+      "superseded": 0,
+      "named": 2,
+      "placed": 0,
+      "changelog_deprecations": 0,
+      "by_reader": {
+        "banners": 11,
+        "obsidian": 181
+      },
+      "by_kind": {
+        "deprecated": 10,
+        "moved": 1
+      },
+      "marks": [
+        {
+          "doc": "deprecation.d/aggregate-failed-updates-total-suffix.md",
+          "kind": "deprecated",
+          "reader": "banners",
+          "line": 10,
+          "quote": "The previous name without the `_total` suffix is deprecated and will be removed in a future release. Migrate any dashboards or alerts that reference:"
+        },
+        {
+          "doc": "deprecation.d/boolean-configuration-shorthand.md",
+          "kind": "deprecated",
+          "reader": "banners",
+          "line": 6,
+          "quote": "Boolean shorthand for object-valued configuration options is deprecated. Use the object form instead"
+        },
+        {
+          "doc": "deprecation.d/opentelemetry-use-otlp-decoding.md",
+          "kind": "deprecated",
+          "reader": "banners",
+          "line": 8,
+          "quote": "The `opentelemetry` source's `use_otlp_decoding` option is deprecated."
+        },
+        {
+          "doc": "deprecation.d/packages-timber-io-artifacts.md",
+          "kind": "deprecated",
+          "reader": "banners",
+          "line": 7,
+          "quote": "release bucket. The `packages.timber.io/vector` URLs are deprecated and users should"
+        },
+        {
+          "doc": "deprecation.d/process-runtime-counter-total-suffix.md",
+          "kind": "deprecated",
+          "reader": "banners",
+          "line": 10,
+          "quote": "The previous name without the `_total` suffix is deprecated and will be removed in a future release. Migrate any dashboards or alerts that reference:"
+        },
+        {
+          "doc": "deprecation.d/structural-interpolation.md",
+          "kind": "deprecated",
+          "reader": "banners",
+          "line": 7,
+          "quote": "a Vector configuration file are deprecated and will be removed in a future"
+        },
+        {
+          "doc": "distribution/helm/README.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 3,
+          "quote": "The helm charts originally developed as part of this repository have been moved to [vectordotdev/helm-charts](https://github.com/vectordotdev/helm-charts/)."
+        },
+        {
+          "doc": "docs/tutorials/sinks/1_basic_sink.md",
+          "kind": "deprecated",
+          "reader": "banners",
+          "line": 2,
+          "quote": "Vector - 'event' and 'event streams'. The 'event' style sinks are deprecated,"
+        },
+        {
+          "doc": "website/content/en/highlights/2021-10-19-elasticsearch-config-deprecations.md",
+          "kind": "deprecated",
+          "reader": "banners",
+          "line": 13,
+          "quote": "Some fields of the elasticsearch sink config are deprecated and scheduled to be removed in 0.19.0"
+        },
+        {
+          "doc": "website/content/en/highlights/2025-02-24-0-45-0-upgrade-guide.md",
+          "kind": "deprecated",
+          "reader": "banners",
+          "line": 16,
+          "quote": "The `ellipsis` argument was deprecated. You can use `suffix` instead. For example:"
+        },
+        {
+          "doc": "website/content/en/highlights/2026-10-19-0-60-0-upgrade-guide.md",
+          "kind": "deprecated",
+          "reader": "banners",
+          "line": 16,
+          "quote": "[deprecated in 0.56.0](https://vector.dev/deprecations/)."
+        }
+      ],
+      "pairs": []
+    },
+    {
+      "repo": "gravitational/teleport",
+      "group": "in-tree",
+      "stars": 21006,
+      "commit": "1283425b60ec5f60d509ba4c791183d452923ff7",
+      "committed": "2026-08-25T11:35:10-05:00",
+      "tree_readable": 12517,
+      "present": 228,
+      "what": "requests for discussion",
+      "pattern": "^rfd/\\d{4}-.+\\.md$",
+      "files": 1605,
+      "complete": true,
+      "records": 0,
+      "dated": 0,
+      "marked": 2,
+      "superseded": 0,
+      "named": 0,
+      "placed": 0,
+      "changelog_deprecations": 0,
+      "by_reader": {
+        "changelog": 1,
+        "banners": 2
+      },
+      "by_kind": {
+        "deprecated": 2
+      },
+      "marks": [
+        {
+          "doc": "docs/pages/identity-governance/access-monitoring.mdx",
+          "kind": "deprecated",
+          "reader": "banners",
+          "line": 13,
+          "quote": "Access Monitoring is deprecated beginning in Teleport 19 and is scheduled for"
+        },
+        {
+          "doc": "rfd/0032-access-tester.md",
+          "kind": "deprecated",
+          "reader": "banners",
+          "line": 8,
+          "quote": "**Deprecated:** `roletester` has been removed for the Teleport 10 release."
+        }
+      ],
+      "pairs": []
+    },
+    {
+      "repo": "quarkusio/quarkus",
+      "group": "in-tree",
+      "stars": 15950,
+      "commit": "637cff27027d2c5f2521ee9cd100bb6ced96390a",
+      "committed": "2026-10-20T13:17:29-05:00",
+      "tree_readable": 30552,
+      "present": 11,
+      "what": "ADRs",
+      "pattern": "^adr/.+\\.(adoc|md)$",
+      "files": 594,
+      "complete": true,
+      "records": 0,
+      "dated": 0,
+      "marked": 2,
+      "superseded": 1,
+      "named": 2,
+      "placed": 0,
+      "changelog_deprecations": 0,
+      "by_reader": {
+        "banners": 2
+      },
+      "by_kind": {
+        "superseded": 1,
+        "deprecated": 1
+      },
+      "marks": [
+        {
+          "doc": "adr/0000-template.adoc",
+          "kind": "superseded",
+          "reader": "banners",
+          "line": 3,
+          "quote": "* Status: [proposed | accepted | deprecated - reason: ... | superseded by [0005](0005-example.md)]"
+        },
+        {
+          "doc": "extensions/grpc/stubs/src/main/proto/reflection/v1alpha/README.md",
+          "kind": "deprecated",
+          "reader": "banners",
+          "line": 1,
+          "quote": "While the v1alpha is deprecated since 2018 (https://github.com/grpc/grpc-proto/commits/master/grpc/reflection/v1/reflection.proto),"
+        }
+      ],
+      "pairs": []
+    },
+    {
+      "repo": "apache/pulsar",
+      "group": "in-tree",
+      "stars": 15351,
+      "commit": "5307d760114dd23528dd33c16b5446f93de37abb",
+      "committed": "2026-10-20T10:03:43-07:00",
+      "tree_readable": 6001,
+      "present": 315,
+      "what": "Pulsar improvement proposals",
+      "pattern": "^pip/pip-\\d+\\.md$",
+      "files": 409,
+      "complete": true,
+      "records": 0,
+      "dated": 0,
+      "marked": 1,
+      "superseded": 0,
+      "named": 1,
+      "placed": 0,
+      "changelog_deprecations": 0,
+      "by_reader": {
+        "banners": 1
+      },
+      "by_kind": {
+        "deprecated": 1
+      },
+      "marks": [
+        {
+          "doc": "pip/pip-155.md",
+          "kind": "deprecated",
+          "reader": "banners",
+          "line": 3,
+          "quote": "Python 2.x has been deprecated for many years now and it was officially end-of-lifed 2.5 years ago (https://www.python.org/doc/sunset-python-2/)."
+        }
+      ],
+      "pairs": []
+    },
+    {
+      "repo": "thanos-io/thanos",
+      "group": "in-tree",
+      "stars": 14240,
+      "commit": "777ac4173c8cddb009db8aed9e4215b45549f497",
+      "committed": "2026-10-20T06:59:25+00:00",
+      "tree_readable": 909,
+      "present": 30,
+      "what": "proposals",
+      "pattern": "^docs/proposals-[a-z]+/.+\\.md$",
+      "files": 100,
+      "complete": true,
+      "records": 0,
+      "dated": 8,
+      "marked": 1,
+      "superseded": 0,
+      "named": 0,
+      "placed": 0,
+      "changelog_deprecations": 4,
+      "by_reader": {
+        "changelog": 1,
+        "obsidian": 33,
+        "banners": 1
+      },
+      "by_kind": {
+        "deprecated": 1
+      },
+      "marks": [
+        {
+          "doc": "mixin/lib/thanos-grafana-builder/README.md",
+          "kind": "deprecated",
+          "reader": "banners",
+          "line": 3,
+          "quote": "> Deprecated This will be removed soon, please do not depend on it."
+        }
+      ],
+      "pairs": []
+    },
+    {
+      "repo": "crossplane/crossplane",
+      "group": "in-tree",
+      "stars": 12182,
+      "commit": "6dbabf1e17b5f5f2b9866742c0ee11ed6668f8c7",
+      "committed": "2026-10-20T11:37:16+02:00",
+      "tree_readable": 908,
+      "present": 82,
+      "what": "design documents",
+      "pattern": "^design/.+\\.md$",
+      "files": 109,
+      "complete": true,
+      "records": 0,
+      "dated": 0,
+      "marked": 1,
+      "superseded": 1,
+      "named": 0,
+      "placed": 0,
+      "changelog_deprecations": 0,
+      "by_reader": {
+        "banners": 1
+      },
+      "by_kind": {
+        "superseded": 1
+      },
+      "marks": [
+        {
+          "doc": "design/defunct/one-pager-controlled-rollout-of-composition-functions.md",
+          "kind": "superseded",
+          "reader": "banners",
+          "line": 5,
+          "quote": "* Status: Superseded by [v2]"
+        }
+      ],
+      "pairs": []
+    },
+    {
+      "repo": "axios/axios",
+      "group": "changelogs",
+      "stars": 109303,
+      "commit": "fceeb10997ea71778ad8bc9671ad53e9195a707c",
+      "committed": "2026-10-20T20:17:44+02:00",
+      "tree_readable": 443,
+      "present": null,
+      "files": 155,
+      "complete": true,
+      "records": 0,
+      "dated": 0,
+      "marked": 0,
+      "superseded": 0,
+      "named": 0,
+      "placed": 0,
+      "changelog_deprecations": 0,
+      "by_reader": {
+        "changelog": 1
+      },
+      "by_kind": {},
+      "marks": [],
+      "pairs": []
+    },
+    {
+      "repo": "angular/angular",
+      "group": "changelogs",
+      "stars": 101107,
+      "commit": "ea43e6c3934a8cf6b9d420505611096db3bb435c",
+      "committed": "2026-10-20T11:21:54-07:00",
+      "tree_readable": 9932,
+      "present": null,
+      "files": 1487,
+      "complete": true,
+      "records": 0,
+      "dated": 3,
+      "marked": 2,
+      "superseded": 0,
+      "named": 0,
+      "placed": 0,
+      "changelog_deprecations": 0,
+      "by_reader": {
+        "changelog": 3,
+        "banners": 2
+      },
+      "by_kind": {
+        "deprecated": 2
+      },
+      "marks": [
+        {
+          "doc": "packages/platform-server/testing/PACKAGE.md",
+          "kind": "deprecated",
+          "reader": "banners",
+          "line": 2,
+          "quote": "This secondary entry point is deprecated. Use e2e tests to verify SSR"
+        },
+        {
+          "doc": "packages/upgrade/PACKAGE.md",
+          "kind": "deprecated",
+          "reader": "banners",
+          "line": 4,
+          "quote": "The primary entry point is deprecated. Use the secondary entry point,"
+        }
+      ],
+      "pairs": []
+    },
+    {
+      "repo": "tailwindlabs/tailwindcss",
+      "group": "changelogs",
+      "stars": 97948,
+      "commit": "8cc0551b1217d36dc565840b90920964d37cb46c",
+      "committed": "2026-10-19T17:50:54+02:00",
+      "tree_readable": 510,
+      "present": null,
+      "files": 31,
+      "complete": true,
+      "records": 0,
+      "dated": 1,
+      "marked": 0,
+      "superseded": 0,
+      "named": 0,
+      "placed": 0,
+      "changelog_deprecations": 1,
+      "by_reader": {
+        "changelog": 1
+      },
+      "by_kind": {},
+      "marks": [],
+      "pairs": []
+    },
+    {
+      "repo": "puppeteer/puppeteer",
+      "group": "changelogs",
+      "stars": 95727,
+      "commit": "4dd58bc1625e5c0a33b8f1f0419fb23975d5aac4",
+      "committed": "2026-10-20T20:08:08+02:00",
+      "tree_readable": 1337,
+      "present": null,
+      "files": 759,
+      "complete": true,
+      "records": 0,
+      "dated": 6,
+      "marked": 16,
+      "superseded": 0,
+      "named": 2,
+      "placed": 2,
+      "changelog_deprecations": 0,
+      "by_reader": {
+        "changelog": 6,
+        "banners": 16
+      },
+      "by_kind": {
+        "obsolete": 16,
+        "deprecated": 2
+      },
+      "marks": [
+        {
+          "doc": "docs/api/puppeteer.browsercontext.overridepermissions.md",
+          "kind": "obsolete",
+          "reader": "banners",
+          "line": 7,
+          "quote": "> Warning: This API is now obsolete."
+        },
+        {
+          "doc": "docs/api/puppeteer.elementhandle.draganddrop.md",
+          "kind": "obsolete",
+          "reader": "banners",
+          "line": 7,
+          "quote": "> Warning: This API is now obsolete."
+        },
+        {
+          "doc": "docs/api/puppeteer.elementhandle.dragenter.md",
+          "kind": "obsolete",
+          "reader": "banners",
+          "line": 7,
+          "quote": "> Warning: This API is now obsolete."
+        },
+        {
+          "doc": "docs/api/puppeteer.elementhandle.dragover.md",
+          "kind": "obsolete",
+          "reader": "banners",
+          "line": 7,
+          "quote": "> Warning: This API is now obsolete."
+        },
+        {
+          "doc": "docs/api/puppeteer.frame.isdetached.md",
+          "kind": "obsolete",
+          "reader": "banners",
+          "line": 7,
+          "quote": "> Warning: This API is now obsolete."
+        },
+        {
+          "doc": "docs/api/puppeteer.frame.name.md",
+          "kind": "obsolete",
+          "reader": "banners",
+          "line": 7,
+          "quote": "> Warning: This API is now obsolete."
+        },
+        {
+          "doc": "docs/api/puppeteer.httprequest.postdata.md",
+          "kind": "obsolete",
+          "reader": "banners",
+          "line": 7,
+          "quote": "> Warning: This API is now obsolete."
+        },
+        {
+          "doc": "docs/api/puppeteer.page.cookies.md",
+          "kind": "obsolete",
+          "reader": "banners",
+          "line": 7,
+          "quote": "> Warning: This API is now obsolete."
+        },
+        {
+          "doc": "docs/api/puppeteer.page.cookies.md",
+          "kind": "deprecated",
+          "reader": "banners",
+          "line": 9,
+          "quote": "> Page-level cookie API is deprecated. Use [Browser.cookies()](./puppeteer.browser.cookies.md) or [BrowserContext.cookies()](./puppeteer.browsercontext.cookies.md) instead."
+        },
+        {
+          "doc": "docs/api/puppeteer.page.deletecookie.md",
+          "kind": "obsolete",
+          "reader": "banners",
+          "line": 7,
+          "quote": "> Warning: This API is now obsolete."
+        },
+        {
+          "doc": "docs/api/puppeteer.page.isdraginterceptionenabled.md",
+          "kind": "obsolete",
+          "reader": "banners",
+          "line": 7,
+          "quote": "> Warning: This API is now obsolete."
+        },
+        {
+          "doc": "docs/api/puppeteer.page.screencast.md",
+          "kind": "obsolete",
+          "reader": "banners",
+          "line": 7,
+          "quote": "> Warning: This API is now obsolete."
+        },
+        {
+          "doc": "docs/api/puppeteer.page.setcookie.md",
+          "kind": "obsolete",
+          "reader": "banners",
+          "line": 7,
+          "quote": "> Warning: This API is now obsolete."
+        },
+        {
+          "doc": "docs/api/puppeteer.page.setcookie.md",
+          "kind": "deprecated",
+          "reader": "banners",
+          "line": 9,
+          "quote": "> Page-level cookie API is deprecated. Use [Browser.setCookie()](./puppeteer.browser.setcookie.md) or [BrowserContext.setCookie()](./puppeteer.browsercontext.setcookie.md) instead."
+        },
+        {
+          "doc": "docs/api/puppeteer.page.setdraginterception.md",
+          "kind": "obsolete",
+          "reader": "banners",
+          "line": 7,
+          "quote": "> Warning: This API is now obsolete."
+        },
+        {
+          "doc": "docs/api/puppeteer.page.setuseragent.md",
+          "kind": "obsolete",
+          "reader": "banners",
+          "line": 9,
+          "quote": "> Warning: This API is now obsolete."
+        },
+        {
+          "doc": "docs/api/puppeteer.page.target.md",
+          "kind": "obsolete",
+          "reader": "banners",
+          "line": 7,
+          "quote": "> Warning: This API is now obsolete."
+        },
+        {
+          "doc": "docs/api/puppeteer.permission.md",
+          "kind": "obsolete",
+          "reader": "banners",
+          "line": 7,
+          "quote": "> Warning: This API is now obsolete."
+        }
+      ],
+      "pairs": [
+        {
+          "replaced": "docs/api/puppeteer.page.cookies.md",
+          "by": "docs/api/puppeteer.browser.cookies.md",
+          "kind": "deprecated",
+          "reader": "banners",
+          "line": 9,
+          "quote": "> Page-level cookie API is deprecated. Use [Browser.cookies()](./puppeteer.browser.cookies.md) or [BrowserContext.cookies()](./puppeteer.browsercontext.cookies.md) instead."
+        },
+        {
+          "replaced": "docs/api/puppeteer.page.setcookie.md",
+          "by": "docs/api/puppeteer.browser.setcookie.md",
+          "kind": "deprecated",
+          "reader": "banners",
+          "line": 9,
+          "quote": "> Page-level cookie API is deprecated. Use [Browser.setCookie()](./puppeteer.browser.setcookie.md) or [BrowserContext.setCookie()](./puppeteer.browsercontext.setcookie.md) instead."
+        }
+      ]
+    },
+    {
+      "repo": "vitejs/vite",
+      "group": "changelogs",
+      "stars": 83418,
+      "commit": "2601eed4d764f21809652dbba745d0f38b47146c",
+      "committed": "2026-10-20T16:55:08+09:00",
+      "tree_readable": 2360,
+      "present": null,
+      "files": 89,
+      "complete": true,
+      "records": 0,
+      "dated": 15,
+      "marked": 0,
+      "superseded": 0,
+      "named": 0,
+      "placed": 0,
+      "changelog_deprecations": 0,
+      "by_reader": {
+        "obsidian": 12,
+        "changelog": 3
+      },
+      "by_kind": {},
+      "marks": [],
+      "pairs": []
+    },
+    {
+      "repo": "prometheus/prometheus",
+      "group": "changelogs",
+      "stars": 66675,
+      "commit": "afa1fdebab3d56eab4527a1a1d5bc9f31a6978d6",
+      "committed": "2026-10-20T18:25:49+02:00",
+      "tree_readable": 1580,
+      "present": null,
+      "files": 83,
+      "complete": true,
+      "records": 0,
+      "dated": 1,
+      "marked": 0,
+      "superseded": 0,
+      "named": 0,
+      "placed": 0,
+      "changelog_deprecations": 0,
+      "by_reader": {
+        "changelog": 2
+      },
+      "by_kind": {},
+      "marks": [],
+      "pairs": []
+    },
+    {
+      "repo": "traefik/traefik",
+      "group": "changelogs",
+      "stars": 65293,
+      "commit": "a804fea41db3f5ed12335114f470d959b37f6737",
+      "committed": "2026-10-20T11:00:35+02:00",
+      "tree_readable": 2179,
+      "present": null,
+      "files": 193,
+      "complete": true,
+      "records": 0,
+      "dated": 0,
+      "marked": 0,
+      "superseded": 0,
+      "named": 0,
+      "placed": 0,
+      "changelog_deprecations": 0,
+      "by_reader": {},
+      "by_kind": {},
+      "marks": [],
+      "pairs": []
+    },
+    {
+      "repo": "socketio/socket.io",
+      "group": "changelogs",
+      "stars": 63226,
+      "commit": "1eaa582d3b453e3e6f522300ed05b10da0a0799b",
+      "committed": "2026-09-29T11:18:46+02:00",
+      "tree_readable": 663,
+      "present": null,
+      "files": 77,
+      "complete": true,
+      "records": 0,
+      "dated": 12,
+      "marked": 2,
+      "superseded": 0,
+      "named": 2,
+      "placed": 0,
+      "changelog_deprecations": 0,
+      "by_reader": {
+        "banners": 2,
+        "changelog": 12
+      },
+      "by_kind": {
+        "moved": 2
+      },
+      "marks": [
+        {
+          "doc": "docs/README.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 2,
+          "quote": "The documentation has been moved to the website [here](https://socket.io/docs/)."
+        },
+        {
+          "doc": "packages/socket.io-client/docs/README.md",
+          "kind": "moved",
+          "reader": "banners",
+          "line": 2,
+          "quote": "The documentation has been moved to the website [here](https://socket.io/docs/)."
+        }
+      ],
+      "pairs": []
+    },
+    {
+      "repo": "vuejs/core",
+      "group": "changelogs",
+      "stars": 54696,
+      "commit": "ef81ddcfc94399c043b349a986a1b231b6bac7d6",
+      "committed": "2026-10-20T16:40:51+08:00",
+      "tree_readable": 613,
+      "present": null,
+      "files": 27,
+      "complete": true,
+      "records": 0,
+      "dated": 1,
+      "marked": 0,
+      "superseded": 0,
+      "named": 0,
+      "placed": 0,
+      "changelog_deprecations": 0,
+      "by_reader": {
+        "changelog": 1
+      },
+      "by_kind": {},
+      "marks": [],
+      "pairs": []
+    },
+    {
+      "repo": "hashicorp/terraform",
+      "group": "changelogs",
+      "stars": 49985,
+      "commit": "79307e8a06d49af948cf28ef3c67212eb8574919",
+      "committed": "2026-10-20T15:10:59+01:00",
+      "tree_readable": 4799,
+      "present": null,
+      "files": 50,
+      "complete": true,
+      "records": 0,
+      "dated": 0,
+      "marked": 0,
+      "superseded": 0,
+      "named": 0,
+      "placed": 0,
+      "changelog_deprecations": 0,
+      "by_reader": {
+        "changelog": 1
+      },
+      "by_kind": {},
+      "marks": [],
+      "pairs": []
+    },
+    {
+      "repo": "babel/babel",
+      "group": "changelogs",
+      "stars": 44059,
+      "commit": "6cd3db7d9c125ec5100093f4ed7e6f6db570c409",
+      "committed": "2026-10-20T19:17:15+02:00",
+      "tree_readable": 27667,
+      "present": null,
+      "files": 402,
+      "complete": true,
+      "records": 0,
+      "dated": 2,
+      "marked": 0,
+      "superseded": 0,
+      "named": 0,
+      "placed": 0,
+      "changelog_deprecations": 0,
+      "by_reader": {
+        "changelog": 2
+      },
+      "by_kind": {},
+      "marks": [],
+      "pairs": []
+    },
+    {
+      "repo": "typeorm/typeorm",
+      "group": "changelogs",
+      "stars": 36662,
+      "commit": "fe92394287516feeada6e9c308ebe22deca2458e",
+      "committed": "2026-10-11T13:56:27+02:00",
+      "tree_readable": 3746,
+      "present": null,
+      "files": 88,
+      "complete": true,
+      "records": 0,
+      "dated": 2,
+      "marked": 0,
+      "superseded": 0,
+      "named": 0,
+      "placed": 0,
+      "changelog_deprecations": 0,
+      "by_reader": {
+        "changelog": 1,
+        "obsidian": 1
+      },
+      "by_kind": {},
+      "marks": [],
+      "pairs": []
+    },
+    {
+      "repo": "date-fns/date-fns",
+      "group": "changelogs",
+      "stars": 36645,
+      "commit": "717ce0a807ea4c6b540d015b5c408723175b2838",
+      "committed": "2026-09-22T14:58:48+08:00",
+      "tree_readable": 2008,
+      "present": null,
+      "files": 123,
+      "complete": true,
+      "records": 0,
+      "dated": 3,
+      "marked": 0,
+      "superseded": 0,
+      "named": 0,
+      "placed": 0,
+      "changelog_deprecations": 1,
+      "by_reader": {
+        "changelog": 3
+      },
+      "by_kind": {},
+      "marks": [],
+      "pairs": []
+    },
+    {
+      "repo": "laravel/framework",
+      "group": "changelogs",
+      "stars": 34967,
+      "commit": "31dbc2b9b0fc775ae3bbc87ae2387e88693ad2ff",
+      "committed": "2026-10-20T11:31:11-04:00",
+      "tree_readable": 3270,
+      "present": null,
+      "files": 44,
+      "complete": true,
+      "records": 0,
+      "dated": 1,
+      "marked": 0,
+      "superseded": 0,
+      "named": 0,
+      "placed": 0,
+      "changelog_deprecations": 0,
+      "by_reader": {
+        "changelog": 1
+      },
+      "by_kind": {},
+      "marks": [],
+      "pairs": []
+    },
+    {
+      "repo": "hashicorp/consul",
+      "group": "changelogs",
+      "stars": 30088,
+      "commit": "75e6642edbaf82074dab46c48c44a9258bb4d7a7",
+      "committed": "2026-10-19T23:43:34+05:30",
+      "tree_readable": 7600,
+      "present": null,
+      "files": 175,
+      "complete": true,
+      "records": 0,
+      "dated": 0,
+      "marked": 2,
+      "superseded": 0,
+      "named": 0,
+      "placed": 0,
+      "changelog_deprecations": 0,
+      "by_reader": {
+        "changelog": 1,
+        "banners": 2
+      },
+      "by_kind": {
+        "deprecated": 2
+      },
+      "marks": [
+        {
+          "doc": "ui/packages/consul-ui/app/components/icon-definition/README.mdx",
+          "kind": "deprecated",
+          "reader": "banners",
+          "line": 6,
+          "quote": "This CSS component is deprecated, please use `%horizontal-kv-list` instead (which this component uses)"
+        },
+        {
+          "doc": "ui/packages/consul-ui/app/components/state-chart/README.mdx",
+          "kind": "deprecated",
+          "reader": "banners",
+          "line": 6,
+          "quote": "**This component is deprecated and is currently undergoing an interface change in <StateMachine />**"
+        }
+      ],
+      "pairs": []
+    },
+    {
+      "repo": "pydantic/pydantic",
+      "group": "changelogs",
+      "stars": 29108,
+      "commit": "8d975e607ca3225699f81ce3c91ee689a71d3ea4",
+      "committed": "2026-10-20T12:32:23+00:00",
+      "tree_readable": 737,
+      "present": null,
+      "files": 99,
+      "complete": true,
+      "records": 0,
+      "dated": 1,
+      "marked": 0,
+      "superseded": 0,
+      "named": 0,
+      "placed": 0,
+      "changelog_deprecations": 0,
+      "by_reader": {
+        "changelog": 1
+      },
+      "by_kind": {},
+      "marks": [],
+      "pairs": []
+    }
+  ]
+}

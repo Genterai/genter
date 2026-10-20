@@ -161,3 +161,54 @@ function cutParts(src, start, end) {
   parts.push([from, end]);
   return parts;
 }
+
+// ---- any text -> the pieces search ranks ----
+
+// A file whose name says it is Markdown.
+export const MARKDOWN_FILE = /\.(md|mdx|markdown)$/i;
+
+// The pieces local search ranks a text by, the same for every caller (the engine, and a benchmark's plain ranking over
+// the same sections): [[start, end, headings]]. Markdown (by its name, or a web page) is cut by its headings
+// (splitMarkdown; the text before the first heading has none); any other text into blocks of about `chunk` characters.
+// chunk has no default: every caller passes the engine's own, LIMITS.chunkChars (local.js), so the two cannot drift.
+export function pieces(where, text, { markdown = MARKDOWN_FILE.test(where), chunk }) {
+  if (markdown) return splitMarkdown(where, text).map((p) => [p.start, p.end, p.headings[0] === "Introduction" && p.headings.length === 1 ? [] : p.headings]);
+  return blocks(text, chunk).map(([a, b]) => [a, b, []]);
+}
+
+// Text that is not Markdown, cut at blank lines into blocks of about `chunk` characters: [[start, end]].
+export function blocks(text, chunk) {
+  if (!(chunk > 0)) throw new Error("blocks: chunk is the engine's LIMITS.chunkChars");
+  const out = [];
+  let start = 0;
+  let last = 0;
+  const re = /\n[ \t]*\n/g;
+  let m = re.exec(text);
+  while (m) {
+    if (m.index - start > chunk && last > start) {
+      out.push([start, last]);
+      start = last;
+    }
+    last = m.index + m[0].length;
+    m = re.exec(text);
+  }
+  if (text.length - start > chunk * 1.5 && last > start) {
+    out.push([start, last]);
+    start = last;
+  }
+  out.push([start, text.length]);
+  // A block still longer than three blocks (no blank lines): cut at line ends.
+  return out.flatMap(([a, b]) => {
+    if (b - a <= chunk * 3) return [[a, b]];
+    const parts = [];
+    let from = a;
+    while (b - from > chunk) {
+      const cut = text.lastIndexOf("\n", from + chunk);
+      const to = cut > from ? cut + 1 : from + chunk;
+      parts.push([from, to]);
+      from = to;
+    }
+    parts.push([from, b]);
+    return parts;
+  });
+}
