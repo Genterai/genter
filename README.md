@@ -80,11 +80,11 @@ Your agent now has four tools:
 | | Words | **Meaning** (recommended) | Genter Cloud |
 | -- | -- | -- | -- |
 | **Best for** | a quick look, an offline machine | an agent working in a repository every day | a team whose answers also live in tickets, chats and mail |
-| **Setup** | `npx genter-cli mcp` | `--semantic` (or `GENTER_SEMANTIC=1`) and an embeddings key, or Ollama | `genter login <token>` on top of either |
+| **Setup** | `npx genter-cli mcp` | `--semantic` (or `GENTER_SEMANTIC=1`) and an embeddings key, or Ollama | its own MCP server, `https://genter.ai/api/mcp`, beside either |
 | **Finds** | questions asked in the docs' own words | other words, other languages | + GitHub, Linear, Slack, Gmail, Notion and 500 more apps |
 | **DriftBench, current answers** | 77% | **88%** | |
-| **Leaves your computer** | nothing | the ranked passages go to the embeddings provider (with Ollama, nothing) | your question goes to your workspace |
-| **Price** | free | free + your provider's embeddings | [plans](https://genter.ai) |
+| **Leaves your computer** | nothing | the ranked passages go to the embeddings provider (with Ollama, nothing) | what your AI tool asks Genter Cloud |
+| **Price** | free | free + your provider's embeddings | see [genter.ai](https://genter.ai) |
 
 If you are just looking, the demo and words are enough. If an agent works in your repository every day, use meaning.
 If you are a team, add Genter Cloud.
@@ -137,7 +137,7 @@ No dependencies. A docs assistant that answers from your folder and cites the fi
 [`examples/answer-with-sources.mjs`](examples/answer-with-sources.mjs):
 
 ```js
-import { createLocal, embedderFor, embeddingProvider } from "genter-cli/local";
+import { createLocal, embedderFor, embeddingProvider } from "genter-cli"; // the same as "genter-cli/local"
 
 const genter = createLocal({ embed: embedderFor(embeddingProvider()) }); // meaning: the first key set, else Ollama
 await genter.add("./docs");
@@ -179,36 +179,26 @@ ranks by words (`genter ask` says why).
 ## Genter Cloud: your team's apps
 
 Why something works the way it does is rarely written in code. It is in a ticket, a Slack thread or an email.
-[Genter Cloud](https://genter.ai) connects your apps and keeps their Anchors current as their own events come in. The
-same `genter ask` and `genter_find` then search your folders first, then your apps.
+[Genter Cloud](https://genter.ai) connects your apps (GitHub, Linear, Slack, Gmail, Notion, Google Drive and 500 more)
+and keeps their Anchors current as their own events come in.
 
-1. Sign up at [genter.ai](https://genter.ai) and connect your apps: GitHub, Linear, Slack, Gmail, Notion, Google Drive
-   and 500 more.
-2. Make a token in Settings → API tokens.
-3. Sign in once:
+Add it to your AI tool as its own MCP server, next to the local `genter mcp`:
 
-   ```bash
-   npx genter-cli login gnt_...
-   ```
+```bash
+claude mcp add --transport http genter-cloud https://genter.ai/api/mcp
+```
 
-4. Ask as before:
+Claude, ChatGPT, Cursor, VS Code and other clients that take a remote MCP server add the same address. The client signs
+you in with OAuth the first time. Nothing is kept on your disk for it: genter-cli never calls Genter Cloud and holds no
+token. Your agent then asks `genter_find` about your folders and Genter Cloud's `search` and `read` about your apps,
+each with the places it cites.
 
-   ```bash
-   genter ask "why do invites never reach shared apps?"     # your repository first, then the ticket and the thread
-   genter ask "what did Anna say about the contract?" --cloud   # only your apps
-   ```
-
-`genter mcp` finds in both too, and `--local` skips the cloud. In a team's `.mcp.json`, the `GENTER_TOKEN` line passes
-each person's own token, so everyone searches only what their own Genter Cloud account can see. Cloud also gives each
-agent its own MCP URL with `search` and `read` that any MCP client can use without genter-cli.
-
-| | `genter-cli` | + Genter Cloud |
+| | `genter-cli` | Genter Cloud |
 | -- | -- | -- |
-| Sources | folders, files, websites, notes | + 500 apps |
-| Kept current | read again at every question | + every event in an app rechecks the Anchors it touches |
-| Ranking | words; meaning with your key | meaning, plus summaries and keywords written by a model, in any language |
-| People | you | a team: roles, an MCP address per agent, a call log |
-| Price | free, Apache-2.0 | [plans](https://genter.ai) |
+| Sources | folders, files, websites, notes | your apps |
+| Kept current | read again at every question | every event in an app rechecks the Anchors it touches |
+| Runs | on your computer | at genter.ai; your AI tool connects to it |
+| Price | free, Apache-2.0 | see [genter.ai](https://genter.ai) |
 
 ## With harden
 
@@ -300,17 +290,16 @@ memory layers publish), run `node bench/convo/run.mjs --answer` with a key. [Res
 | `genter remember <text>` | keep a note in `~/.genter/notes.md`; edit it as you like |
 | `genter sources` · `genter forget <...>` | list what is searched; stop searching one |
 | `genter mcp [folder\|url ...]` | all of it for your agent, over stdio |
-| `genter login <token>` · `genter logout` | also find in your apps (Genter Cloud) |
 
 `--semantic` ranks by meaning too (or set `GENTER_SEMANTIC=1`); `--json` prints JSON; `--limit N` sets the number of
-passages; `--local` and `--cloud` search only this computer or only your apps. Genter never reads hidden files,
-`.gitignore`d files, lockfiles, keys, or anything that holds a private key. The store (`~/.genter`, or `GENTER_HOME`) is
-sealed with a secret made on the first run.
+passages. Genter never reads hidden files, `.gitignore`d files, lockfiles, keys, or anything that holds a private key.
+The store (`~/.genter`, or `GENTER_HOME`) is sealed with a secret made on the first run.
 
 ## More
 
 - [`examples/`](examples): the files that add Genter to a project, and the docs assistant.
-- [Your apps on your own Composio keys](docs/apps.md): the agent (`run`, `find`, `write`), the library, the models.
+- The apps engine of 0.3 and earlier (Composio, `genter run`, `find`, `write`) is on the
+  [`legacy`](https://github.com/Genterai/genter/tree/legacy) branch, unsupported.
 - [The red lines](harden/redlines) genter-cli keeps, and how a change gets in ([harden](harden/README.md)).
 - Releases: raise `version` in `package.json` in a pull request. Merging it into `main` publishes it to npm and creates
   the GitHub release.

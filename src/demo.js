@@ -49,7 +49,7 @@ Nothing was installed, no key was used, no model was called, and nothing of your
 
   Your folder:      npx genter-cli ask "how do we deploy?"
   Your agent:       claude mcp add genter -- npx -y genter-cli mcp
-  Your apps:        genter login <token from https://genter.ai>`);
+  Your team's apps: Genter Cloud, as its own MCP server in your AI tool: https://genter.ai/api/mcp`);
   } finally {
     rmSync(base, { recursive: true, force: true });
   }

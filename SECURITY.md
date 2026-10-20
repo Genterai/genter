@@ -25,9 +25,8 @@ What a report can be held against:
 - **Websites.** Public addresses only: an address that resolves to a private or local network is refused.
 - **What it stores.** In `~/.genter` (or `GENTER_HOME`): which places there are, their digests, headings and dates, a
   page's most frequent words and the vectors of `--semantic`, sealed with AES-256-GCM and a secret made on the first
-  run. Never the text of a file or a page. Its files there (the config with that secret, your keys and a Genter Cloud
-  token, and the sealed stores) are readable by their owner only.
+  run. Never the text of a file or a page. Its files there (the config with that secret and your keys, and the sealed
+  stores) are readable by their owner only.
 - **What it sends.** With no key, nothing. With `--semantic`, the passages to rank go to the embeddings provider you
-  chose. Signed in with `genter login`, your questions go to Genter Cloud. The app commands call Composio and
-  OpenRouter with your keys.
-- **What it runs.** Nothing it reads. A skill's scripts are handed over, never run.
+  chose. It never calls Genter Cloud: the cloud is its own MCP server in your AI tool.
+- **What it runs.** Nothing it reads.

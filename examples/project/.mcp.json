@@ -7,8 +7,7 @@
         "GENTER_SEMANTIC": "1",
         "OPENAI_API_KEY": "${OPENAI_API_KEY:-}",
         "OPENROUTER_API_KEY": "${OPENROUTER_API_KEY:-}",
-        "AI_GATEWAY_API_KEY": "${AI_GATEWAY_API_KEY:-}",
-        "GENTER_TOKEN": "${GENTER_TOKEN:-}"
+        "AI_GATEWAY_API_KEY": "${AI_GATEWAY_API_KEY:-}"
       }
     }
   }

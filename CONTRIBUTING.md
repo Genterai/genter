@@ -25,12 +25,12 @@ npm run bench         # DriftBench, offline, about a second
 node bin/genter.js demo
 ```
 
-Node 20 or later. `npm ci` also installs `@composio/core` and `zod`, which only the app commands need.
+Node 20 or later.
 
 ## What the code keeps to
 
-- **No runtime dependencies.** The local commands run on Node alone, and `@composio/core` and `zod` stay optional peers
-  of the app commands. A pull request that adds a package to `dependencies` is not merged.
+- **No runtime dependencies.** Genter runs on Node alone, with no peers. A pull request that adds a package to
+  `dependencies` or `peerDependencies` is not merged.
 - **Nothing copied.** Local search never stores the text of a file or a page: its store keeps places, digests,
   headings and dates, sealed.
 - **Nothing run.** Genter never runs what it reads: no `child_process`, `vm`, `eval`, `new Function` or

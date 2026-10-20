@@ -1,7 +1,8 @@
 name: test
 # The repository's tests on every pull request (Genterai/specs how/engineering/testing.md), Biome's lint (biome.jsonc), on every Node version
-# package.json promises (engines: >=20), and a check of what the backend and the command use: every entry in
-# "exports" imports, and `genter` starts and prints its usage.
+# package.json promises (engines: >=20), and a check of what Genter Cloud and the command use: every entry in
+# "exports" imports, the packed package installs alone and imports in a clean folder, and `genter` starts and prints
+# its usage.
 on:
   pull_request:
   push:
@@ -54,5 +55,14 @@ jobs:
       - name: Every export imports
         run: |
           node --input-type=module -e "import p from './package.json' with { type: 'json' }; for (const e of Object.values(p.exports)) await import(e)"
+      - name: The packed package installs alone and imports
+        # What npm gives a person or Genter Cloud: the tarball in an empty folder, no peers, no dev packages.
+        run: |
+          npm pack --pack-destination "$RUNNER_TEMP"
+          mkdir "$RUNNER_TEMP/clean" && cd "$RUNNER_TEMP/clean" && npm init -y >/dev/null
+          npm i "$RUNNER_TEMP"/genter-cli-*.tgz
+          test "$(ls node_modules)" = genter-cli
+          node --input-type=module -e 'for (const m of ["genter-cli", "genter-cli/local", "genter-cli/lexical"]) await import(m)'
+          npx --no-install genter --version
       - name: The command starts
         run: node bin/genter.js

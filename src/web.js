@@ -2,10 +2,10 @@ import { redirectOf } from "./drift.js";
 import { createHash } from "node:crypto";
 import { publicFetch, textOf } from "./net.js";
 
-// Websites: a page is read by a local tool, WEBSITE_READ_PAGE {url} -> { url, title, text }, and becomes an anchor like
-// any call (genter.js). Connecting a site is preparing an area: crawl() finds its pages (the address and the pages it
-// links to on the same site, up to two links deep), then each page is one execute. Pages the crawl just read are
-// kept for a few minutes, so the executes that follow do not download them again.
+// Websites: a page is read by a local tool, WEBSITE_READ_PAGE {url} -> { url, title, text }, and becomes an anchor
+// (local.js). Adding a site: crawl() finds its pages (the address and the pages it links to on the same site, up to
+// two links deep), then each page is one read. Pages the crawl just read are kept for a few minutes, so the reads
+// that follow do not download them again.
 
 export const WEBSITE = { maxDepth: 2, maxPages: 120, pageBytes: 2_000_000, pageMs: 12_000, budgetMs: 45_000, readers: 6 };
 

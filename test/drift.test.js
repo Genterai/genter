@@ -1,8 +1,6 @@
 import assert from "node:assert/strict";
-import { afterEach, describe, it } from "node:test";
-import { areaStats, driftFacts, sourceDates, sourceCount, supersededOf } from "../src/drift.js";
-import { recipesResultText } from "../src/tools.js";
-import { createGenter } from "../src/genter.js";
+import { describe, it } from "node:test";
+import { areaStats, driftFacts, sourceDates, supersededOf } from "../src/drift.js";
 
 const NOW = Date.parse("2026-10-07T12:00:00Z");
 
@@ -76,66 +74,5 @@ describe("Anchor Drift: facts only on deviation", () => {
     assert.equal(s.recent, 2);
     assert.equal(s.median, "2026-08-01T00:00:00.000Z");
     assert.equal(areaStats(["", "v1"], { now: NOW }), null);
-  });
-});
-
-describe("Anchor Drift: the answer", () => {
-  const r = (id, signals, extra = {}) => ({ id, tool: "T", args: {}, data: { x: 1 }, signals, ...extra });
-  const old = { source_at: "2019-03-10T00:00:00Z", updated_at: new Date().toISOString(), source: "github/a/r1" };
-  const fresh = { source_at: new Date(Date.now() - 5 * 86_400_000).toISOString(), updated_at: new Date().toISOString(), source: "notion/b/" };
-  it("the Anchor line is unchanged without a deviation, and gets one bracketed fact with it", () => {
-    const plain = recipesResultText({ status: "done", results: [r("rcp_1", fresh), r("rcp_2", undefined)] });
-    assert.match(plain, /^Anchor 1: rcp_1 · T · saved path\n/);
-    assert.match(plain, /\nAnchor 2: rcp_2 · T · saved path\n/);
-    const text = recipesResultText({ status: "done", results: [r("rcp_1", old, { title: "Guide" }), r("rcp_2", fresh)] });
-    assert.match(text, /^Anchor 1: rcp_1 · T — Guide · saved path \[source last changed 2019-03; another source in this answer changed within the last 30 days\]\n/);
-    assert.match(text, /\nAnchor 2: rcp_2 · T · saved path\n/);
-  });
-  it("two or more different sources add one instruction line; one source adds none", () => {
-    const meta = (t) => JSON.parse(t.slice(t.lastIndexOf("\n") + 1));
-    assert.equal(meta(recipesResultText({ status: "done", results: [r("a", old), r("b", fresh)] })).instructions, "These results come from 2 different sources. Compare them before answering and tell the user if they disagree.");
-    assert.equal(meta(recipesResultText({ status: "done", results: [r("a", old), r("b", { ...old })] })).instructions, undefined);
-    assert.equal(sourceCount([r("a", old), r("b", fresh), r("c", undefined)]), 2);
-  });
-});
-
-describe("Anchor Drift: execute stores the signals", () => {
-  let restore;
-  afterEach(() => restore?.());
-  const store = () => {
-    const rows = new Map();
-    return { rows, get: async (id) => rows.get(id), put: async (row) => rows.set(row.id, row), all: async () => [...rows.values()].filter((x) => x.remembered), remove: async (id) => rows.delete(id) };
-  };
-  const compose = (data) => {
-    const original = globalThis.fetch;
-    globalThis.fetch = async (url) => {
-      const u = String(url);
-      const json = (b) => new Response(JSON.stringify(b), { status: 200, headers: { "content-type": "application/json" } });
-      if (u.includes("/tools/execute/")) return json({ data: data(), successful: true, error: null, log_id: "l" });
-      if (u.includes("/tools/")) return json({ slug: "T", name: "T", description: "", toolkit: { slug: "drive", name: "Drive", logo: "" }, input_parameters: {}, output_parameters: {}, tags: [], version: "1", available_versions: ["1"], scopes: [], no_auth: false, is_deprecated: false, deprecated: { displayName: "", version: "1", available_versions: ["1"], is_deprecated: false, toolkit: { logo: "" } } });
-      return json({ items: [] });
-    };
-    restore = () => (globalThis.fetch = original);
-  };
-  it("saves source_at without changing the digest, and returns signals", async () => {
-    const body = { files: [{ id: "f", name: "Spec", modifiedTime: "2019-03-02T10:00:00Z" }] };
-    compose(() => body);
-    const s = store();
-    const genter = createGenter({ composioApiKey: "k", workspaceId: "w", userId: "u", secret: "s", store: s, defer: () => {} });
-    const out = await genter.execute({ tool: "GOOGLEDRIVE_FIND_FILE", args: { q: "x" } });
-    assert.equal(out.signals.source_at, "2019-03-02T10:00:00.000Z");
-    const first = await genter.recipes.get(out.id);
-    assert.equal(first.source_at, "2019-03-02T10:00:00.000Z");
-    const digest = first.digest;
-    const again = await genter.execute({ tool: "GOOGLEDRIVE_FIND_FILE", args: { q: "x" } });
-    assert.equal(again.unchanged, true);
-    assert.equal((await genter.recipes.get(out.id)).digest, digest);
-    assert.equal(again.signals.updated_at, first.updated_at);
-  });
-  it("marks a replaced document from its text, no model", async () => {
-    compose(() => ({ title: "Setup", text: "DEPRECATED: use https://docs.x.io/new instead.\n\nOld steps." }));
-    const genter = createGenter({ composioApiKey: "k", workspaceId: "w", userId: "u", secret: "s", store: store(), defer: () => {} });
-    const out = await genter.execute({ tool: "NOTION_FETCH_DATA", args: { id: "1" } });
-    assert.deepEqual(out.signals.superseded, { marker: "deprecated", by: "https://docs.x.io/new" });
   });
 });
