@@ -1,6 +1,7 @@
 # A merge to main releases the version in package.json when it is new: npm publish (with provenance) and a GitHub
 # release with notes, after lint, the tests and a clean install that answers with no key. A merge that keeps the
-# version releases nothing. To release: raise "version" in package.json in the pull request.
+# version releases nothing. To release: raise "version" in package.json in the pull request, and add its section to
+# CHANGELOG.md (the tests fail without one, so the notes are there before npm publish runs).
 # npm publishes through trusted publishing (OIDC): genter-cli on npmjs.com trusts this repository and release.yml, with
 # "Allow npm publish" on. No npm token is kept anywhere; each run gets a short one, and provenance comes with it.
 # Once the release job has released a version, the image job publishes genter serve's container image (Dockerfile,
@@ -122,10 +123,14 @@ jobs:
         if: steps.version.outputs.npm == 'true'
         run: npm publish --provenance --access public
       - name: Tag and GitHub release
+        # The notes: this version's section of CHANGELOG.md, then GitHub's list of the pull requests since the last release.
         if: steps.version.outputs.tag == 'true'
-        run: gh release create "v${{ steps.version.outputs.version }}" --target "$GITHUB_SHA" --title "v${{ steps.version.outputs.version }}" --generate-notes
+        run: |
+          node .github/scripts/notes.mjs "$V" > "$RUNNER_TEMP/notes.md"
+          gh release create "v$V" --target "$GITHUB_SHA" --title "v$V" --notes-file "$RUNNER_TEMP/notes.md" --generate-notes
         env:
           GH_TOKEN: ${{ github.token }}
+          V: ${{ steps.version.outputs.version }}
 
   image:
     # Only after the release job released this version (it ran to the end with something to release): a run that

@@ -4,7 +4,7 @@ Intent: a person runs Genter on their own machine with nothing to set up, and ad
 its own MCP server — success: `npx genter-cli ask "how do we deploy?"` answers from the folder it runs in.
 Sources: the cli spec on the legacy branch of Genterai/specs (archive); `bin/`, `src/demo.js`, `src/mcp-server.js`;
 step 1.8 of Genter's open-source plan: `server.json`, `manifest.json`, `glama.json`, `.github/scripts/mcpb.mjs`,
-`.github/scripts/versions.mjs`.
+`.github/scripts/versions.mjs`; the release notes: `CHANGELOG.md`, `.github/scripts/notes.mjs`.
 `genter serve`, the same tools over HTTP for a team, is its own area: `serve`.
 
 Most weight: [no-packages] (the first run must work), [config-private] (the config holds the store's secret and
@@ -63,8 +63,9 @@ keys), [cloud-own-server] (no token on the person's disk), and the local MCP con
 
 ### Packaging and listings
 
-Where clients and directories find Genter and how they start it. The release job that attaches the extension is
-`.github/workflows/release.yml` (outside Sources on purpose: Dependabot updates its actions); a test reads it.
+Where clients and directories find Genter and how they start it, and what a release says it brings. The release
+workflow that attaches the extension and writes the notes is `.github/workflows/release.yml` (outside Sources on
+purpose: Dependabot updates its actions); a test reads it.
 
 * **[registry-entry]** `server.json` is the entry of the official MCP Registry (schema 2025-12-11) for
   `io.github.<owner>/genter`, the owner spelled as GitHub spells it, capitals included (the registry grants a GitHub
@@ -89,6 +90,11 @@ Where clients and directories find Genter and how they start it. The release job
   (the packages that version asks for float, as it has no lockfile) in a step that sees no token, and what it packed is
   compared with what was staged, byte for byte, before the bundle is started or uploaded; the npm release job does not
   know about it.
+* **[release-notes]** A release's notes on GitHub start with its section of `CHANGELOG.md` (`## <version>`, newest
+  first): what it brings in plain words, the changes that can break what a person has (a command, a tool, an export, a
+  file Genter keeps) first, its links whole addresses (a release page resolves no relative one); GitHub's list of the
+  pull requests merged since the release before follows. A version without a section fails the tests, which the
+  release job runs before it publishes to npm or tags.
 
 ## Proof
 

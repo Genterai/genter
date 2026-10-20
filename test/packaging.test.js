@@ -7,6 +7,7 @@ import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 import { mismatches, sync } from "../.github/scripts/versions.mjs";
 import { packedFiles, pointedAt, stage } from "../.github/scripts/mcpb.mjs";
+import { notesOf } from "../.github/scripts/notes.mjs";
 import { conformance } from "../src/conformance.js";
 import { mcpTools } from "../src/mcp-server.js";
 
@@ -272,5 +273,56 @@ describe("the release attaches genter.mcpb", () => {
     assert.match(jobs.release, /npm publish --provenance --access public/);
     assert.match(jobs.release, /gh release create/);
     assert.doesNotMatch(jobs.release, /continue-on-error/);
+  });
+});
+
+describe("the release notes", () => {
+  const release = text(".github/workflows/release.yml");
+  const job = release.slice(release.indexOf("\n  release:\n"), release.indexOf("\n  image:\n"));
+  const steps = job.split(/^ {6}- /m).slice(1);
+
+  it("[rl:cli/release-notes] CHANGELOG.md has this version's section, what can break first, and the release job puts it before GitHub's list of pull requests; the tests that ask for it run before npm publish", () => {
+    const notes = notesOf(pkg.version);
+    assert.ok(notes, `CHANGELOG.md has no "## ${pkg.version}": add what ${pkg.version} brings, in plain words`);
+    const headings = notes.split("\n").filter((l) => l.startsWith("### "));
+    const breaking = headings.findIndex((h) => /^### Breaking/i.test(h));
+    assert.ok(breaking <= 0, `"${headings[breaking]}" comes first, before ${headings.slice(0, breaking).join(", ")}`);
+    // A release page resolves no relative link, so the notes link to whole addresses.
+    for (const [link] of notes.matchAll(/\]\(([^)]*)\)/g)) assert.match(link, /^\]\(https:\/\//, `${link}: a whole address`);
+    // Every section of CHANGELOG.md is a version once, newest first, so the notes of one are never another's.
+    const versions = [...text("CHANGELOG.md").matchAll(/^## \[?v?(\d+\.\d+\.\d+)/gm)].map((m) => m[1]);
+    assert.equal(versions[0], pkg.version, "the newest section is package.json's version");
+    const newer = (a, b) => a.split(".").map(Number).reduce((d, n, i) => d || n - b.split(".").map(Number)[i], 0) > 0;
+    for (let i = 1; i < versions.length; i++) assert.ok(newer(versions[i - 1], versions[i]), `${versions[i]} after ${versions[i - 1]}`);
+
+    // The tag step writes the section to a file and gives it to gh with --generate-notes, which puts it first.
+    const tag = steps.find((s) => s.startsWith("name: Tag and GitHub release"));
+    assert.ok(tag, "the tag step");
+    assert.match(tag, /run: \|\n\s+node \.github\/scripts\/notes\.mjs "\$V" > "\$RUNNER_TEMP\/notes\.md"\n\s+gh release create "v\$V" --target "\$GITHUB_SHA" --title "v\$V" --notes-file "\$RUNNER_TEMP\/notes\.md" --generate-notes\n/);
+    assert.match(tag, /V: \$\{\{ steps\.version\.outputs\.version \}\}/);
+    // The tests (which ask for the section) run before npm publish, and the tag comes after it: a version without notes
+    // stops before anything is published or tagged.
+    const at = (re) => steps.findIndex((s) => re.test(s));
+    assert.ok(at(/run: npm test$/m) >= 0 && at(/run: npm test$/m) < at(/npm publish/), "npm test before npm publish");
+    assert.ok(at(/npm publish/) < steps.indexOf(tag), "the tag after npm publish");
+  });
+
+  it("[rl:cli/release-notes] notes.mjs takes a version's section up to the next one, in either heading form, and exits 1 without one", () => {
+    const changelog = ["# Changelog", "", "Intro.", "", "## [1.2.0] - 2026-01-02", "", "### Breaking changes", "", "- one", "", "## 1.1.0", "", "- two", "", "## 1.1.0-rc.1", "", "- three", "", "## 1.0.0", ""].join("\n");
+    assert.equal(notesOf("1.2.0", changelog), "### Breaking changes\n\n- one");
+    assert.equal(notesOf("1.1.0", changelog), "- two");
+    assert.equal(notesOf("1.1.0-rc.1", changelog), "- three");
+    assert.equal(notesOf("1.0.0", changelog), null, "an empty section is no notes");
+    assert.equal(notesOf("1.3.0", changelog), null);
+    assert.equal(notesOf("1.2", changelog), null);
+
+    const script = at(".github/scripts/notes.mjs");
+    const ok = spawnSync(process.execPath, [script, pkg.version], { encoding: "utf8" });
+    assert.equal(ok.status, 0, ok.stderr);
+    assert.equal(ok.stdout, `${notesOf(pkg.version)}\n`);
+    const missing = spawnSync(process.execPath, [script, "0.0.0"], { encoding: "utf8" });
+    assert.equal(missing.status, 1);
+    assert.equal(missing.stdout, "");
+    assert.match(missing.stderr, /CHANGELOG\.md has no section for 0\.0\.0/);
   });
 });
