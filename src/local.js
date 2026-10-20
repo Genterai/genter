@@ -6,7 +6,7 @@ import { classifyFailure, contentHash, MARKDOWN_FILE as MARKDOWN, pieces as cut,
 import { cloneWindow, driftFacts, HEAD_LINES, noticeWords, supersededOf } from "./drift.js";
 import { bm25, prepare, terms, topTerms } from "./lexical.js";
 import { LIMITS as READER_LIMITS, readDocument } from "./readers.js";
-import { createRemote, MCP_READ, mcpAddress, REMOTE } from "./remote.js";
+import { createRemote, MCP_READ, mcpAddress, oneLine, REMOTE } from "./remote.js";
 import { cipher } from "./seal.js";
 import { crawl, forgetPage, readPage, siteUrl } from "./web.js";
 
@@ -233,7 +233,7 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
   function scope() {
     const config = join(home, "config.json");
     let off = readConfig(home).off ?? [];
-    if (!Array.isArray(off) || off.some((p) => typeof p !== "string")) throw new Error(`${config}: "off" must be a list of paths`);
+    if (!Array.isArray(off) || off.some((p) => typeof p !== "string")) throw new Error(`${config}: "off" must be a list of paths or addresses of MCP servers`);
     // An address in the list (https://…) switches off the MCP servers at it or under it; every other entry is a path.
     const addresses = off.filter((p) => /^https?:\/\//i.test(p.trim())).map((p) => p.trim());
     off = off.filter((p) => !/^https?:\/\//i.test(p.trim()));
@@ -424,21 +424,22 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
 
   // A document an MCP server read, as its Anchor, the same way: { record, text, event }. call: the read that gives it
   // ({ tool, arguments } or { resource }); doc: what it answered (remote.js docOf), its title, date and link from the
-  // listing when the read gives none. Kept: its title, headings, most frequent words, date, link and digest; never its text.
+  // listing when the read gives none, else what the Anchor kept (its date only while the text is the same), else its
+  // first heading. Kept: its title, headings, most frequent words, date, link and digest (of its text); never its text.
   function noteDoc(source, call, doc) {
     const s = state;
     const id = anchorId(MCP_READ, { server: source.url, ...call });
     const prev = s.anchors[id];
-    const title = doc.title || /^#{1,3}\s+(.+)$/m.exec(doc.text)?.[1].replace(/[`*_]/g, "").trim() || "Untitled";
-    const digest = contentHash({ title, text: doc.text });
+    const digest = contentHash({ text: doc.text });
+    const title = doc.title || prev?.title || oneLine(/^#{1,3}\s+(.+)$/m.exec(doc.text)?.[1].replace(/[`*_]/g, "")) || "Untitled";
     const at = now();
     const top = (doc.data && supersededOf(doc.data)) || supersededOf({ title, text: doc.text.slice(0, 1500) });
     const about = {
       title: title.slice(0, 120),
-      items: [...new Set(splitMarkdown(id, doc.text).map((p) => p.headings.join(" › ")))].slice(0, 40),
+      items: [...new Set(splitMarkdown(id, doc.text).map((p) => oneLine(p.headings.join(" › "), 300)))].slice(0, 40),
       terms: topTerms(`${title}\n${doc.text}`),
-      source_at: doc.date ?? undefined,
-      link: doc.link ?? undefined,
+      source_at: doc.date ?? (prev?.digest === digest ? prev.source_at : undefined),
+      link: doc.link ?? prev?.link,
       superseded: replacedMark({ title, text: doc.text.slice(0, 1500) }, (link) => (doc.link ? absoluteLink(doc.link, link) : /^https?:/i.test(link) ? link : null), undefined, top) ?? undefined,
     };
     if (!prev) {
@@ -579,7 +580,9 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
     const pieces = cut(where, text, { markdown: MARKDOWN.test(where) || record.tool !== FILE_READ, chunk: LIMITS.chunkChars });
     const name = record.tool === FILE_READ ? basename(where) : record.title;
     const out = pieces
-      .map(([start, end, headings]) => {
+      .map(([start, end, cutHeadings]) => {
+        // An MCP document's headings are the server's text, printed on one line of an answer.
+        const headings = record.tool === MCP_READ ? cutHeadings.map((h) => oneLine(h, 200)) : cutHeadings;
         const body = text.slice(start, end);
         if (!body.trim()) return null;
         const from = lineOf(starts, start);

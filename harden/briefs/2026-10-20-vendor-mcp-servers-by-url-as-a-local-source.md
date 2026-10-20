@@ -77,22 +77,30 @@ Decided:
 * What is called (`readOnly`, `planOf`): from the tools the server lists in that session, never one it marks
   `readOnlyHint: false` or `destructiveHint: true`, never one whose name writes (it starts with a write verb, holds a
   word that always writes such as `create`, `delete`, `replace`, or joins one with and, or, then), then one it marks
-  `readOnlyHint: true` or whose name starts with a read verb. Of those: a list needing no input (not of people, labels,
-  settings), a search taking one text input, a read taking one id; a list or a search only with a read of the same
-  thing, or a read of anything (`fetch`). Resources are read with `resources/read`. A read whose tool is not in the
-  session's plan is not called.
+  `readOnlyHint: true` or whose name starts with a read verb. `open` is a write verb (an issue, a pull request, a ticket
+  or a conversation is opened by creating it) and `load` is no read verb; a name that is not plain (letters, digits,
+  `_ . - / :`, 128 at most) is never called. Of those: a list needing no input (not of people, labels, settings), a
+  search taking one text input (never a bare `query`, whose input may be SQL), a read taking one id; a list or a search
+  only with a read of the same thing, or a read of anything (`fetch`). Resources are read with `resources/read`. A read
+  whose tool is not in the session's plan is not called.
 * What is kept (`noteDoc`): each document is an Anchor `MCP_READ {server, tool, arguments}` or `{server, resource}`, with
   its number; the sealed store keeps its title, headings, most frequent words, date, link and digest, as for a page,
-  never its text. At `genter add`: the server's resources and lists (100 documents at most), and the documents it gave
-  before that the listing no longer has, read again (gone when the server says not found). At every question, each
-  server in a session of its own, all at once, 45 seconds at most: its own search with the question (5 hits per search),
-  then the kept documents whose words fit (8 at most), each read now; what changed is said.
+  never its text. Its title, date and link come from the read, else from the listing, else from what the Anchor kept
+  (the date only while the text is the same); the digest is of its text only, so a document read again without its
+  listing is not changed. At `genter add`: the server's resources and lists (100 documents at most), and the documents
+  it gave before that the listing no longer has, read again. Gone only when the server says so of the read (the tool's
+  own error, or a JSON-RPC error answering `resources/read`, -32002); a status with no answer to the read (a 404 for a
+  session the server lost, a proxy's) is an error: a session the server ended is started again once, as Streamable
+  HTTP says. At every question, each server in a session of its own, all at once, 45 seconds at most: its own search
+  with the question (5 hits per search), then the kept documents whose words fit (8 at most), each read now; what
+  changed is said.
 * What a person sees: the place is the server's name and host (`Acme Docs (93.184.215.14)`), with the document's own
   link when it gives one; `kind: "mcp"`. A server that could not be searched (down, slow, its sign-in expired, every
   search failing, no document read) is named before the places ("Not searched: …") in `genter ask` and the `search`
   tool, and what it did give still answers; `read` says why it could not read a document; `genter add` says what it could
-  not list or read. Text from a server that lands on one line of an answer (its name, a title, a link, an error) holds no
-  control, bidi or line-break character.
+  not list or read. Text from a server that lands on one line of an answer (its name, a title, a heading, a tool's name,
+  a link, an error) holds no control, bidi or line-break character; a document's text holds no control character but
+  tab and line break, and no bidi control.
 * Switch-off: an address in the person's `off` list (`https://mcp.linear.app`) switches off the servers at it or under
   it in every project: not asked, their documents dropped from the store, their ids refused, `genter add` refused before
   anything is sent. Paths in the list work as before.
@@ -119,7 +127,7 @@ Open:
   docs/remote.md. [non-blocking]
 Proof: `test/remote.test.js`, against a fake vendor (an MCP server and its authorization server at two public addresses,
 the engine's `fetch` routed to them, so every request passes the public-address check): "[rl:remote/read-only-tools] a
-tool is called only when …" (9 tools taken, 14 refused, `delete_document` marked read-only among them); "… the plan …"
+tool is called only when …" (9 tools taken, 21 refused, `delete_document` marked read-only among them); "… the plan …"
 (Notion's, Linear's and Atlassian's tool names: what is listed, searched and read); "[rl:remote/anchors-not-copies] what
 a server answers …" (JSON as text, titles without bidi or line breaks, dates, links, GraphQL nodes); "[rl:remote/sign-in]
 [rl:remote/public-only] signs in as MCP says …" (metadata found, Genter registered with no secret, PKCE verified by the
@@ -137,8 +145,16 @@ resource metadata: refused, none fetched; http refused; metadata for another add
 crawled); "[rl:remote/sign-in] … no new clients or no PKCE …"; "[rl:remote/switch-off] …" (no request to the server,
 documents dropped, ids refused, `add` refused); "[rl:remote/one-person] …"; "[rl:remote/ac-add-and-ask]
 [rl:cli/output-local] …" (the `genter` command in a process of its own: the address on stderr, the browser following it,
-`ask`, `sources`, `forget` dropping the sign-in, no token printed). `discover()` run against the six vendors' live
-metadata. `npm test`, `npm run lint` (no new finding), `harden check` 0 errors.
+`ask`, `sources`, `forget` dropping the sign-in, no token printed). After the review: the read-only test also refuses
+`open_pull_request`, `openIssue`, `open_ticket`, `conversations_open`, `load_document` and names with a line break or a
+bidi control, and the plan never pairs an `open_*` reader or gives a bare `query` the question; "… read again without
+its listing keeps the title, date and link …" (an unchanged resource re-read by a search after `genter add` is not
+changed and keeps its date, `genter add` again says 0 changed, `read` keeps the link); "… a server's text writes no line
+of an answer …" (a heading with U+202E and ESC, a resource with no name whose heading holds U+2067 and BEL);
+"[rl:remote/says-when-failing] … a 404 from the server is no document gone …" (a session the server ends between its
+search and the reads is started again, two `initialize`; every read answered 404 "Session not found" leaves every Anchor
+fresh and names the server; `read` says the 404; a resource the server answers -32002 for is gone). `discover()` run
+against the six vendors' live metadata. `npm test`, `npm run lint` (no new finding), `harden check` 0 errors.
 
 ## Red lines after
 
@@ -148,10 +164,13 @@ metadata. `npm test`, `npm run lint` (no new finding), `harden check` 0 errors.
   https endpoints, PKCE S256, dynamic registration, a loopback redirect, the address printed and no browser opened, no
   write scope; no registration or no S256 refused saying so
 * remote/public-only: new, every address on the way through the public-address check, refused before anything is sent
-* remote/read-only-tools: new, only tools the server does not mark writing and whose names do not write, marked
-  read-only or named with a read verb; lists, searches and reads paired; nothing else called
+* remote/read-only-tools: new, only tools the server does not mark writing and whose plain names do not write (`open`
+  writes), marked read-only or named with a read verb; lists, searches and reads paired, never a bare `query` given
+  the question; nothing else called
 * remote/anchors-not-copies: new, each document an Anchor `MCP_READ`, read again at every question (the server's search,
-  then the kept documents that fit); title, headings, words, date, link and digest kept sealed, never its text
+  then the kept documents that fit); title, headings, words, date, link and digest of its text kept sealed, never its
+  text; gone only when the server says so of the read, a lost session started again once; a server's text writes no
+  line of an answer
 * remote/tokens-sealed: new, `remote.json` sealed under a key of its own, 0600, never in a config, printed or answered;
   refreshed before expiry and on a 401, one at a time; dropped by `genter forget`
 * remote/says-when-failing: new, a server not searched (down, slow, sign-in expired, search failing, nothing read) named
@@ -161,6 +180,7 @@ metadata. `npm test`, `npm run lint` (no new finding), `harden check` 0 errors.
 * remote/one-person: new, `genter serve` refuses a server; an MCP client cannot start a sign-in; another project does
   not search it
 * remote/ac-add-and-ask: new, the command's add, ask, forget path
+* local-search/person-off-wins: text changed, the `off` list also takes addresses of MCP servers (remote/switch-off)
 * contract/place-ids: text changed, an MCP server's document is a place with a number
 * contract/search-shape: text changed, the server's name and the document's link, `mcp`, and "Not searched: …" after
   the files not read in time

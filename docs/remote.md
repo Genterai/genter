@@ -7,6 +7,9 @@ the project it runs in, next to its folders and websites:
 genter add https://mcp.linear.app/mcp
 ```
 
+What it prints looks like this (an illustration: the tools are named as Linear names them, but no sign-in to Linear is
+recorded here, and the numbers and links depend on the account):
+
 ```
 genter: https://mcp.linear.app/mcp asks you to sign in. Open this address in your browser; Genter waits 5 minutes for it to come back:
 
@@ -16,7 +19,7 @@ Added https://mcp.linear.app/mcp (Linear (mcp.linear.app)): 87 documents (87 new
 ```
 
 From then on `genter ask` and the `search` tool answer from it too, with the server's name as the place and the
-document's own link:
+document's own link (again an illustration):
 
 ```
 [14] Release process v2 › Fridays
@@ -79,15 +82,17 @@ Only tools that read, decided from what the server lists in each session:
 
 - never a tool the server marks `readOnlyHint: false` or `destructiveHint: true`;
 - never a tool whose name says it changes something: it starts with a verb that writes (`create_issue`,
-  `addCommentToJiraIssue`), holds a word that always does (`get_or_create_page`, `find_and_replace`), or joins one with
-  and, or, then (`list_and_archive`);
+  `addCommentToJiraIssue`, and `open_pull_request` or `conversations_open`: to open is to create), holds a word that
+  always does (`get_or_create_page`, `find_and_replace`), or joins one with and, or, then (`list_and_archive`);
+- never a tool whose name is not a plain name (letters, digits and `_ . - / :`, 128 at most);
 - then a tool the server marks `readOnlyHint: true`, or whose name starts with a verb that reads (`get`, `list`,
   `search`, `fetch`, `read`, `find`, `query`…).
 
 Of those, Genter uses three kinds: a list that needs no input (`list_documents`), a search that takes the question
 (`notion-search`), and a read that takes one thing's id (`get_document`, `notion-fetch`). A list or a search is used
 only with a read of the same thing (or a read of anything, such as `fetch`), and lists of people, labels or settings
-are left out. Resources the server lists are read with `resources/read`.
+are left out; a bare `query` tool is never given the question (its input may be SQL). Resources the server lists are
+read with `resources/read`.
 
 ## What is kept, and what is read again
 
@@ -96,8 +101,10 @@ Nothing the server answers is copied. Each document is an Anchor: one read call 
 documents there are, their titles, headings, most frequent words, dates, links and digests; never a line of their text.
 
 At every question Genter asks each server, in a session of its own: its own search with the question, then the
-documents whose kept words fit (8 at most), each read now. A document that changed answers as it is now, marked
-changed since the last look; one the server says is not found is gone.
+documents whose kept words fit (8 at most), each read now. A document whose text changed answers as it is now, marked
+changed since the last look; one the server itself says is not found (the tool's own error, or its answer to
+`resources/read`) is gone. A 404 with no answer to the read, such as for a session the server lost, says nothing about
+the document: Genter starts a new session once, and a read that still fails is said in the answer.
 
 ## Your sign-in
 

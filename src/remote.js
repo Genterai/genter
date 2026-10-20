@@ -32,21 +32,26 @@ const wordsOf = (name) =>
     .split(/[^A-Za-z0-9]+/)
     .filter(Boolean)
     .map((w) => w.toUpperCase());
-const READS = new Set(["GET", "LIST", "SEARCH", "FETCH", "READ", "FIND", "QUERY", "RETRIEVE", "SHOW", "VIEW", "DESCRIBE", "LOOKUP", "LOAD", "BROWSE", "OPEN"]);
+const READS = new Set(["GET", "LIST", "SEARCH", "FETCH", "READ", "FIND", "QUERY", "RETRIEVE", "SHOW", "VIEW", "DESCRIBE", "LOOKUP", "BROWSE"]);
 // Verbs that change something when a name starts with them (some are nouns elsewhere: get_comment reads a comment).
+// OPEN is one: an issue, a pull request, a ticket or a conversation is opened by creating it.
 const WRITES = new Set(
-  "CREATE DELETE UPDATE SEND REMOVE ADD POST MODIFY PATCH PUT MOVE ARCHIVE UNARCHIVE INVITE REPLY STAR UNSTAR WATCH UNWATCH UPLOAD SET START STOP CANCEL MERGE CLOSE LOCK UNLOCK MARK TRASH EXECUTE EXEC RUN TRIGGER IMPORT EXPORT COPY SHARE FORWARD APPEND INSERT UPSERT TRANSITION TRANSFER EDIT RENAME ASSIGN UNASSIGN SUBMIT DISMISS REQUEST FORK BLOCK UNBLOCK ENABLE DISABLE REPLACE ACCEPT DECLINE JOIN LEAVE APPROVE REJECT PIN UNPIN PUBLISH UNPUBLISH SCHEDULE SNOOZE RERUN RESTORE DUPLICATE CONVERT REACT FOLLOW UNFOLLOW SUBSCRIBE UNSUBSCRIBE LABEL TAG COMMENT RESOLVE REOPEN DRAFT BAN KICK MUTE INVOKE CALL DEPLOY PROVISION REVOKE GRANT RESET CLEAR EMPTY PURGE WRITE SAVE APPLY COMPLETE CHECKOUT PAY REFUND CHARGE DESTROY DROP PUSH NOTIFY TOGGLE SYNC GENERATE INSTALL UNINSTALL KILL TERMINATE RESTART ROLLBACK REVERT LINK UNLINK ATTACH DETACH VOTE LIKE UNLIKE BOOKMARK CONNECT DISCONNECT LOGIN LOGOUT REGISTER AUTHORIZE ERASE WIPE OVERWRITE".split(" "),
+  "OPEN CREATE DELETE UPDATE SEND REMOVE ADD POST MODIFY PATCH PUT MOVE ARCHIVE UNARCHIVE INVITE REPLY STAR UNSTAR WATCH UNWATCH UPLOAD SET START STOP CANCEL MERGE CLOSE LOCK UNLOCK MARK TRASH EXECUTE EXEC RUN TRIGGER IMPORT EXPORT COPY SHARE FORWARD APPEND INSERT UPSERT TRANSITION TRANSFER EDIT RENAME ASSIGN UNASSIGN SUBMIT DISMISS REQUEST FORK BLOCK UNBLOCK ENABLE DISABLE REPLACE ACCEPT DECLINE JOIN LEAVE APPROVE REJECT PIN UNPIN PUBLISH UNPUBLISH SCHEDULE SNOOZE RERUN RESTORE DUPLICATE CONVERT REACT FOLLOW UNFOLLOW SUBSCRIBE UNSUBSCRIBE LABEL TAG COMMENT RESOLVE REOPEN DRAFT BAN KICK MUTE INVOKE CALL DEPLOY PROVISION REVOKE GRANT RESET CLEAR EMPTY PURGE WRITE SAVE APPLY COMPLETE CHECKOUT PAY REFUND CHARGE DESTROY DROP PUSH NOTIFY TOGGLE SYNC GENERATE INSTALL UNINSTALL KILL TERMINATE RESTART ROLLBACK REVERT LINK UNLINK ATTACH DETACH VOTE LIKE UNLIKE BOOKMARK CONNECT DISCONNECT LOGIN LOGOUT REGISTER AUTHORIZE ERASE WIPE OVERWRITE".split(" "),
 );
 // Words that change something wherever they stand in a name (never a thing a tool reads): get_or_create, find_replace.
 const CHANGES = new Set("CREATE DELETE UPDATE REMOVE MODIFY EDIT WRITE PATCH INSERT UPSERT DESTROY PURGE TRASH APPEND REPLACE RENAME EXECUTE EXEC INVOKE SEND ERASE WIPE OVERWRITE".split(" "));
 
+// A tool name Genter calls (MCP's tool name characters, and / and :): one line, nothing a terminal would act on, so a
+// name it prints (the tools it calls, what failed) writes no line of an answer.
+const TOOL_NAME = /^[A-Za-z0-9_./:-]{1,128}$/;
+
 // Whether Genter may call a tool: never one the server says is not read-only or is destructive, never one whose name
 // says it changes something (it starts with a verb that writes, holds a word that always does, or joins one with
-// and/or/then); then one the server marks readOnlyHint, or whose name starts with a verb that reads. Anything else is
-// never called.
+// and/or/then) or is not a plain name (TOOL_NAME); then one the server marks readOnlyHint, or whose name starts with a
+// verb that reads. Anything else is never called.
 export function readOnly(tool) {
   const hints = tool?.annotations ?? {};
-  if (!tool?.name || hints.readOnlyHint === false || hints.destructiveHint === true) return false;
+  if (typeof tool?.name !== "string" || !TOOL_NAME.test(tool.name) || hints.readOnlyHint === false || hints.destructiveHint === true) return false;
   const words = wordsOf(tool.name);
   const first = words.findIndex((w) => READS.has(w) || WRITES.has(w));
   if (first >= 0 && WRITES.has(words[first])) return false;
@@ -59,7 +64,7 @@ export function readOnly(tool) {
 // Anchors), search (one text input, the question), read (one input naming a thing: an Anchor's call). noun: what it
 // lists or reads, so a list pairs with the read of the same thing ("list_documents" with "get_document").
 const LIST = new Set(["LIST", "SEARCH", "QUERY", "FIND", "BROWSE"]);
-const READ = new Set(["GET", "READ", "FETCH", "RETRIEVE", "VIEW", "SHOW", "OPEN", "DESCRIBE", "LOAD", "LOOKUP"]);
+const READ = new Set(["GET", "READ", "FETCH", "RETRIEVE", "VIEW", "SHOW", "DESCRIBE", "LOOKUP"]);
 const QUERY_ARG = /^(query|q|search|search_?query|search_?term|search_?text|term|terms|text|keywords?)$/i;
 const ID_ARG = /^(id|uri|url|key|identifier|uuid|slug)$|(_id|Id|_uri|Uri|_url|Url|_key|Key)$/;
 const LIMIT_ARG = /^(limit|first|max_?results|page_?size|per_?page|count|top)$/i;
@@ -84,7 +89,8 @@ function roleOf(tool) {
 
 // How Genter reads a server, from the tools it lists now: { reads (the names Genter may call), lists, searches, others
 // (how many tools it never calls) }. A list or a search is taken only with a read of the same thing (or a read of
-// anything, such as "fetch") to call for each thing it gives; lists of things that are no documents are left out.
+// anything, such as "fetch") to call for each thing it gives; lists of things that are no documents are left out. A
+// bare "query" (or "sql_query") is never a search: its input may be a query language, never given the question.
 export function planOf(tools) {
   const readable = tools.filter(readOnly);
   const roles = readable.map(roleOf);
@@ -97,7 +103,7 @@ export function planOf(tools) {
     .slice(0, REMOTE.lists)
     .map((r) => ({ tool: r.tool, arguments: fit(r, 50), reader: readerOf(r.noun) }));
   const searches = roles
-    .filter((r) => LIST.has(r.verb) && r.query && r.required.every((k) => k === r.query) && !NOT_DOCS.test(r.noun) && readerOf(r.noun))
+    .filter((r) => LIST.has(r.verb) && !(r.verb === "QUERY" && !r.noun) && r.query && r.required.every((k) => k === r.query) && !NOT_DOCS.test(r.noun) && readerOf(r.noun))
     .sort((a, b) => Number(a.verb !== "SEARCH") - Number(b.verb !== "SEARCH") || a.tool.length - b.tool.length)
     .slice(0, REMOTE.searches)
     .map((r) => ({ tool: r.tool, arg: r.query, arguments: fit(r, REMOTE.hits * 2), reader: readerOf(r.noun) }));
@@ -236,7 +242,13 @@ export function docOf(result) {
     const rest = Object.fromEntries(Object.entries(one).filter(([k, x]) => x !== body && !TITLE_KEYS.slice(0, 2).includes(k)));
     text = [plainOf(rest), body?.trim()].filter(Boolean).join("\n\n");
   } else if (Array.isArray(data)) text = plainOf(data);
-  text = text.slice(0, REMOTE.textChars).replace(/\r\n?/g, "\n").trim();
+  // Nothing in it acts on a terminal or turns text around: control characters (but tab and line break), bidi
+  // embeddings, overrides and isolates are left out.
+  text = text
+    .slice(0, REMOTE.textChars)
+    .replace(/\r\n?/g, "\n")
+    .replace(/(?![\t\n])\p{Cc}|[\u202a-\u202e\u2066-\u2069]/gu, "")
+    .trim();
   if (!text) return null;
   const title = (one && titleOf(one)) || undefined;
   if (title && !/^\s*#{1,3}\s/.test(text)) text = `# ${title}\n\n${text}`;
@@ -252,6 +264,16 @@ function readCall(reader, item) {
 }
 
 // ---- the protocol ----
+
+// The server's own JSON-RPC error answering a request (code: its code): what it says about what was asked, such as a
+// resource it does not have (-32002). Any other failure (a status with no answer to this request, a session the server
+// ended, a timeout) is a plain Error and says nothing about what was asked.
+class Answered extends Error {
+  constructor(method, error) {
+    super(`${method}: ${oneLine(error?.message, 300) || "failed"}`);
+    this.code = error?.code;
+  }
+}
 
 // A server that asks to sign in (again): its message says how, for an answer that names the server.
 export class SignInNeeded extends Error {
@@ -335,41 +357,57 @@ async function probe(url) {
 }
 
 // One session with a server: { info, name, tools, plan, call(method, params), close() }. auth: the tokens it signs its
-// requests with (authOf), refreshed before they expire and once again when the server says they no longer work.
+// requests with (authOf), refreshed before they expire and once again when the server says they no longer work. A
+// session the server ended (a 404 to a request that carried its id, as Streamable HTTP says) is started again once.
 async function session(url, auth) {
   let sid = null;
   let version = null;
   let next = 1;
-  // One request, signed with the access token at hand: { res, used } (used: that token).
+  let restart = null;
+  // One request, signed with the access token at hand: { res, used, sent } (used: that token; sent: the session id).
   const post = async (msg) => {
     if (auth.expiring() && !(await auth.refresh())) throw new SignInNeeded("", url, true);
     const used = auth.current?.access;
-    const headers = { ...HEADERS, ...(used && { Authorization: `Bearer ${used}` }), ...(sid && { "Mcp-Session-Id": sid }), ...(version && { "MCP-Protocol-Version": version }) };
+    const sent = sid;
+    const headers = { ...HEADERS, ...(used && { Authorization: `Bearer ${used}` }), ...(sent && { "Mcp-Session-Id": sent }), ...(version && { "MCP-Protocol-Version": version }) };
     try {
-      return { res: (await publicFetch(url, { method: "POST", headers, body: JSON.stringify(msg), signal: AbortSignal.timeout(REMOTE.requestMs) })).res, used };
+      return { res: (await publicFetch(url, { method: "POST", headers, body: JSON.stringify(msg), signal: AbortSignal.timeout(REMOTE.requestMs) })).res, used, sent };
     } catch (e) {
       throw failure(e);
     }
   };
   const call = async (method, params = {}, again = true) => {
     const id = next++;
-    const { res, used } = await post({ jsonrpc: "2.0", id, method, params });
+    const { res, used, sent } = await post({ jsonrpc: "2.0", id, method, params });
     if (res.status === 401) {
       const header = res.headers.get("www-authenticate") ?? "";
       await cancel(res);
       if (again && used && (await auth.refresh(used))) return call(method, params, false);
       throw new SignInNeeded(header, url, Boolean(used));
     }
+    if (res.status === 404 && sent && again) {
+      await cancel(res);
+      if (sid === sent) restart ??= begin().finally(() => (restart = null));
+      await restart;
+      return call(method, params, false);
+    }
     sid = res.headers.get("mcp-session-id") ?? sid;
     const m = await answerOf(res, id);
-    if (!m || (res.status >= 400 && !m.jsonrpc)) throw new Error(`${method}: the server answered ${res.status} without an MCP message`);
-    if (m.error) throw new Error(`${method}: ${oneLine(m.error.message, 300) || "failed"}`);
+    // Only a message answering this request, with a status that is not a failure, is the server's answer to it.
+    if (!m || res.status >= 400 || m.id !== id) throw new Error(`${method}: the server answered ${res.status}${m?.error?.message ? ` (${oneLine(m.error.message, 200)})` : " without an MCP message"}`);
+    if (m.error) throw new Answered(method, m.error);
     return m.result;
   };
-  const info = await call("initialize", initialize(0).params);
-  if (!info?.protocolVersion) throw new Error("it did not answer as an MCP server");
-  version = String(info.protocolVersion);
-  await cancel((await post({ jsonrpc: "2.0", method: "notifications/initialized" })).res);
+  const begin = async () => {
+    sid = null;
+    version = null;
+    const info = await call("initialize", initialize(0).params);
+    if (!info?.protocolVersion) throw new Error("it did not answer as an MCP server");
+    version = String(info.protocolVersion);
+    await cancel((await post({ jsonrpc: "2.0", method: "notifications/initialized" })).res);
+    return info;
+  };
+  const info = await begin();
   const tools = [];
   if (info.capabilities?.tools) {
     let cursor;
@@ -391,7 +429,8 @@ async function session(url, auth) {
 }
 
 // A read of one Anchor's call: { doc } | { gone: true } | { error }. A tool is called only when it is one Genter may
-// call on this server now (its plan's reads, from the tools it lists in this session).
+// call on this server now (its plan's reads, from the tools it lists in this session). Gone only when the server says
+// so of this read (the tool's own error, or its answer to resources/read); a failure on the way is an error.
 async function readWith(s, call) {
   try {
     let result;
@@ -406,7 +445,7 @@ async function readWith(s, call) {
     return doc ? { doc } : { error: "it answered no text" };
   } catch (e) {
     if (e instanceof SignInNeeded) throw e;
-    return classifyFailure(e.message) === "gone" ? { gone: true } : { error: e.message };
+    return e instanceof Answered && (e.code === -32002 || classifyFailure(e.message) === "gone") ? { gone: true } : { error: e.message };
   }
 }
 

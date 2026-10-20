@@ -40,17 +40,25 @@ and their network stay theirs), [one-person] (what one person signed in to is re
 ### What Genter calls and keeps
 
 * **[read-only-tools]** Genter calls a server's tool only when, in the tools it lists in that session, the server does
-  not mark it `readOnlyHint: false` or `destructiveHint: true`, its name does not say it changes something (it starts
-  with a verb that writes, holds a word that always does, or joins one with and, or, then), and the server marks it
-  `readOnlyHint: true` or its name starts with a verb that reads. Of those it calls a list that needs no input, a
-  search that takes the question, and a read that takes one thing's id, a list or a search only with a read of the
-  same thing; resources are read with `resources/read`. No other tool is ever called.
+  not mark it `readOnlyHint: false` or `destructiveHint: true`, its name is a plain name (letters, digits and
+  `_ . - / :`, 128 at most) that does not say it changes something (it starts with a verb that writes, `open` among
+  them, holds a word that always does, or joins one with and, or, then), and the server marks it `readOnlyHint: true`
+  or its name starts with a verb that reads. Of those it calls a list that needs no input, a search that takes the
+  question (never a bare `query`, whose input may be a query language), and a read that takes one thing's id, a list
+  or a search only with a read of the same thing; resources are read with `resources/read`. No other tool is ever
+  called.
 * **[anchors-not-copies]** Each document a server lists or finds is an Anchor: one read with fixed arguments
   (`MCP_READ {server, tool, arguments}`, or `{server, resource}`), read again at every question where it may answer:
   the server's own search with the question, then the documents whose kept words fit (8 at most). The store keeps its
-  title, headings, most frequent words, date and link as the server gives them, and its digest, sealed; never a line
-  of its text. A document that changed answers as it is now, said as changed since the last look; one the server says
-  is not found is gone.
+  title, headings, most frequent words, date and link as the server gives them (a read that gives none keeps what the
+  listing gave, its date while the text is the same), and the digest of its text, sealed; never a line of its text. A
+  document whose text changed answers as it is now, said as changed since the last look; one the server itself says
+  is not found (the tool's own error, or its answer to `resources/read`) is gone. A failure on the way (a status with
+  no answer to the read, such as a 404 for a session the server lost) says nothing about a document: a session the
+  server ended is started again once, and a read that still fails is an error (remote/says-when-failing). Text from a
+  server that lands on one line of an answer (its name, a title, a heading, a tool's name, a link, an error) holds no
+  control, bidi or line-break character, and a document's text no control character but tab and line break and no
+  bidi control.
 * **[tokens-sealed]** A server's tokens (access and refresh) are kept in `remote.json` in Genter's home, sealed with
   the store's secret (a key of their own), readable by their owner only, read again at every use; never in a config,
   never printed, logged or in an answer. They are refreshed before they expire (and once more on a 401), one refresh at
