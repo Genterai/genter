@@ -30,8 +30,9 @@ description.
   Cloud's, that what it marks takes a model, and what the open engine marks with no key.
 * **[pictures]** `docs/hero.png`, `docs/hero-dark.png` (the same size, twice the 760 pixels the README shows) and
   `docs/demo.gif` are rendered by `docs/art/render.mjs` from `docs/art/hero.html` and `docs/art/terminal.html`, each
-  under 1.5 MB; rendering them installs nothing with genter-cli (Playwright's command line through npx, and ffmpeg),
-  and the package ships none of them.
+  under 1.5 MB; `docs/art/rendered.json`, written by the same run, holds each picture's SHA-256 and those of the files
+  it was made from, and a picture or a source changed without a new render fails a test; rendering them installs
+  nothing with genter-cli (Playwright's command line through npx, and ffmpeg), and the package ships none of them.
 * **[gif-real]** `docs/demo.gif` is made from what `genter demo` prints, recorded in `docs/art/demo.txt`; the demo
   printing anything else fails a test until the GIF is made again. Each frame shows the lines printed up to that point,
   every line once and in order, about 20 seconds in all; the window around them holds no words of its own.

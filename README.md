@@ -34,8 +34,10 @@ the open engine does not yet (planned: with your own key or Ollama).
 Kubernetes' KEPs, Jaeger's RFCs and ADRs) and 5 from [DriftBench](bench/drift). An agent's plain ranking leaves the
 replaced document unmarked in its first five on 31 of 39; Genter on 0 of 39, each quoting the document's own notice.
 Genter still puts the old answer first on 7 of 39 (plain ranking: 8 of 39): PEPs whose `Superseded-By:` names a number,
-not a file, so Genter marks them but cannot bring the replacement first. Every question and every loss:
-[bench/old-answer/RESULTS.md](bench/old-answer/RESULTS.md) (the archive questions wait for a person's review).
+not a file, so Genter marks them but cannot bring the replacement first. Genter's first result differs from plain
+ranking's on 1 of 39 questions (DriftBench's q38) and on 0 of the 34 archive questions: there its gain is the marks, not
+the order. Every question and every loss: [bench/old-answer/RESULTS.md](bench/old-answer/RESULTS.md) (the archive
+questions wait for a person's review).
 
 | of 39 questions ([results](bench/old-answer/RESULTS.md)) | plain ranking | Genter, no key |
 | -- | --: | --: |

@@ -9,8 +9,10 @@
 // GIF is made from what `node bin/genter.js demo` prints when this runs: its lines are written to docs/art/demo.txt
 // (test/first-screen.test.js fails when the demo prints anything else, so the GIF is made again) and each frame shows the
 // lines printed up to that point, nothing typed in. The demo takes about a tenth of a second; the frames are paced to
-// be read.
+// be read. Each run records in docs/art/rendered.json the SHA-256 of every picture it made and of the files it made it
+// from, so the test fails when a picture or one of its sources changes without a new render.
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -20,6 +22,20 @@ const root = fileURLToPath(new URL("../..", import.meta.url));
 const art = join(root, "docs/art");
 const PLAYWRIGHT = "playwright@1.56.1";
 const LIMIT = 1.5 * 1024 * 1024; // each picture stays under 1.5 MB
+const RENDERED = join(art, "rendered.json");
+
+export const sha256 = (path) => createHash("sha256").update(readFileSync(join(root, path))).digest("hex");
+
+// Writes down, for each picture just made, its digest and the digests of the files it was made from.
+function record(pictures, from) {
+  let all = {};
+  try {
+    all = JSON.parse(readFileSync(RENDERED, "utf8"));
+  } catch {}
+  for (const picture of pictures) all[picture] = { sha256: sha256(picture), from: Object.fromEntries(from.map((f) => [f, sha256(f)])) };
+  const sorted = Object.fromEntries(Object.entries(all).sort(([a], [b]) => a.localeCompare(b)));
+  writeFileSync(RENDERED, `${JSON.stringify(sorted, null, 2)}\n`);
+}
 
 // One full-page screenshot at twice the pixels, in the colour scheme asked.
 function shot(file, out, { width, height, scheme = "light" }) {
@@ -39,6 +55,7 @@ function hero() {
     shot(join(art, "hero.html"), out, { width: 760, height: 400, scheme });
     small(out);
   }
+  record(["docs/hero.png", "docs/hero-dark.png"], ["docs/art/hero.html"]);
 }
 
 // What `genter demo` prints now, in a temp folder of its own, with no colour and no key in its environment.
@@ -95,6 +112,7 @@ function demo() {
     const filter = "split[a][b];[a]palettegen=max_colors=48:stats_mode=full[p];[b][p]paletteuse=dither=none:diff_mode=rectangle";
     execFileSync("ffmpeg", ["-loglevel", "error", "-y", "-f", "concat", "-safe", "0", "-i", join(tmp, "frames.txt"), "-filter_complex", filter, "-loop", "0", gif]);
     small(gif);
+    record(["docs/demo.gif"], ["docs/art/demo.txt", "docs/art/terminal.html"]);
     console.log(`${list.length} frames, ${list.reduce((n, s) => n + s.hold, 0).toFixed(1)} s`);
   } finally {
     rmSync(tmp, { recursive: true, force: true });

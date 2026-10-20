@@ -3,7 +3,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, normalize } from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
-import { demoOutput, steps } from "../docs/art/render.mjs";
+import { demoOutput, sha256, steps } from "../docs/art/render.mjs";
 import cursor from "../src/install/cursor.js";
 import vscode from "../src/install/vscode.js";
 
@@ -20,12 +20,27 @@ const PROMISE_RU = "Ваш ИИ перестаёт цитировать стар
 const SENTENCE_RU = "Genter показывает вашему ИИ, что решила ваша команда, где это записано и когда, и отмечает, что с тех пор заменено.";
 const MB = 1024 * 1024;
 
-// What a reader sees of HTML and Markdown: tags and line breaks gone, spaces collapsed.
-const plain = (s) => s.replace(/<br>/g, " ").replace(/<[^>]+>/g, "").replace(/\*\*/g, "").replace(/\s+/g, " ").trim();
+// What a reader sees of HTML and Markdown: tags, links' addresses and line breaks gone, spaces collapsed.
+const plain = (s) =>
+  s
+    .replace(/<br>/g, " ")
+    .replace(/<[^>]+>/g, "")
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/\*\*/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 // The part above the first rule (---): the first screen.
 const firstScreen = (s) => s.slice(0, s.indexOf("\n---\n"));
 // The latest dated results of a bench.
 const latest = (dir) => JSON.parse(text(join(dir, readdirSync(at(dir)).filter((f) => /^\d{4}-\d{2}-\d{2}\.json$/.test(f)).sort().at(-1))));
+// The files a picture was made from, as docs/art/render.mjs recorded them; the picture and each of them unchanged since.
+function madeFrom(picture) {
+  const made = JSON.parse(text("docs/art/rendered.json"))[picture];
+  assert.ok(made, `${picture} has no record in docs/art/rendered.json: run node docs/art/render.mjs`);
+  assert.equal(sha256(picture), made.sha256, `${picture} is not the picture docs/art/render.mjs made: run it`);
+  for (const [source, digest] of Object.entries(made.from)) assert.equal(sha256(source), digest, `${source} changed since ${picture} was made: run node docs/art/render.mjs`);
+  return Object.keys(made.from).sort();
+}
 
 // Every link and picture of a Markdown file: [text](target), href="", src="", srcset="".
 function links(md) {
@@ -110,6 +125,9 @@ describe("the README's first screen", () => {
     assert.equal(readFileSync(at("docs/demo.gif")).subarray(0, 6).toString(), "GIF89a");
     for (const file of ["docs/hero.png", "docs/hero-dark.png", "docs/demo.gif"]) assert.ok(statSync(at(file)).size < 1.5 * MB, file);
     for (const file of ["docs/art/hero.html", "docs/art/terminal.html", "docs/art/render.mjs", "docs/art/demo.txt"]) assert.ok(existsSync(at(file)), file);
+    // Each PNG is the one rendered from hero.html as it is now.
+    for (const file of ["docs/hero.png", "docs/hero-dark.png"]) assert.deepEqual(madeFrom(file), ["docs/art/hero.html"], file);
+    assert.deepEqual(Object.keys(JSON.parse(text("docs/art/rendered.json"))).sort(), ["docs/demo.gif", "docs/hero-dark.png", "docs/hero.png"]);
     // Dark is drawn for, in the page the pictures come from.
     assert.match(text("docs/art/hero.html"), /@media \(prefers-color-scheme: dark\)/);
     const pkg = JSON.parse(text("package.json"));
@@ -120,6 +138,8 @@ describe("the README's first screen", () => {
   it("[rl:first-screen/gif-real] the GIF is made from what `genter demo` prints, and no frame shows a line it did not print", () => {
     const printed = demoOutput();
     assert.equal(text("docs/art/demo.txt"), printed, "docs/art/demo.txt is what the demo prints: run node docs/art/render.mjs demo");
+    // The GIF is the one rendered from that demo.txt, in that window: demo.txt refreshed by hand leaves it stale, and fails.
+    assert.deepEqual(madeFrom("docs/demo.gif"), ["docs/art/demo.txt", "docs/art/terminal.html"]);
     // The frames: every line once, in order, each step adding the lines after the last.
     const lines = printed.replace(/\n$/, "").split("\n");
     const list = steps(lines);
@@ -180,32 +200,54 @@ describe("the README's first screen", () => {
         assert.ok(named.length, `${file}: a number with no file in bench/ beside it: ${block.slice(0, 200)}`);
       }
     }
-    // The old-answer test's counts, as its latest run wrote them.
-    const { plain: p, genter: g } = latest("bench/old-answer/results").totals;
+    // The old-answer test's counts, as its latest run wrote them: the table, every sentence that states one, and the
+    // Benchmarks section, in both languages.
+    const results = latest("bench/old-answer/results");
+    const { plain: p, genter: g } = results.totals;
     const n = p.n;
-    const en = text("README.md");
-    for (const row of [
-      `| old answer unmarked in the first five | ${p.old_unmarked} of ${n} | **${g.old_unmarked} of ${n}** |`,
-      `| old answer first | ${p.old_first} of ${n} | ${g.old_first} of ${n} |`,
-      `| current answer first | ${p.current_first} of ${n} | ${g.current_first} of ${n} |`,
-    ])
-      assert.ok(en.includes(row), row);
-    assert.ok(plain(en).includes(`${n} questions whose answer was replaced`));
-    assert.ok(plain(en).includes(`unmarked in its first five on ${p.old_unmarked} of ${n}; Genter on ${g.old_unmarked} of ${n}`));
-    assert.ok(plain(en).includes(`old answer first on ${g.old_first} of ${n} (plain ranking: ${p.old_first} of ${n})`));
-    const ru = text("README.ru.md");
-    for (const row of [
-      `| старый ответ без отметки в первой пятёрке | ${p.old_unmarked} из ${n} | **${g.old_unmarked} из ${n}** |`,
-      `| старый ответ первым | ${p.old_first} из ${n} | ${g.old_first} из ${n} |`,
-      `| актуальный ответ первым | ${p.current_first} из ${n} | ${g.current_first} из ${n} |`,
-    ])
-      assert.ok(ru.includes(row), row);
+    const drift = results.sources.find((s) => s.id === "driftbench").plain.n;
+    const archive = n - drift;
+    // The questions whose first result is not plain ranking's, and how many of them are the archives'.
+    const differ = results.questions.filter((q) => q.plain.first !== q.genter.first);
+    const differArchive = differ.filter((q) => q.source !== "driftbench").length;
+    const ids = (ru) => differ.map((q) => q.id.replace(/^driftbench\/(.+)$/, ru ? "$1 из DriftBench" : "DriftBench's $1")).join(", ");
     // The 50-repository gate's verdict.
     const v = latest("bench/repos/results").verdict;
-    assert.ok(plain(en).includes(`of ${v.repos} popular ones, the median holds ${v.median_records} records`));
-    assert.ok(plain(en).includes(`${v.with_marks} of ${v.repos} hold at least one document with a mark`));
-    assert.ok(plain(ru).includes(`в медианном из ${v.repos} популярных репозиториев ${v.median_records} записей`));
-    assert.ok(plain(ru).includes(`${v.with_marks} из ${v.repos} содержат`));
+    const en = text("README.md");
+    const ru = text("README.ru.md");
+    const said = {
+      "README.md": [
+        `| old answer unmarked in the first five | ${p.old_unmarked} of ${n} | **${g.old_unmarked} of ${n}** |`,
+        `| old answer first | ${p.old_first} of ${n} | ${g.old_first} of ${n} |`,
+        `| current answer first | ${p.current_first} of ${n} | ${g.current_first} of ${n} |`,
+        `| of ${n} questions (results) | plain ranking |`,
+        `${n} questions whose answer was replaced: ${archive} from public decision archives`,
+        `and ${drift} from DriftBench.`,
+        `unmarked in its first five on ${p.old_unmarked} of ${n}; Genter on ${g.old_unmarked} of ${n}`,
+        `old answer first on ${g.old_first} of ${n} (plain ranking: ${p.old_first} of ${n})`,
+        `Genter's first result differs from plain ranking's on ${differ.length} of ${n} questions (${ids(false)}) and on ${differArchive} of the ${archive} archive questions`,
+        `asks ${n} questions whose answer a newer document replaced`,
+        `of ${v.repos} popular ones, the median holds ${v.median_records} records`,
+        `runs the readers on ${v.repos} popular repositories at pinned commits: the median holds ${v.median_records} decision records the readers read, ${v.with_marks} of ${v.repos} hold at least one document with a mark`,
+      ],
+      "README.ru.md": [
+        `| старый ответ без отметки в первой пятёрке | ${p.old_unmarked} из ${n} | **${g.old_unmarked} из ${n}** |`,
+        `| старый ответ первым | ${p.old_first} из ${n} | ${g.old_first} из ${n} |`,
+        `| актуальный ответ первым | ${p.current_first} из ${n} | ${g.current_first} из ${n} |`,
+        `| из ${n} вопросов (результаты) | обычное ранжирование |`,
+        `${n} вопросов, ответ на которые заменён более новым документом: ${archive} из публичных архивов решений`,
+        `и ${drift} из DriftBench.`,
+        `без отметки в первой пятёрке в ${p.old_unmarked} из ${n}; Genter в ${g.old_unmarked} из ${n}`,
+        `Старый ответ первым Genter всё же ставит в ${g.old_first} из ${n} (обычное ранжирование: в ${p.old_first} из ${n})`,
+        `Первый результат у Genter и у обычного ранжирования разный в ${differ.length} из ${n} вопросов (${ids(true)}) и в ${differArchive} из ${archive} вопросов по архивам`,
+        `в медианном из ${v.repos} популярных репозиториев ${v.median_records} записей`,
+        `у медианного репозитория ${v.median_records} записей решений, которые читают ридеры; ${v.with_marks} из ${v.repos} содержат`,
+      ],
+    };
+    for (const [file, sentences] of Object.entries(said)) {
+      const md = file === "README.md" ? en : ru;
+      for (const sentence of sentences) assert.ok(md.includes(sentence) || plain(md).includes(sentence), `${file}: ${sentence}`);
+    }
     // DriftBench's tables are in the English README only, where its guard reads them.
     assert.match(en, /^\| \*\*genter\*\* \|/m);
     assert.doesNotMatch(ru, /driftbench:start|\| \*\*genter\*\* \|/);
