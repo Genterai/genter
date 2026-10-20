@@ -9,6 +9,7 @@ import { fileURLToPath } from "node:url";
 import { recipeId } from "../src/anchor.js";
 import { bm25, prepare, stem, terms } from "../src/lexical.js";
 import { createLocal, embedderFor, embeddingProvider, FILE_READ, findText, listFolder } from "../src/local.js";
+import { handle } from "../src/mcp-server.js";
 import { cipher } from "../src/seal.js";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
@@ -27,6 +28,13 @@ function put(dir, path, text) {
   writeFileSync(join(dir, path), text);
 }
 const textOf = (out) => out.results.map((r) => r.text).join("\n");
+// Folders side by side and one Genter home, in a fresh temp folder; "a/.git/HEAD" makes a a repository.
+function folders(files = {}) {
+  const base = mkdtempSync(join(tmpdir(), "genter-projects-"));
+  for (const [path, text] of Object.entries(files)) put(base, path, text);
+  return { base, home: join(base, "home"), at: (path) => join(base, path), done: () => rmSync(base, { recursive: true, force: true }) };
+}
+const GIT = "ref: refs/heads/main\n";
 
 const DEPLOY = "# Deploy\n\n## Staging\n\nStaging deploys every Tuesday. The pooler listens on port 6432.\n\n## Production\n\nProduction ships on Thursday after the change review.\n";
 const ONCALL = "# On-call\n\nPage the on-call engineer in #beacon-oncall. Escalate to Dana after 15 minutes.\n";
@@ -244,6 +252,32 @@ describe("local search: forget", () => {
       assert.deepEqual(g.sources().map((s) => s.place), ["docs"]);
       assert.doesNotMatch(textOf(await g.find("escalate on-call")), /Dana/);
       assert.throws(() => g.forget("nowhere"), /Not a source/);
+    } finally {
+      box.done();
+    }
+  });
+});
+
+describe("local search: projects", () => {
+  it("[rl:local-search/project-scope] from project B, a question whose answer lives only in project A finds nothing from A", async () => {
+    const box = folders({ "a/.git/HEAD": GIT, "a/docs/deploy.md": DEPLOY, "b/.git/HEAD": GIT, "b/README.md": "# B\n\nProject B ships its mobile app on Mondays.\n" });
+    try {
+      const a = createLocal({ home: box.home, secret: "s", cwd: box.at("a/docs") });
+      assert.match((await a.find("which port does the staging pooler use?")).results[0].text, /6432/);
+      const b = createLocal({ home: box.home, secret: "s", cwd: box.at("b") });
+      const out = await b.find("which port does the staging pooler use?");
+      assert.doesNotMatch(textOf(out), /6432/);
+      assert.equal(out.results.some((r) => r.path.startsWith(box.at("a"))), false);
+      // The same through the MCP server, and in what it lists.
+      const found = await handle(b, { jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "genter_find", arguments: { question: "which port does the staging pooler use?" } } });
+      assert.doesNotMatch(found.result.content[0].text, /6432|deploy\.md/);
+      const listed = await handle(b, { jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "genter_sources", arguments: {} } });
+      assert.match(listed.result.content[0].text, /^project {2}.*\bb \(its \.git\)$/m);
+      assert.doesNotMatch(listed.result.content[0].text, /\ba\b.*places/);
+      // The person's notes are theirs: kept in one project, found in every one, with their date.
+      a.remember("The staging pooler moves to port 7000 in November");
+      const note = (await b.find("staging pooler port")).results.find((r) => r.path === a.notesPath);
+      assert.ok(note?.facts.some((f) => /^noted \d{4}-\d{2}-\d{2} \d{2}:\d{2} UTC$/.test(f)), "the note answers in project b with its date");
     } finally {
       box.done();
     }
