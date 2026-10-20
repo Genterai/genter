@@ -539,8 +539,8 @@ passages. The store (`~/.genter`, or `GENTER_HOME`) is sealed with a secret made
 - [The red lines](harden/redlines) genter-cli keeps, and how a change gets in ([harden](harden/README.md)).
 - The README's pictures are rendered from [`docs/art/`](docs/art) (`node docs/art/render.mjs`): the first is Genter
   Cloud's try page, the GIF is `genter demo`'s own output.
-- Releases: raise `version` in `package.json` in a pull request. Merging it into `main` publishes it to npm and creates
-  the GitHub release.
+- Releases: raise `version` in `package.json` and add its section to [`CHANGELOG.md`](CHANGELOG.md) in a pull request.
+  Merging it into `main` publishes it to npm and creates the GitHub release, whose notes start with that section.
 
 ## License
 
