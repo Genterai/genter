@@ -65,12 +65,14 @@ describe("the Claude Code plugin", () => {
     assert.equal(args[2], "mcp");
     // No folder, no environment, no address, no header: the project of the folder Claude Code runs in, and no key.
     assert.deepEqual(rest, {});
-    // The pin is this package's minor, or the next one while it is on its way to npm.
+    // The pin is this package's minor, or the next one while it is on its way to npm, and never one before 0.4: 0.3 is
+    // the old engine, whose server has neither search nor read.
     const pin = /^genter-cli@(\d+)\.(\d+)$/.exec(args[1]);
     assert.ok(pin, `${args[1]} is pinned to a minor`);
     const [major, minor] = JSON.parse(text("package.json")).version.split(".").map(Number);
     assert.equal(Number(pin[1]), major);
     assert.ok([minor, minor + 1].includes(Number(pin[2])), `genter-cli@${pin[1]}.${pin[2]} beside ${major}.${minor}`);
+    assert.ok(Number(pin[1]) > 0 || Number(pin[2]) >= 4, `genter-cli@${pin[1]}.${pin[2]}: 0.4 is the first minor with search and read`);
     // The manifest adds no server and no hook of its own, and the plugin holds no address of Genter Cloud and no key.
     const manifest = json(`${PLUGIN}/.claude-plugin/plugin.json`);
     for (const key of ["mcpServers", "hooks", "lspServers", "userConfig", "channels"]) assert.equal(manifest[key], undefined, key);
@@ -112,6 +114,10 @@ describe("the Claude Code plugin", () => {
     const marks = [...body.matchAll(/`(⚠ (?:superseded by|contradicted by|contradicts) [^`]+)`/g)].map((m) => m[1]);
     assert.equal(marks.length, 3);
     for (const mark of marks) assert.equal(markProblem(`  ${mark}`), "", mark);
+    // A genter-cli command it gives is pinned as the plugin's server is: an unpinned npx gets 0.3, the old engine.
+    const pinned = json(`${PLUGIN}/.mcp.json`).mcpServers.genter.args[1];
+    assert.doesNotMatch(body, /npx (?:-y )?genter-cli(?!@)/);
+    for (const [command] of body.matchAll(/genter-cli@[\d.]+/g)) assert.equal(command, pinned);
   });
 
   it("[rl:plugin/hook-opt-in] the search-first hook is opt-in: a settings snippet that only prints one line", () => {
@@ -134,18 +140,27 @@ describe("the Claude Code plugin", () => {
     assert.ok(text("README.md").includes("plugins/genter/search-first.json"));
   });
 
-  // Claude Code itself, when it is installed here (CI has none): it validates the marketplace and installs the plugin
-  // from this folder into an empty home.
+  // Claude Code itself, when it is installed here (CI has none): it validates the marketplace and installs the plugins
+  // from this folder into an empty home; harden comes from GitHub, so that half also needs the network.
   const claude = spawnSync("claude", ["--version"], { encoding: "utf8" });
-  it("[rl:plugin/ac-plugin] Claude Code validates the marketplace and installs genter@genter: one skill, one server, no hooks", { skip: claude.status !== 0 && "Claude Code is not installed" }, () => {
+  const online = claude.status === 0 && spawnSync("git", ["ls-remote", "https://github.com/Genterai/harden", "HEAD"], { timeout: 30_000 }).status === 0;
+  function inEmptyHome(test) {
     const home = mkdtempSync(join(tmpdir(), "genter-plugin-"));
     try {
       const env = { ...process.env, HOME: home, CLAUDE_CONFIG_DIR: join(home, ".claude") };
       const run = (...args) => spawnSync("claude", args, { cwd: home, env, encoding: "utf8", timeout: 60_000 });
+      assert.equal(run("plugin", "marketplace", "add", root).status, 0);
+      test(run);
+    } finally {
+      rmSync(home, { recursive: true, force: true });
+    }
+  }
+
+  it("[rl:plugin/ac-plugin] Claude Code validates the marketplace and installs genter@genter: one skill, one server, no hooks", { skip: claude.status !== 0 && "Claude Code is not installed" }, () => {
+    inEmptyHome((run) => {
       const valid = run("plugin", "validate", root);
       assert.equal(valid.status, 0, valid.stdout + valid.stderr);
       assert.match(valid.stdout, /Validation passed/);
-      assert.equal(run("plugin", "marketplace", "add", root).status, 0);
       const installed = run("plugin", "install", "genter@genter");
       assert.equal(installed.status, 0, installed.stdout + installed.stderr);
       const details = run("plugin", "details", "genter").stdout;
@@ -153,8 +168,15 @@ describe("the Claude Code plugin", () => {
       assert.match(details, /MCP servers \(1\)\s+genter/);
       assert.match(details, /Hooks \(0\)/);
       assert.match(run("plugin", "list").stdout, /genter@genter[\s\S]*enabled/);
-    } finally {
-      rmSync(home, { recursive: true, force: true });
-    }
+    });
+  });
+
+  it("[rl:plugin/ac-plugin] Claude Code installs harden@genter from Genterai/harden, with its hardening-changes skill", { skip: !online && "Claude Code or GitHub is not reachable here" }, () => {
+    inEmptyHome((run) => {
+      const installed = run("plugin", "install", "harden@genter");
+      assert.equal(installed.status, 0, installed.stdout + installed.stderr);
+      assert.match(run("plugin", "details", "harden").stdout, /Skills \(1\)\s+hardening-changes/);
+      assert.match(run("plugin", "list").stdout, /harden@genter[\s\S]*enabled/);
+    });
   });
 });

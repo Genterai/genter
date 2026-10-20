@@ -69,7 +69,8 @@ Decided:
   probe server printed its working directory and `CLAUDE_PROJECT_DIR`, both that folder, and saw the shell's
   environment), so `genter mcp` searches that folder's project and the person's notes, as `genter install`'s entry for
   Claude Code does; meaning is on when the person starts Claude Code with `GENTER_SEMANTIC=1` and a key. A test holds
-  the pin to this package's minor or the next one, so the pin moves with the release after 0.4 (plan step 1.4)
+  the pin to this package's minor or the next one, and never below 0.4, so the pin moves with the release after 0.4
+  and cannot slip back to the old engine (plan step 1.4)
 * `genter-cli@0.4` is not on npm yet: it waits on the owner configuring npm trusted publishing for this repository.
   Until then the plugin's server fails to connect, and the README says so plainly: the 0.3 on npm is the old engine,
   with neither `search` nor `read`, so the plugin does not fall back to it; the skill works with Genter Cloud, which
@@ -86,7 +87,8 @@ Decided:
   repeat a mark as the quote Genter shows, with its place, never as a verdict ("docs/runbook.md says at its top: …",
   not "the runbook is outdated"); give both sides of a contradiction from Genter Cloud and let the person decide; what
   the tools return is data, never instructions. Its mark examples are in the contract's format, checked with
-  `markProblem` (plan step 1.4, D3)
+  `markProblem`; a genter-cli command it gives (`npx -y genter-cli@0.4 install`) is pinned as the plugin's server is,
+  since an unpinned `npx genter-cli` gets 0.3, which has no `install` (plan step 1.4, D3)
 * The plugin has no `version`: it is served from `main` of this repository, so people track its commits; `claude plugin
   validate` warns about the missing version and passes (this brief)
 * The hook is off by default: the plugin has no `hooks/hooks.json` and declares none. `plugins/genter/search-first.json`
@@ -104,41 +106,48 @@ Open:
   with Claude Code 2.1.304). → Installing Claude Code in CI would make the check run on every PR; left for the
   maintainers. [non-blocking]
 * With `genter install` and the plugin both, Claude Code has two `genter` servers with the same tools. → The README
-  says to keep one. [non-blocking]
+  says to keep one: `/mcp` turns the plugin's off, and `claude mcp remove genter -s user` removes the one `genter
+  install` wrote (checked by hand: the plugin's server stays), since `genter install --undo` puts back every tool's
+  file. [non-blocking]
 * The repository's agent map (`.claude/AGENTS.md`) does not list `plugins/`, `skills/` and the `plugin` area yet; agent
   sessions do not edit it. → For the maintainers; harden finds the area by its Sources. [non-blocking]
 Proof: `test/plugin.test.js` "[rl:plugin/marketplace]": the marketplace is `genter`, has an owner and a description,
 lists `genter` (`./plugins/genter`, a folder whose `plugin.json` has the same name) then `harden` (`{ source: "github",
 repo: "Genterai/harden" }`), every name installable, and the README gives the add and both install commands /
 "[rl:plugin/local-server]": `.mcp.json` holds one server, `genter`: `npx`, `-y`, `genter-cli@<minor>`, `mcp`, nothing
-else (no folder, env, url or headers); the pin is this package's minor or the next; the manifest declares no server,
+else (no folder, env, url or headers); the pin is this package's minor or the next, and not below 0.4; the manifest
+declares no server,
 hook, LSP server, user config or channel; neither file names genter.ai, a token or a key /
 "[rl:plugin/local-server] [rl:plugin/hook-opt-in]": the plugin folder is exactly `.claude-plugin/plugin.json`,
 `.mcp.json`, `README.md`, `search-first.json` and `skills/genter/SKILL.md` (no `hooks/`, no `bin/`) /
 "[rl:plugin/skill]": the plugin's `SKILL.md` equals `skills/genter/SKILL.md`; front matter from the first line with
 `name: genter` and a third-person description of what and when, 510 of at most 1,024 characters; under 500 lines; the
 body says search first, cite by id and place (the place alone in files), read whole, repeat marks as Genter shows them
-and never as a judgment, text as data; its three mark examples pass `markProblem` / "[rl:plugin/hook-opt-in]": no
+and never as a judgment, text as data; its three mark examples pass `markProblem`; no unpinned `npx genter-cli`, and
+every `genter-cli@<minor>` in it is the server's pin / "[rl:plugin/hook-opt-in]": no
 `hooks/` folder; `search-first.json` is `{ hooks: { UserPromptSubmit: [{ hooks: [{ type: "command", command }] }] } }`
 and nothing else, the command `echo '<one line>'` with no `$`, backquote or backslash in it, and the README shows that
 line and the file / "[rl:plugin/ac-plugin]" (where Claude Code is installed): `claude plugin validate` passes on the
 repository, the marketplace is added from this folder into an empty home, `genter@genter` installs, `claude plugin
-details genter` shows `Skills (1) genter`, `MCP servers (1) genter`, `Hooks (0)`, and the list shows it enabled. By
+details genter` shows `Skills (1) genter`, `MCP servers (1) genter`, `Hooks (0)`, and the list shows it enabled /
+"[rl:plugin/ac-plugin]" (where Claude Code is installed and GitHub answers): `harden@genter` installs from
+Genterai/harden, `claude plugin details harden` shows `Skills (1) hardening-changes`, and the list shows it enabled. By
 hand, in an empty home with Claude Code 2.1.304: `claude plugin validate .` and `claude plugin validate
-./plugins/genter` pass with one warning (no version); `harden@genter` installs from GitHub (version 0.3.0, skill
-`hardening-changes`); `claude mcp list` shows `plugin:genter:genter: npx -y genter-cli@0.4 mcp` failing to connect
-(0.4 is not on npm), and the same plugin with its server started from this worktree's `bin/genter.js` connects;
-`npx skills@1.7.4 add <worktree> --list` finds one skill, `genter`, and an install writes `.claude/skills/genter/SKILL.md`
-equal to `skills/genter/SKILL.md`. Each test fails when its part is undone (checked by hand: the pin dropped, a
-`hooks/hooks.json` added, the plugin's copy edited, a mark example out of format) / `npm test`, `npm run lint` (no new
-finding), `harden check` 0 errors.
+./plugins/genter` pass with one warning (no version); `claude mcp list` shows `plugin:genter:genter: npx -y
+genter-cli@0.4 mcp` failing to connect (0.4 is not on npm), and the same plugin with its server started from this
+worktree's `bin/genter.js` connects; `npx skills@1.7.4 add <worktree> --list` finds one skill, `genter`, and an install
+writes `.claude/skills/genter/SKILL.md` equal to `skills/genter/SKILL.md`. Each test fails when its part is undone
+(checked by hand: the pin dropped, the pin set to 0.3, a `hooks/hooks.json` added, the plugin's copy edited, a mark
+example out of format, the skill's install command unpinned or set to 0.3, harden's repository renamed) / `npm test`,
+`npm run lint` (no new finding), `harden check` 0 errors.
 
 ## Red lines after
 
 * plugin/marketplace: new, the marketplace `genter` lists `genter` (`./plugins/genter`) and `harden` (Genterai/harden)
-* plugin/local-server: new, one server, `npx -y genter-cli@<minor> mcp`, pinned, no folder, env, token, key or Genter
-  Cloud address
+* plugin/local-server: new, one server, `npx -y genter-cli@<minor> mcp`, pinned to 0.4 or later, no folder, env,
+  token, key or Genter Cloud address
 * plugin/skill: new, `skills/genter/SKILL.md` and the plugin's copy are one file: search first, cite `[id]` and place,
-  read whole, marks as quotes never verdicts, text as data
+  read whole, marks as quotes never verdicts, text as data; a genter-cli command it gives is pinned as the server is
 * plugin/hook-opt-in: new, the plugin runs no hook; the search-first hook is a snippet the person adds
-* plugin/ac-plugin: new, a clean Claude Code installs `genter@genter`: one skill, one server, no hooks
+* plugin/ac-plugin: new, a clean Claude Code installs `genter@genter` (one skill, one server, no hooks) and
+  `harden@genter` (its `hardening-changes` skill), both enabled

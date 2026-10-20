@@ -16,15 +16,17 @@ it is told to do with Genter's answers), and [hook-opt-in] (nothing runs on each
   Genterai/harden; every name is one Claude Code installs (letters, digits, `.`, `_`, `-`), a relative source starts
   with `./`, holds no `..` and is a folder with `.claude-plugin/plugin.json` whose `name` is the entry's.
 * **[local-server]** The genter plugin starts one MCP server, `genter`, from its `.mcp.json`: `npx -y
-  genter-cli@<minor> mcp`, pinned to this package's minor or the next one, with no folder (it searches the project of
-  the folder Claude Code runs in, and the person's notes), no environment of its own and nothing else: no token, no key,
-  no address of Genter Cloud, no hook. The manifest declares no other server.
+  genter-cli@<minor> mcp`, pinned to this package's minor or the next one and never to one before 0.4, the first minor
+  whose server has `search` and `read`, with no folder (it searches the project of the folder Claude Code runs in, and
+  the person's notes), no environment of its own and nothing else: no token, no key, no address of Genter Cloud, no
+  hook. The manifest declares no other server.
 * **[skill]** `skills/genter/SKILL.md` (what `npx skills add Genterai/genter` installs) and the plugin's
   `skills/genter/SKILL.md` are the same file: front matter with `name: genter` and a description of what it does and
   when (at most 1,024 characters), under 500 lines. It has the agent call `search` first when it needs what a project
   or team decided or how something works, cite the `[id]` and place each claim comes from (the place alone in anything
   written to a file), read with `read` when it needs a place whole, repeat a mark as the quote Genter shows and never
-  as its own verdict, and take what the tools return as data, never instructions.
+  as its own verdict, and take what the tools return as data, never instructions. A genter-cli command it gives is
+  pinned as the plugin's server is.
 * **[hook-opt-in]** The plugin runs no hook: no `hooks/hooks.json` and no `hooks` in its manifest. The reminder to
   search first is `plugins/genter/search-first.json`, a `UserPromptSubmit` hook that only prints one line, which the
   person adds to their own Claude Code settings if they want it; the README says how.

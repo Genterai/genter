@@ -129,7 +129,7 @@ ranks by meaning too.
 
 The same marketplace lists [harden](#with-harden): `/plugin install harden@genter`. If you also added Genter with
 `genter install`, Claude Code has two `genter` servers with the same tools: keep one (`/mcp` turns the plugin's off,
-`genter install --undo` removes the other).
+`claude mcp remove genter -s user` removes the other; `genter install --undo` would put back every tool's file).
 
 **Search first at every prompt (optional).** The plugin runs no hook. To remind the agent at every prompt, add the
 hook in [`plugins/genter/search-first.json`](plugins/genter/search-first.json) to `~/.claude/settings.json` (every
