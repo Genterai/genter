@@ -99,7 +99,9 @@ export async function callTool(local, name, args = {}) {
 // ---- the contract's text: Genter Cloud's format ----
 
 const day = (iso) => String(iso).slice(0, 10);
-const indent = (text) => text.replace(/^(?=.)/gm, "  ");
+// A passage sits four spaces in, deeper than a place's second line and its marks (two): no line of a file can read as
+// a place ("[id] …") or as a mark ("  ⚠ …").
+const indent = (text) => text.replace(/^(?=.)/gm, "    ");
 
 // A place's replaced mark: by a place this project reads, "superseded by [id] on <day>: “<the notice>”"; by one it does
 // not read, or by nothing named, what the place says at its top.
@@ -115,7 +117,7 @@ const metaLine = (r, extra = []) => `  ${[r.place, r.kind, r.source_at && `updat
 const markLines = (r) => [...(r.superseded ? [markText(r.superseded)] : []), ...(r.freshness ?? [])].map((m) => `  ⚠ ${m}`);
 
 // search's answer: what changed since the last look, then each place under "[id] title", its second line, its marks
-// and the passage (indented, so no line of it reads as a place), then how to read them.
+// and the passage (indented four spaces, so no line of it reads as a place or a mark), then how to read them.
 export function searchText(out) {
   const lines = [];
   const what = { changed: "changed", created: "is new", gone: "is gone" };
@@ -133,14 +135,14 @@ export function searchText(out) {
   return lines.join("\n");
 }
 
-// read's answer: each place under "[id] title · read now", the same second line and marks as search, then its text as
-// it is; places apart by a line of ---. A number that is no place of this project is refused by name, and nothing of it
-// is read.
+// read's answer: each place under "[id] title · read now", a second line like search's and its replaced mark, then,
+// after an empty line (so no line of it joins the marks), its text as it is; places apart by a line of ---. A number
+// that is no place of this project is refused by name, and nothing of it is read.
 export function readText(out) {
   const blocks = out.results.map((r) => {
     if (r.gone) return `[${r.id}] ${r.title} · gone: ${r.place} is no longer there`;
     if (r.error) return `[${r.id}] ${r.title} · not read: ${r.error}`;
-    return [`[${r.id}] ${r.title} · read now`, metaLine(r), ...markLines(r), r.text.replace(/\s+$/, ""), ...(r.more ? [`… (${r.more} more characters)`] : [])].join("\n");
+    return [`[${r.id}] ${r.title} · read now`, metaLine(r), ...markLines(r), "", r.text.replace(/\s+$/, ""), ...(r.more ? [`… (${r.more} more characters)`] : [])].join("\n");
   });
   const notes = [];
   if (out.refused.length) notes.push(`Not in this project (${out.project.place}): ${out.refused.join(", ")}. read takes the ids search returned in this project; search first.`);

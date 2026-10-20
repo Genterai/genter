@@ -92,6 +92,7 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
   let state;
   let loadedAt = 0;
   let dirty = false;
+  let synced = { sources: new Set(), anchors: new Set(), number: 0 }; // the store as this process last read or wrote it
 
   // The store, read again when another process (the command while the MCP server runs) wrote it.
   function load() {
@@ -108,6 +109,7 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
     }
     state ??= { v: 2, sources: {}, anchors: {}, vectors: {} };
     loadedAt = at;
+    sync();
     split(state);
     numberAll(state);
     return state;
@@ -132,8 +134,9 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
   // Every place has a number, the id search and read name it by over MCP (Genter Cloud's read takes numbers too): given
   // once, kept on its anchor inside the seal and never given to another place, so it stays the same across searches,
   // re-reads and restarts. A store made before numbers gets them at its first open, oldest place first.
+  const given = (s) => Object.values(s.anchors ?? {}).reduce((n, a) => Math.max(n, Number.isSafeInteger(a.number) ? a.number : 0), Number.isSafeInteger(s.lastNumber) ? s.lastNumber : 0);
   function nextNumber(s) {
-    if (!Number.isSafeInteger(s.lastNumber)) s.lastNumber = Object.values(s.anchors).reduce((n, a) => Math.max(n, Number.isSafeInteger(a.number) ? a.number : 0), 0);
+    if (!Number.isSafeInteger(s.lastNumber)) s.lastNumber = given(s);
     return ++s.lastNumber;
   }
   function numberAll(s) {
@@ -146,11 +149,45 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
   }
   function save() {
     if (!dirty) return;
+    merge();
     writeJson(file, { v: 1, blob: seal(state) });
     dirty = false;
     try {
       loadedAt = statSync(file).mtimeMs;
     } catch {}
+    sync();
+  }
+  function sync() {
+    synced = { sources: new Set(Object.keys(state.sources)), anchors: new Set(Object.keys(state.anchors)), number: given(state) };
+  }
+  // Another process wrote the store since this one read it (the command while the MCP server runs, a second client):
+  // what it added stays (sources, places and their numbers), what this process forgot stays forgotten, and a place this
+  // process numbered meanwhile takes a number above all the store gave, before an answer names it. So no number names
+  // two places. Two writes in the same instant (between one's look at the file and its write) can still cross.
+  function merge() {
+    let at = 0;
+    try {
+      at = statSync(file).mtimeMs;
+    } catch {}
+    if (!at || at === loadedAt) return;
+    let disk;
+    try {
+      disk = open(readJson(file, null)?.blob);
+    } catch {
+      return;
+    }
+    if (!disk?.anchors) return;
+    for (const [id, src] of Object.entries(disk.sources ?? {})) if (!state.sources[id] && !synced.sources.has(id)) state.sources[id] = src;
+    for (const [id, a] of Object.entries(disk.anchors)) {
+      const mine = state.anchors[id];
+      if (!mine) {
+        if (!synced.anchors.has(id)) state.anchors[id] = a;
+      } else if (mine.number > synced.number && Number.isSafeInteger(a.number)) mine.number = a.number; // numbered by both: the first number given
+    }
+    const top = given(disk);
+    let last = Math.max(top, given(state));
+    for (const a of Object.values(state.anchors)) if (a.number > synced.number && a.number <= top && disk.anchors[a.id]?.number !== a.number) a.number = ++last;
+    state.lastNumber = last;
   }
   const anchorId = (tool, args) => recipeId({ workspaceId: userId, scope: "", tool, args });
   const place = (a) => (a.args.url ? a.args.url : shown(a.args.path, cwd));
@@ -653,6 +690,7 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
         picked.push([x, score]);
         if (picked.length >= limit) break;
       }
+      save(); // the places' numbers settle (merge) before a result names them
       // A section of a source marked as replaced brings the best section of what replaces it, when Genter reads that.
       const byPath = new Map();
       for (const x of sections) {

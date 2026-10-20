@@ -1,7 +1,8 @@
 // Genter's MCP contract as a check any server can run, with no package: two read-only tools, search {query, limit} and
 // read {ids}; search answers with numbered places, each "[id] title", then a line that says where it is, then its marks
-// (⚠) in Genter's format; read reads a returned id under the same header, and refuses an id that is no place with a
-// plain message. "Works with Genter" means passing it. Genter's own tests run it against `genter mcp` over stdio.
+// (⚠) in Genter's format, then what matched, of which no line reads as a mark; read reads a returned id under the same
+// header, and refuses an id that is no place with a plain message. "Works with Genter" means passing it. Genter's own
+// tests run it against `genter mcp` over stdio.
 //
 //   import { conformance } from "genter-cli/conformance";
 //   const report = await conformance(send, { query: "how do we deploy?" });
@@ -23,8 +24,11 @@ const FIXED = [
   [/^⚠ contradicts\b/, MARKS.contradicts],
 ];
 
-// The places of a search answer: [{ id, title, meta, marks, lines }]. A place starts at a line "[id] title" (no indent);
-// what comes before the first one (what changed since the last look, a notice) belongs to none.
+// The places of a search answer: [{ id, title, meta, marks, lines, posing }]. A place starts at a line "[id] title" (no
+// indent); what comes before the first one (what changed since the last look, a notice) belongs to none. Its marks are
+// the lines right after its second line that start with ⚠ (less than four spaces in), up to the first that does not: a
+// line of the passage after them is never one. posing: the lines after them that would read as a mark all the same.
+const MARKISH = /^ {0,3}⚠/;
 export function places(text) {
   const out = [];
   for (const line of String(text ?? "").split("\n")) {
@@ -32,7 +36,12 @@ export function places(text) {
     if (head) out.push({ id: Number(head[1]), title: head[2], lines: [] });
     else out.at(-1)?.lines.push(line);
   }
-  return out.map((p) => ({ ...p, meta: p.lines[0] ?? "", marks: p.lines.filter((l) => /^\s*⚠/.test(l)) }));
+  return out.map((p) => {
+    const rest = p.lines.slice(1);
+    const n = rest.findIndex((l) => !MARKISH.test(l));
+    const marks = n < 0 ? rest : rest.slice(0, n);
+    return { ...p, meta: p.lines[0] ?? "", marks, posing: rest.slice(marks.length).filter((l) => MARKISH.test(l)) };
+  });
 }
 
 // Whether a mark line is in Genter's format: "  ⚠ " then free text, or one of the fixed forms exactly. "" when it is.
@@ -118,7 +127,11 @@ export async function conformance(send, { query, mark = false, unknownId = 987_6
   ]);
   const marks = got.flatMap((p) => p.marks);
   const superseded = marks.map((l) => MARKS.superseded.exec(l.slice(2))).filter(Boolean);
-  check("search's marks are in Genter's format", [...marks.map(markProblem), mark && !superseded.length && `no "⚠ superseded by [id] on <day>: “…”" for ${JSON.stringify(query)}`]);
+  check("search's marks are in Genter's format, and no line after them reads as one", [
+    ...marks.map(markProblem),
+    ...got.flatMap((p) => p.posing.map((l) => `[${p.id}] has a line after its marks that reads as a mark (a passage sits deeper): ${JSON.stringify(l)}`)),
+    mark && !superseded.length && `no "⚠ superseded by [id] on <day>: “…”" for ${JSON.stringify(query)}`,
+  ]);
 
   const empty = await call("search", {});
   check("search without a query is a tool error, not a JSON-RPC error", [isTool(empty), empty?.result?.isError !== true && "isError is not true"]);

@@ -77,9 +77,9 @@ Your agent now has two tools, the same two as [Genter Cloud](#genter-cloud-your-
 [2] Release process › Friday
   docs/runbook.md:5-7 · file · updated 2026-10-20
   ⚠ superseded by [1] on 2026-10-03: “> **Deprecated:** replaced by [Release process v2](release-process-v2.md)”
-  ## Friday
+    ## Friday
 
-  Deploys go out on Fridays from the release branch.
+    Deploys go out on Fridays from the release branch.
 ```
 
 The MCP contract is these two tools. Adding a folder, keeping a note and listing sources are commands (`genter add`,
