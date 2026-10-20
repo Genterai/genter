@@ -1,0 +1,29 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.Genterai/genter",
+  "title": "Genter",
+  "description": "Decision memory for your AI: the current answer first, and what was replaced marked. No key.",
+  "websiteUrl": "https://genter.ai",
+  "repository": {
+    "url": "https://github.com/Genterai/genter",
+    "source": "github"
+  },
+  "version": "0.3.1",
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "genter-cli",
+      "version": "0.3.1",
+      "runtimeHint": "npx",
+      "transport": { "type": "stdio" },
+      "packageArguments": [{ "type": "positional", "value": "mcp" }]
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://genter.ai/api/mcp"
+    }
+  ]
+}
