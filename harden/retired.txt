@@ -1,1 +1,41 @@
 # area/id of red lines that were removed, one per line; an id is never reused.
+# 2026-10-20, steps 0.1 and 0.2 of Genter's open-source plan (harden/briefs/2026-10-20-local-engine-only.md): the
+# Cloud bridge and the app commands left the cli area; the areas of the legacy apps engine (mcp, retrieval,
+# search-agent, areas, area-listing) left main. They stay as they were on the `legacy` branch.
+area-listing/run-reads  # 2026-10-20
+area-listing/plain-reads  # 2026-10-20
+area-listing/listing-handed-early  # 2026-10-20
+area-listing/reconcile-room  # 2026-10-20
+area-listing/plain-text  # 2026-10-20
+area-listing/plain-sections  # 2026-10-20
+area-listing/plain-description  # 2026-10-20
+areas/read-no-model  # 2026-10-20
+areas/no-trigger-asked  # 2026-10-20
+areas/no-model-stays  # 2026-10-20
+areas/list-is-read  # 2026-10-20
+areas/recipe-per-app  # 2026-10-20
+cli/app-packages  # 2026-10-20
+cli/cloud-login  # 2026-10-20
+cli/cloud-env  # 2026-10-20
+cli/cloud-ask  # 2026-10-20
+cli/cloud-fail-local  # 2026-10-20
+cli/local-mcp-cloud  # 2026-10-20
+cli/ac-app-no-packages  # 2026-10-20
+mcp/same-descriptions  # 2026-10-20
+mcp/find-takes  # 2026-10-20
+mcp/fresh  # 2026-10-20
+mcp/saved-marker  # 2026-10-20
+mcp/connected-in-instructions  # 2026-10-20
+mcp/connect-tool  # 2026-10-20
+mcp/connect-lists  # 2026-10-20
+mcp/connect-link  # 2026-10-20
+mcp/connect-refused  # 2026-10-20
+mcp/connect-free  # 2026-10-20
+mcp/start-connect  # 2026-10-20
+mcp/start-first-question  # 2026-10-20
+mcp/start-done  # 2026-10-20
+mcp/ac-pro-tools-connect  # 2026-10-20
+mcp/ac-saved-now  # 2026-10-20
+retrieval/asked-discount  # 2026-10-20
+search-agent/handed-before  # 2026-10-20
+search-agent/handed-before-strong  # 2026-10-20

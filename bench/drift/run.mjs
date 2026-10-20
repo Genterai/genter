@@ -19,10 +19,10 @@ import { cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, stat
 import { tmpdir } from "node:os";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
+import { splitMarkdown } from "../../src/anchor.js";
 import { bm25, prepare } from "../../src/lexical.js";
 import { createLocal, embedderFor, embeddingProvider, fuse, listFolder } from "../../src/local.js";
 import { chatModel, pool } from "../lib.mjs";
-import { splitMarkdown } from "../../src/skills.js";
 import { applyChanges } from "./check.mjs";
 import { fullReport, guard, readmeBlock, replaceReadmeBlock } from "./report.mjs";
 import { whatItTakes } from "./takes.mjs";

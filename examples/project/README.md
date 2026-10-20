@@ -39,6 +39,7 @@ finds both by meaning from the first day, and nothing has to be kept in sync: th
 
 ## The team's apps
 
-The `GENTER_TOKEN` line passes a Genter Cloud token through. A person who has one (or ran `genter login`) gets the
-team's tickets, chats, mail and docs in the same `genter_find`, after this repository's passages
-([Genter Cloud](../../README.md#genter-cloud-your-teams-apps)).
+Genter Cloud is its own MCP server, not a line in this file: a person who uses it adds `https://genter.ai/api/mcp` to
+their own AI tool once, and the tool signs them in with OAuth. Their agent then asks this repository with
+`genter_find` and the team's tickets, chats, mail and docs with Genter Cloud's `search` and `read`. Nothing about it
+is committed here or kept on anyone's disk ([Genter Cloud](../../README.md#genter-cloud-your-teams-apps)).

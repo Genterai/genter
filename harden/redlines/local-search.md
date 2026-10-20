@@ -3,8 +3,8 @@
 Intent: a person searches their own folders, files, public websites and notes where they are, with no key and no
 package — success: after someone edits a file nobody tells Genter about, `genter ask` answers from the file as it is
 now and says it changed.
-Sources: the local-search spec on the legacy branch of Genterai/specs (archive); `src/local.js`, `src/lexical.js`,
-`src/seal.js`, `src/web.js`.
+Sources: the local-search spec on the legacy branch of Genterai/specs (archive); `src/local.js`, `src/anchor.js`,
+`src/lexical.js`, `src/seal.js`, `src/web.js`.
 
 Most weight: [reads-again] and [gone-not-answer] are the product's promise; [no-text-stored] and
 [private-key-skipped] are what keeps a person's disk safe.
@@ -15,6 +15,8 @@ Most weight: [reads-again] and [gone-not-answer] are the product's promise; [no-
 
 * **[file-is-anchor]** Each file or web page is an anchor: one read call with a fixed argument (`FILE_READ {path}`,
   `WEBSITE_READ_PAGE {url}`), with the same deterministic id as any anchor.
+* **[ids-stable]** A place's anchor id and digest are made as they were in genter-cli 0.3, so an upgrade reads a
+  person's store as it was: no place turns new or changed because the version did.
 * **[first-search-adds-folder]** With nothing added, the first search adds the current folder and says so; later
   searches add nothing.
 * **[private-key-skipped]** Never read: hidden files (`.env` among them), key and credential files, a file holding a

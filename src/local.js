@@ -2,11 +2,10 @@ import { createHash, randomBytes } from "node:crypto";
 import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
+import { classifyFailure, contentHash, recipeId, splitMarkdown } from "./anchor.js";
 import { driftFacts, supersededOf } from "./drift.js";
 import { bm25, prepare, terms, topTerms } from "./lexical.js";
-import { classifyFailure, contentHash, recipeId } from "./recipe.js";
 import { cipher } from "./seal.js";
-import { splitMarkdown } from "./skills.js";
 import { crawl, forgetPage, readPage, siteUrl } from "./web.js";
 
 // Genter with no keys and no packages: folders, files, public websites and the person's notes, searched where they are.
@@ -49,7 +48,7 @@ function writeJson(file, data, pretty = false) {
   renameSync(tmp, file);
 }
 
-// The secret that seals the local store: config.json's, made on the first run (the same one the app commands use).
+// The secret that seals the local store: config.json's, made on the first run.
 export function localSecret(home = genterHome()) {
   const file = join(home, "config.json");
   const config = readJson(file, {});

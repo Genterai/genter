@@ -1,7 +1,10 @@
 # Agents working on genter-cli
 
-The engine of Genter: Anchors, search, Genter's own agent, embeddings, freshness facts. It is a library the backend
-imports (pinned by commit) and the `genter` command, which runs locally on the person's own Composio and OpenRouter keys.
+Genter's open engine: local search over folders, files, websites and notes, read again at every question, with
+freshness facts and optional embeddings. It is the `genter` command, its local MCP server, and a library (`genter-cli`,
+`genter-cli/local`, `genter-cli/lexical`) that Genter Cloud imports from npm. It runs on the person's machine with no
+key; Genter Cloud is never called from here (it is its own MCP server). The legacy apps engine (Composio, Genter's
+agent, the hosted MCP tools) is on the unsupported `legacy` branch.
 
 ## Red lines come first
 
@@ -34,15 +37,11 @@ and the app takes it.
 
 | Path | What lives there | Red lines |
 | -- | -- | -- |
-| `src/local.js`, `src/lexical.js`, `src/seal.js` | local search: folders, files, websites, notes | `local-search` |
-| `bin/`, `src/cloud.js`, `src/demo.js`, `src/mcp-server.js` | the `genter` command, Genter Cloud, the local MCP server | `cli` |
-| `src/tools.js` | the hosted MCP server's tools and instructions | `mcp` |
-| `src/genter.js`, `src/recipe.js` | Anchors: identity, execute, retrieval | `retrieval` |
-| `src/agent.js`, `src/loop.js` | Genter's agent | `search-agent` |
-| `src/area-recipe.js`, `src/area.js`, `src/plain.js` | reading and reconciling an area | `areas`, `area-listing` |
-| `src/web.js`, `src/net.js`, `src/skills.js` | websites, public-address checks, skills | `security` |
+| `src/local.js`, `src/anchor.js`, `src/lexical.js`, `src/seal.js` | local search: folders, files, websites, notes; an Anchor's id, digest and sections | `local-search` |
+| `bin/`, `src/demo.js`, `src/mcp-server.js` | the `genter` command, the local MCP server | `cli` |
+| `src/web.js`, `src/net.js` | websites, public-address checks | `security` |
 | `bench/drift/` | DriftBench | `driftbench` |
-| `src/drift.js`, `src/refs.js`, `src/cost.js`, `src/mcp.js` | freshness facts, writes, cost log, MCP servers | not mapped yet (`harden/README.md`) |
+| `src/drift.js` | freshness facts | not mapped yet (`harden/README.md`) |
 | `harden/` | red lines and briefs | (all) |
 | `test/` | the tests | |
 
@@ -53,10 +52,9 @@ and the app takes it.
 | install | `npm ci` |
 | test | `npm test` |
 | red lines | `harden check` (`npm install -g github:Genterai/harden`) |
-| run | `node bin/genter.js <command> '<json>'` (needs `COMPOSIO_API_KEY`, `OPENROUTER_API_KEY`) |
+| run | `node bin/genter.js <command>` (no key; `--semantic` takes an embeddings key or Ollama) |
 
 ## Rules
 
-- No app has its own Anchor workflow: fields are found by name; per-app read and write helpers are an open question (the
-  archive's `what/writing.md`).
-- A skill's files are never run: no `child_process`, `vm`, `eval`, `new Function` or `worker_threads`.
+- Nothing Genter reads is ever run: no `child_process`, `vm`, `eval`, `new Function` or `worker_threads` in `src/`.
+- No runtime dependencies and no peers: `genter-cli` installs alone.

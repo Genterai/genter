@@ -1,13 +1,14 @@
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
+import { recipeId } from "../src/anchor.js";
 import { bm25, prepare, stem, terms } from "../src/lexical.js";
-import { createLocal, FILE_READ, findText, listFolder } from "../src/local.js";
-import { recipeId } from "../src/recipe.js";
+import { createLocal, embedderFor, embeddingProvider, FILE_READ, findText, listFolder } from "../src/local.js";
 import { cipher } from "../src/seal.js";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
@@ -284,6 +285,39 @@ describe("local search: websites", () => {
   });
 });
 
+describe("embedding providers", () => {
+  it("[spec:local-search/semantic-providers] picks the endpoint, the named one, the first key set, else Ollama", () => {
+    assert.deepEqual(embeddingProvider({ env: { GENTER_EMBED_URL: "http://lm:1234/v1/", GENTER_EMBED_MODEL: "bge" } }), { name: "custom", url: "http://lm:1234/v1", key: undefined, model: "bge" });
+    assert.equal(embeddingProvider({ env: { OPENROUTER_API_KEY: "r", OPENAI_API_KEY: "o" } }).name, "openai");
+    assert.deepEqual(embeddingProvider({ env: { AI_GATEWAY_API_KEY: "v" } }), { name: "vercel", url: "https://ai-gateway.vercel.sh/v1", key: "v", model: "openai/text-embedding-3-small" });
+    assert.equal(embeddingProvider({ env: { AI_GATEWAY_TOKEN: "t" } }).key, "t");
+    assert.equal(embeddingProvider({ env: { OPENAI_API_KEY: "o" }, name: "ollama" }).url, "http://localhost:11434/v1");
+    assert.equal(embeddingProvider({ env: {}, config: { openrouter_api_key: "r" } }).name, "openrouter");
+    assert.equal(embeddingProvider({ env: {} }).name, "ollama");
+    assert.throws(() => embeddingProvider({ env: {}, name: "openai" }), /openai needs OPENAI_API_KEY/);
+    assert.throws(() => embeddingProvider({ env: {}, name: "nope" }), /Unknown provider/);
+  });
+
+  it("[spec:local-search/semantic-providers] calls any OpenAI-compatible /embeddings and says how to get one when none answers", async () => {
+    const original = globalThis.fetch;
+    const calls = [];
+    globalThis.fetch = async (url, init) => {
+      calls.push({ url, auth: init.headers.Authorization, body: JSON.parse(init.body) });
+      if (String(url).startsWith("http://localhost:11434")) throw Object.assign(new TypeError("fetch failed"), { cause: { code: "ECONNREFUSED" } });
+      return new Response(JSON.stringify({ data: JSON.parse(init.body).input.map((_, index) => ({ index, embedding: [index, 1] })) }), { status: 200 });
+    };
+    try {
+      const embed = embedderFor({ name: "vercel", url: "https://ai-gateway.vercel.sh/v1", key: "v", model: "openai/text-embedding-3-small" });
+      assert.deepEqual(await embed(["a", "b"]), [[0, 1], [1, 1]]);
+      assert.deepEqual(calls[0], { url: "https://ai-gateway.vercel.sh/v1/embeddings", auth: "Bearer v", body: { model: "openai/text-embedding-3-small", input: ["a", "b"] } });
+      assert.equal(embed.model, "openai/text-embedding-3-small");
+      await assert.rejects(embedderFor(embeddingProvider({ env: {} }))(["x"]), /No embeddings: set OPENAI_API_KEY.*Ollama.*ECONNREFUSED/);
+    } finally {
+      globalThis.fetch = original;
+    }
+  });
+});
+
 describe("the genter command", () => {
   // The package as installed: bin, src and package.json with no node_modules anywhere above it.
   function installed() {
@@ -291,12 +325,29 @@ describe("the genter command", () => {
     for (const part of ["bin", "src", "package.json"]) cpSync(join(root, part), join(base, "pkg", part), { recursive: true });
     mkdirSync(join(base, "project/docs"), { recursive: true });
     writeFileSync(join(base, "project/docs/deploy.md"), DEPLOY);
-    const env = { PATH: process.env.PATH, HOME: join(base, "home"), GENTER_HOME: join(base, "home/.genter") };
-    const run = (...args) => spawnSync(process.execPath, [join(base, "pkg/bin/genter.js"), ...args], { cwd: join(base, "project"), env, encoding: "utf8" });
-    return { run, done: () => rmSync(base, { recursive: true, force: true }) };
+    const home = join(base, "home/.genter");
+    const env = { PATH: process.env.PATH, HOME: join(base, "home"), GENTER_HOME: home };
+    const bin = join(base, "pkg/bin/genter.js");
+    const run = (...args) => spawnSync(process.execPath, [bin, ...args], { cwd: join(base, "project"), env, encoding: "utf8" });
+    // The same, without blocking this process (a test server here can answer), with more env and lines on stdin.
+    const start = (args, { env: more = {}, input = "" } = {}) =>
+      new Promise((done) => {
+        const child = spawn(process.execPath, [bin, ...args], { cwd: join(base, "project"), env: { ...env, ...more } });
+        let stdout = "";
+        let stderr = "";
+        child.stdout.on("data", (d) => {
+          stdout += d;
+        });
+        child.stderr.on("data", (d) => {
+          stderr += d;
+        });
+        child.on("close", (status) => done({ status, stdout, stderr }));
+        child.stdin.end(input);
+      });
+    return { run, start, home, done: () => rmSync(base, { recursive: true, force: true }) };
   }
 
-  it("[spec:local-search/ac-no-keys] [spec:cli/no-packages] [rl:cli/output-local] asks with no key and no package", () => {
+  it("[spec:local-search/ac-no-keys] [rl:cli/no-packages] [rl:cli/output-local] asks with no key and no package", () => {
     const pkg = installed();
     try {
       const out = pkg.run("ask", "which", "day", "does", "production", "ship?");
@@ -310,28 +361,94 @@ describe("the genter command", () => {
     }
   });
 
-  it("[spec:cli/ac-app-no-packages] [spec:cli/app-packages] names the two packages an app command needs", () => {
+  it("[rl:cli/help] prints the help, its last line Genter Cloud's MCP address, and fails on an unknown command", () => {
     const pkg = installed();
     try {
-      const out = pkg.run("search", '{"query":"x"}');
-      assert.equal(out.status, 1);
-      assert.match(out.stderr, /npm i -g @composio\/core zod/);
+      const help = pkg.run();
+      assert.equal(help.status, 0);
+      assert.match(help.stdout, /genter ask <question>/);
+      assert.match(help.stdout.trim().split("\n").at(-1), /https:\/\/genter\.ai\/api\/mcp$/);
+      assert.doesNotMatch(help.stdout, /login|logout|--cloud|--local|token|dashboard|composio/i);
+      const bad = pkg.run("nope");
+      assert.equal(bad.status, 1);
+      assert.match(bad.stderr, /Unknown command: nope/);
+      assert.equal(pkg.run("ask").status, 1);
+      for (const app of ["search", "run", "execute", "anchors"]) assert.match(pkg.run(app, '{"query":"x"}').stderr, /Unknown command/, app);
     } finally {
       pkg.done();
     }
   });
 
-  it("[spec:cli/help] [spec:cli/output-local] lists the local commands first and fails on an unknown one", () => {
+  it("[rl:cli/cloud-own-server] never reaches Genter Cloud: no token read or kept, ask and mcp answer from this computer, login, logout and --cloud name the MCP address", async () => {
+    // A stand-in for the old token API, and a token where 0.3 looked for one: in the env and in config.json.
+    const seen = [];
+    const server = createServer((req, res) => {
+      seen.push(req.url);
+      res.writeHead(200, { "content-type": "application/json" }).end('{"user":{"email":"anna@acme.test"},"result":{"text":"From the cloud"}}');
+    });
+    await new Promise((r) => server.listen(0, "127.0.0.1", r));
     const pkg = installed();
     try {
-      const help = pkg.run();
-      assert.equal(help.status, 0);
-      assert.ok(help.stdout.indexOf("genter ask") < help.stdout.indexOf("genter run"));
-      assert.match(help.stdout.trim().split("\n").at(-1), /https:\/\/genter\.ai$/);
-      const bad = pkg.run("nope");
-      assert.equal(bad.status, 1);
-      assert.match(bad.stderr, /Unknown command: nope/);
-      assert.equal(pkg.run("ask").status, 1);
+      const token = `gnt_${"a".repeat(43)}`;
+      const env = { GENTER_TOKEN: token, GENTER_URL: `http://127.0.0.1:${server.address().port}` };
+      const file = join(pkg.home, "config.json");
+      const config = () => JSON.parse(readFileSync(file, "utf8"));
+      // What 0.3's genter login left: the token beside the rest of the config, which stays as it is.
+      const signedIn = () => writeFileSync(file, JSON.stringify({ ...config(), cloud: { token, url: env.GENTER_URL, workspace: "Acme" } }), { mode: 0o600 });
+      mkdirSync(pkg.home, { recursive: true });
+      writeFileSync(file, "{}");
+      signedIn();
+
+      const asked = await pkg.start(["ask", "production"], { env });
+      assert.equal(asked.status, 0, asked.stderr);
+      assert.match(asked.stdout, /docs\/deploy\.md/);
+      assert.doesNotMatch(asked.stdout, /Genter Cloud|From the cloud/);
+      assert.match(asked.stderr, /removed the Genter Cloud token genter 0\.3 kept in .*config\.json/);
+      assert.equal(config().cloud, undefined);
+      assert.ok(config().secret, "the rest of the config is kept");
+      if (process.platform !== "win32") assert.equal(statSync(file).mode & 0o777, 0o600);
+      const again = await pkg.start(["ask", "production"], { env });
+      assert.doesNotMatch(again.stderr, /Genter Cloud/);
+
+      signedIn();
+      const rpc = (id, method, params) => `${JSON.stringify({ jsonrpc: "2.0", id, method, params })}\n`;
+      const mcp = await pkg.start(["mcp"], { env, input: rpc(1, "initialize", { protocolVersion: "2025-06-18" }) + rpc(2, "tools/list") + rpc(3, "tools/call", { name: "genter_find", arguments: { question: "production" } }) });
+      const [init, list, found] = mcp.stdout.trim().split("\n").map((l) => JSON.parse(l));
+      assert.doesNotMatch(JSON.stringify([init, list]), /Genter Cloud|workspace/);
+      assert.match(found.result.content[0].text, /docs\/deploy\.md/);
+      assert.doesNotMatch(found.result.content[0].text, /Genter Cloud|From the cloud/);
+      assert.equal(config().cloud, undefined);
+      // 0.3's --local changes nothing now; its --cloud is gone like login.
+      const only = await pkg.start(["mcp", "--local"], { env, input: rpc(1, "initialize", { protocolVersion: "2025-06-18" }) });
+      assert.equal(JSON.parse(only.stdout.trim()).result.serverInfo.name, init.result.serverInfo.name, only.stderr);
+      assert.equal(JSON.parse((await pkg.start(["ask", "--json", "--local", "production"], { env })).stdout).question, "production");
+      assert.deepEqual(seen, []);
+
+      for (const args of [["login", token], ["logout"], ["ask", "production", "--cloud"]]) {
+        signedIn();
+        const out = await pkg.start(args, { env });
+        assert.equal(out.status, 1, args.join(" "));
+        assert.equal(out.stdout, "");
+        assert.match(out.stderr, new RegExp(`${args[0] === "ask" ? "--cloud" : `genter ${args[0]}`} is gone[\\s\\S]*OAuth[\\s\\S]*https://genter\\.ai/api/mcp`));
+        assert.equal(config().cloud, undefined, args.join(" "));
+      }
+      assert.deepEqual(seen, []);
+    } finally {
+      server.close();
+      pkg.done();
+    }
+  });
+
+  it("[spec:cli/demo] shows a changed answer and a replaced doc on a temp folder, with no key", () => {
+    const pkg = installed();
+    try {
+      const out = pkg.run("demo");
+      assert.equal(out.status, 0, out.stderr);
+      assert.match(out.stdout, /port 6432[\s\S]*Since the last look: docs\/deploy\.md changed[\s\S]*changed since the last look[\s\S]*port 5433/);
+      assert.match(out.stdout, /still answers:\n {2}"Staging deploys every Tuesday from `main`\. The pooler listens on port 6432\."/);
+      assert.match(out.stdout, /\[2\] docs\/runbook-v2\.md:3-5 · Runbook v2 › Restarting the probes\n {6}replaces \[1\]/);
+      assert.match(out.stdout, /https:\/\/genter\.ai\/api\/mcp/);
+      assert.doesNotMatch(out.stdout, /genter login/);
     } finally {
       pkg.done();
     }

@@ -33,23 +33,8 @@
     "genter": "bin/genter.js"
   },
   "exports": {
-    ".": "./src/genter.js",
-    "./tools": "./src/tools.js",
-    "./agent": "./src/agent.js",
-    "./models": "./src/models.js",
-    "./recipe": "./src/recipe.js",
-    "./shape": "./src/shape.js",
-    "./markdown": "./src/markdown.js",
-    "./refs": "./src/refs.js",
-    "./skills": "./src/skills.js",
-    "./mcp": "./src/mcp.js",
-    "./web": "./src/web.js",
-    "./cost": "./src/cost.js",
-    "./loop": "./src/loop.js",
-    "./area": "./src/area.js",
-    "./area-recipe": "./src/area-recipe.js",
+    ".": "./src/local.js",
     "./local": "./src/local.js",
-    "./mcp-server": "./src/mcp-server.js",
     "./lexical": "./src/lexical.js"
   },
   "files": [
@@ -67,21 +52,7 @@
     "node": ">=20"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.15",
-    "@composio/core": "^0.22.0",
-    "zod": "^4.0.0"
-  },
-  "peerDependencies": {
-    "@composio/core": "^0.22.0",
-    "zod": "^4.0.0"
-  },
-  "peerDependenciesMeta": {
-    "@composio/core": {
-      "optional": true
-    },
-    "zod": {
-      "optional": true
-    }
+    "@biomejs/biome": "2.5.15"
   },
   "publishConfig": {
     "access": "public",

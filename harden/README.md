@@ -3,11 +3,13 @@
 What genter-cli must keep true, and how a change gets in: [the method](https://github.com/Genterai/harden). It
 replaces the specs of [Genterai/specs](https://github.com/Genterai/specs) for this repository (genter-cli's specs are
 on its `legacy` branch, an archive). Ids are the old statement ids, so every `[spec:…]` tag in `test/` still names a
-line.
+line. The legacy apps engine (Composio, Genter's agent, the hosted MCP tools) and its areas (mcp, retrieval,
+search-agent, areas, area-listing) left `main` on 2026-10-20; they are on this repository's `legacy` branch,
+unsupported.
 
 | Path | What |
 | -- | -- |
-| `redlines/<area>.md` | the red lines of each area: local-search, cli, mcp, retrieval, search-agent, areas, area-listing, security, driftbench |
+| `redlines/<area>.md` | the red lines of each area: local-search, cli, security, driftbench |
 | `briefs/YYYY-MM-DD-<slug>.md` | one brief per change request, written before the code |
 | `retired.txt` | removed ids; an id is never reused |
 | `config.json` | older `[spec:…]` tags still count; tests are `test/**` only (`.github/scripts` tests carry sample tags) |
@@ -33,7 +35,5 @@ A pull request that changes code an area names carries one line:
 
 ## Not mapped yet
 
-Red lines grow with the changes. Code no area names yet, and the old specs that described it: `src/drift.js`
-(anchor-drift), `src/refs.js` (writing), `src/skills.js` (skills, skill-pieces), `src/cost.js`
-(cost-observability), `src/mcp.js` (connectors), `src/models.js`, `src/shape.js`, `src/markdown.js`. The first change
-there writes that area's red lines from its tests.
+Red lines grow with the changes. Code no area names yet, and the old spec that described it: `src/drift.js`
+(anchor-drift). The first change there writes that area's red lines from its tests.
