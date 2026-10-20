@@ -41,7 +41,8 @@ jobs:
   old-answer:
     # The old-answer test (bench/old-answer): plain ranking and genter over the same sections of DriftBench's deprecated
     # kind and three public archives, each at the commit questions.json names (fetched with git from github.com). The
-    # run fails when genter leaves a replaced answer unmarked in its first five or does worse than plain ranking.
+    # run fails on any loss: genter puts a replaced answer first, leaves it unmarked in its first five, or does worse
+    # than plain ranking (the current answer counted with its chain, bench/old-answer/README.md).
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:

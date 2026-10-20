@@ -1,32 +1,48 @@
 # The old-answer test: results
 
-Written by `node bench/old-answer/run.mjs` on 2026-10-20 with genter-cli 0.3.1; the numbers are in [results/2026-10-20-by-id.json](results/2026-10-20-by-id.json). The method is in [README.md](README.md); the questions, 39 of them, in [questions.json](questions.json).
+Written by `node bench/old-answer/run.mjs` on 2026-10-20 with genter-cli 0.3.1; the numbers are in [results/2026-10-20-chain.json](results/2026-10-20-chain.json). The method is in [README.md](README.md); the questions, 39 of them, in [questions.json](questions.json).
 
 | arm | old answer first | old answer unmarked in the first five | current answer first | current answer in the first five |
 | -- | --: | --: | --: | --: |
 | plain ranking (BM25 over the same sections, no marks, no reordering) | 8 of 39 (21%) | 31 of 39 (79%) | 20 of 39 (51%) | 32 of 39 (82%) |
-| **Genter** (the local engine as shipped, no key) | **0 of 39 (0%)** | **0 of 39 (0%)** | **27 of 39 (69%)** | **35 of 39 (90%)** |
+| **Genter** (the local engine as shipped, no key) | **0 of 39 (0%)** | **0 of 39 (0%)** | **28 of 39 (72%)** | **35 of 39 (90%)** |
+
+## The current answer, as written and with its chain
+
+A question's current answer is its written current document or any later document reached from it by the archive's own explicit replacement marks, the same kind of mark its pair quotes (a PEP's "Superseded-By: 345"); the old answer stays the replaced document alone. Those later documents are listed by hand from the archive, in order, under "later", each with the line of the document before it that names it, quoted; Genter's readers do not compute them. The rule was decided on 2026-10-20 by the lead of Genter's open-source plan, under the product's principle "current over history", for every question alike. It was set after a run (results/2026-10-20-by-id.json) showed one question affected, peps/0241. The counts above take the current answer with its chain; as written, the written current document alone:
+
+| arm | current answer first, as written | with its chain | current answer in the first five, as written | with its chain |
+| -- | --: | --: | --: | --: |
+| plain ranking | 20 of 39 (51%) | 20 of 39 (51%) | 32 of 39 (82%) | 32 of 39 (82%) |
+| **Genter** | **27 of 39 (69%)** | **28 of 39 (72%)** | **35 of 39 (90%)** | **35 of 39 (90%)** |
+
+The questions whose current document is itself replaced, by a mark of the archive's own (2):
+
+* **peps/0241**: [peps/pep-0314.rst](https://github.com/python/peps/blob/1317769c334c658db28aa5336d910f58443049eb/peps/pep-0314.rst), then [peps/pep-0345.rst](https://github.com/python/peps/blob/1317769c334c658db28aa5336d910f58443049eb/peps/pep-0345.rst) (peps/pep-0314.rst says "Superseded-By: 345"), then [peps/pep-0566.rst](https://github.com/python/peps/blob/1317769c334c658db28aa5336d910f58443049eb/peps/pep-0566.rst) (peps/pep-0345.rst says "Superseded-By: 566"). Here plain ranking puts peps/pep-0314.rst (the current answer as written) first, Genter peps/pep-0566.rst (later in its chain).
+* **peps/0314**: [peps/pep-0345.rst](https://github.com/python/peps/blob/1317769c334c658db28aa5336d910f58443049eb/peps/pep-0345.rst), then [peps/pep-0566.rst](https://github.com/python/peps/blob/1317769c334c658db28aa5336d910f58443049eb/peps/pep-0566.rst) (peps/pep-0345.rst says "Superseded-By: 566"). Here plain ranking puts peps/pep-0808.rst first, Genter peps/pep-0808.rst.
+
+Counted as written, Genter does worse than plain ranking on 1 question(s) that with the chain are no loss: **peps/0241**, where plain ranking puts peps/pep-0314.rst (the current answer as written) first, Genter peps/pep-0566.rst (later in its chain).
 
 ## The plan's decision rule
 
-Plain ranking puts the current answer first on 51% of the questions, under 90%: by the plan's rule the local picture can lead. That is the rule applied as written; what it rests on:
+Plain ranking puts the current answer first on 51% of the questions, under 90%: by the plan's rule the local picture can lead. That is the plan's rule applied to the letter; what it rests on:
 
-* What each arm puts first, of 39: plain ranking the old answer on 8, the current one on 20, another document (or nothing) on 11; Genter the old answer on 0, the current one on 27, another document (or nothing) on 12. Where plain ranking does not put the current answer first, the old answer is first on 8 and another document on 11. Another document ranks first in both arms on peps/0005, peps/0248, peps/0314, peps/0409, peps/0426, peps/0554, peps/0563, peps/0601, peps/0622, peps/0631, peps/3153: a review of the questions starts there (that document may state the current answer too).
+* What each arm puts first, of 39: plain ranking the old answer on 8, the current one on 20, another document (or nothing) on 11; Genter the old answer on 0, the current one on 28, another document (or nothing) on 11. Where plain ranking does not put the current answer first, the old answer is first on 8 and another document on 11. Another document ranks first in both arms on peps/0005, peps/0248, peps/0314, peps/0409, peps/0426, peps/0554, peps/0563, peps/0601, peps/0622, peps/0631, peps/3153: a review of the questions starts there (that document may state the current answer too).
 * Genter's first result differs from plain ranking's on 10 of 39 questions (driftbench/q38, peps/0241, peps/0248, peps/0438, peps/0501, peps/0513, peps/0543, peps/0571, peps/0599, peps/0722), 9 of them among the 34 questions of the public archives.
-* On the public archives: current answer first, plain ranking 16 and Genter 22; old answer unmarked in the first five, plain ranking 26 and Genter 0.
+* On the public archives: current answer first, plain ranking 16 and Genter 23; old answer unmarked in the first five, plain ranking 26 and Genter 0.
 
 ## Per source
 
 | source | questions | sections (both arms) | plain: old first | plain: old unmarked in five | Genter: old first | Genter: old unmarked in five | plain: current first | Genter: current first |
 | -- | --: | --: | --: | --: | --: | --: | --: | --: |
 | [DriftBench, deprecated kind](https://github.com/Genterai/genter/tree/main/bench/drift) | 5 | 341 | 1 | 5 | 0 | 0 | 4 | 5 |
-| [Python Enhancement Proposals](https://github.com/python/peps/tree/1317769c334c658db28aa5336d910f58443049eb) at 1317769 (2026-10-20) | 31 | 11228 | 7 | 24 | 0 | 0 | 13 | 19 |
+| [Python Enhancement Proposals](https://github.com/python/peps/tree/1317769c334c658db28aa5336d910f58443049eb) at 1317769 (2026-10-20) | 31 | 11228 | 7 | 24 | 0 | 0 | 13 | 20 |
 | [Kubernetes Enhancement Proposals](https://github.com/kubernetes/enhancements/tree/5b503a75369bdfdd494a2c2c72107a41bf6dd1a8) at 5b503a7 (2026-10-17) | 1 | 17666 | 0 | 1 | 0 | 0 | 1 | 1 |
 | [Jaeger's RFCs and ADRs](https://github.com/jaegertracing/jaeger/tree/ca047c72f34cf413c16d1118e19c7419de04bbab) at ca047c7 (2026-10-19) | 2 | 1337 | 0 | 1 | 0 | 0 | 2 | 2 |
 
 ## Before and after
 
-The same questions in the run of 2026-10-20 (genter-cli 0.3.1, [results/2026-10-20.json](results/2026-10-20.json)): plain ranking 8 old first, 31 old unmarked in five, 20 current first, 32 current in five, then; now 8 old first, 31 old unmarked in five, 20 current first, 32 current in five. Genter 7 old first, 0 old unmarked in five, 21 current first, 32 current in five, then; now 0 old first, 0 old unmarked in five, 27 current first, 35 current in five. 9 of 39 questions changed what an arm puts first, or their current answer (in bold); the rest put first what they did. Old: the replaced document; current: the replacing one; else the document an arm put first.
+The same questions in the run of 2026-10-20 (genter-cli 0.3.1, [results/2026-10-20.json](results/2026-10-20.json)), the current answer counted as written in both: plain ranking 8 old first, 31 old unmarked in five, 20 current first, 32 current in five, then; now 8 old first, 31 old unmarked in five, 20 current first, 32 current in five. Genter 7 old first, 0 old unmarked in five, 21 current first, 32 current in five, then; now 0 old first, 0 old unmarked in five, 27 current first, 35 current in five. 9 of 39 questions changed what an arm puts first, or their current answer (in bold); the rest put first what they did. Old: the replaced document; current: the replacing one, or a later document of its chain, named; else the document an arm put first.
 
 | question | plain first, then | plain first, now | Genter first, then | Genter first, now |
 | -- | -- | -- | -- | -- |
@@ -39,7 +55,7 @@ The same questions in the run of 2026-10-20 (genter-cli 0.3.1, [results/2026-10-
 | peps/0102 | current | current | current | current |
 | peps/0215 | current | current | current | current |
 | peps/0216 | current | current | current | current |
-| **peps/0241** | current | current | current | peps/pep-0566.rst |
+| **peps/0241** | current | current | current | current, later in its chain (peps/pep-0566.rst) |
 | **peps/0248** | peps/pep-0426.rst | peps/pep-0426.rst | peps/pep-0426.rst | peps/pep-0566.rst |
 | peps/0291 | current | current | current | current |
 | peps/0314 | peps/pep-0808.rst | peps/pep-0808.rst | peps/pep-0808.rst | peps/pep-0808.rst |
@@ -72,9 +88,7 @@ The same questions in the run of 2026-10-20 (genter-cli 0.3.1, [results/2026-10-
 
 ## Losses
 
-1 questions where Genter puts the old answer first, leaves it unmarked in the first five, or does worse than plain ranking:
-
-* **peps/0241** "Which metadata fields say what a package requires, provides and obsoletes?" — worse than plain ranking: the current answer's own document is marked as replaced too, and Genter follows the replacements among the sections it found, so a later document of that chain (peps/pep-0566.rst) comes first. The pair: peps/pep-0241.rst says "Superseded-By: 314" in its header (a number: the pep reader makes it peps/pep-0314.*, which Genter finds in the archive). Replaced: [peps/pep-0241.rst](https://github.com/python/peps/blob/1317769c334c658db28aa5336d910f58443049eb/peps/pep-0241.rst); current: [peps/pep-0314.rst](https://github.com/python/peps/blob/1317769c334c658db28aa5336d910f58443049eb/peps/pep-0314.rst). Genter's first five: peps/pep-0566.rst, peps/pep-0345.rst (marked), peps/pep-0314.rst (marked), peps/pep-0345.rst (marked), peps/pep-0725.rst, peps/pep-0725.rst. The current answer is the one written before any run: PEP 314, the document PEP 241's mark names. PEP 314 is itself marked "Superseded-By: 345" (and PEP 345 "Superseded-By: 566"), and PEP 345 renamed the fields the question asks about; whether a later document of that chain counts as current is the owner's to decide, for every question alike.
+None: Genter never puts the old answer first, never leaves it unmarked in the first five, and is nowhere worse than plain ranking.
 
 ## Every question
 
@@ -89,10 +103,10 @@ The same questions in the run of 2026-10-20 (genter-cli 0.3.1, [results/2026-10-
 | peps/0102: What steps does the release manager follow to make a Python bugfix release? | [peps/pep-0102.rst](https://github.com/python/peps/blob/1317769c334c658db28aa5336d910f58443049eb/peps/pep-0102.rst) | [peps/pep-0101.rst](https://github.com/python/peps/blob/1317769c334c658db28aa5336d910f58443049eb/peps/pep-0101.rst) | current | current | pending owner |
 | peps/0215: How do I substitute $name placeholders in a string with values from a mapping? | [peps/pep-0215.rst](https://github.com/python/peps/blob/1317769c334c658db28aa5336d910f58443049eb/peps/pep-0215.rst) | [peps/pep-0292.rst](https://github.com/python/peps/blob/1317769c334c658db28aa5336d910f58443049eb/peps/pep-0292.rst) | current | current | pending owner |
 | peps/0216: Which markup should be used to write structured Python docstrings? | [peps/pep-0216.rst](https://github.com/python/peps/blob/1317769c334c658db28aa5336d910f58443049eb/peps/pep-0216.rst) | [peps/pep-0287.rst](https://github.com/python/peps/blob/1317769c334c658db28aa5336d910f58443049eb/peps/pep-0287.rst) | current | current | pending owner |
-| peps/0241: Which metadata fields say what a package requires, provides and obsoletes? | [peps/pep-0241.rst](https://github.com/python/peps/blob/1317769c334c658db28aa5336d910f58443049eb/peps/pep-0241.rst) | [peps/pep-0314.rst](https://github.com/python/peps/blob/1317769c334c658db28aa5336d910f58443049eb/peps/pep-0314.rst) | current | peps/pep-0566.rst | pending owner |
+| peps/0241: Which metadata fields say what a package requires, provides and obsoletes? | [peps/pep-0241.rst](https://github.com/python/peps/blob/1317769c334c658db28aa5336d910f58443049eb/peps/pep-0241.rst) | [peps/pep-0314.rst](https://github.com/python/peps/blob/1317769c334c658db28aa5336d910f58443049eb/peps/pep-0314.rst), then [peps/pep-0345.rst](https://github.com/python/peps/blob/1317769c334c658db28aa5336d910f58443049eb/peps/pep-0345.rst), [peps/pep-0566.rst](https://github.com/python/peps/blob/1317769c334c658db28aa5336d910f58443049eb/peps/pep-0566.rst) (later in its chain) | current | current, later in its chain (peps/pep-0566.rst) | pending owner |
 | peps/0248: What does the Python database API require a driver module to define at module level? | [peps/pep-0248.rst](https://github.com/python/peps/blob/1317769c334c658db28aa5336d910f58443049eb/peps/pep-0248.rst) | [peps/pep-0249.rst](https://github.com/python/peps/blob/1317769c334c658db28aa5336d910f58443049eb/peps/pep-0249.rst) | peps/pep-0426.rst | peps/pep-0566.rst | pending owner |
 | peps/0291: Which backward compatibility rules apply when changing a standard library module? | [peps/pep-0291.rst](https://github.com/python/peps/blob/1317769c334c658db28aa5336d910f58443049eb/peps/pep-0291.rst) | [peps/pep-0387.rst](https://github.com/python/peps/blob/1317769c334c658db28aa5336d910f58443049eb/peps/pep-0387.rst) | current | current | pending owner |
-| peps/0314: How does a package's metadata say which Python versions it supports? | [peps/pep-0314.rst](https://github.com/python/peps/blob/1317769c334c658db28aa5336d910f58443049eb/peps/pep-0314.rst) | [peps/pep-0345.rst](https://github.com/python/peps/blob/1317769c334c658db28aa5336d910f58443049eb/peps/pep-0345.rst) | peps/pep-0808.rst | peps/pep-0808.rst | pending owner |
+| peps/0314: How does a package's metadata say which Python versions it supports? | [peps/pep-0314.rst](https://github.com/python/peps/blob/1317769c334c658db28aa5336d910f58443049eb/peps/pep-0314.rst) | [peps/pep-0345.rst](https://github.com/python/peps/blob/1317769c334c658db28aa5336d910f58443049eb/peps/pep-0345.rst), then [peps/pep-0566.rst](https://github.com/python/peps/blob/1317769c334c658db28aa5336d910f58443049eb/peps/pep-0566.rst) (later in its chain) | peps/pep-0808.rst | peps/pep-0808.rst | pending owner |
 | peps/0333: How should a WSGI application handle bytes and strings for the response body on Python 3? | [peps/pep-0333.rst](https://github.com/python/peps/blob/1317769c334c658db28aa5336d910f58443049eb/peps/pep-0333.rst) | [peps/pep-3333.rst](https://github.com/python/peps/blob/1317769c334c658db28aa5336d910f58443049eb/peps/pep-3333.rst) | current | current | pending owner |
 | peps/0345: How does package metadata declare the markup format of the long description? | [peps/pep-0345.rst](https://github.com/python/peps/blob/1317769c334c658db28aa5336d910f58443049eb/peps/pep-0345.rst) | [peps/pep-0566.rst](https://github.com/python/peps/blob/1317769c334c658db28aa5336d910f58443049eb/peps/pep-0566.rst) | current | current | pending owner |
 | peps/0354: How do I define an enumeration type with the standard library? | [peps/pep-0354.rst](https://github.com/python/peps/blob/1317769c334c658db28aa5336d910f58443049eb/peps/pep-0354.rst) | [peps/pep-0435.rst](https://github.com/python/peps/blob/1317769c334c658db28aa5336d910f58443049eb/peps/pep-0435.rst) | current | current | pending owner |

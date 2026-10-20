@@ -20,6 +20,14 @@ left out, proves nothing.
 * **[counts]** Each arm is counted per question by the place a result comes from: "old answer first" (the first result
   is the replaced document) and "old answer unmarked in the first five" (a result among the first five comes from it
   and carries no replaced mark), with "current answer first" and "in the first five" beside them, in all and per source.
+  A question's current answer is its written current document or any later document reached from it by the archive's
+  own explicit replacement marks, the same kind of mark its pair quotes, for every question alike; the old answer is
+  the replaced document alone, never current. The later documents are written by hand from the archive (questions.json
+  `later`, each with the line of its mark quoted, checked as plain text in its document at the pinned commit, a run
+  stopping when one is not there), never computed with Genter's readers. RESULTS.md gives the current answer's counts
+  both ways, as written (the written current document alone) and with the chain, says the rule was set after a run
+  showed one question affected, and names every question the chain takes out of the losses; the losses, the decision
+  rule and `--guard` use the chain.
 * **[losses-published]** RESULTS.md lists every question where Genter puts the old answer first, leaves it unmarked in
   its first five, or does worse than plain ranking on any count, each with its two documents, Genter's first five and
   why.
@@ -29,7 +37,8 @@ left out, proves nothing.
   differs from plain ranking's, in all and on the public archives, and whether Genter's gain there is the order or the
   marks.
 * **[questions-reviewed]** Each archive question names its public archive at a pinned commit (the commit the readers
-  read it at), its replaced and its replacing document, the mark that pairs them, what the replacing document says, and
+  read it at), its replaced and its replacing document, the mark that pairs them, what the replacing document says,
+  where the replacing document is itself replaced the later documents of that chain in order (`later`, [counts]), and
   who reviewed it ("pending owner" until a person does); DriftBench's deprecated kind is taken as DriftBench has it.
   Memory layers and a real agent are not arms here (step 3.5 of the plan), and RESULTS.md says so.
 * **[one-command]** `node bench/old-answer/run.mjs` writes RESULTS.md and results/<date>.json from the sources alone; the
@@ -39,7 +48,8 @@ left out, proves nothing.
   public repositories are fetched, from github.com with git, nothing fetched is run, and the bench uses Node's built-ins
   only.
 * **[never-worse]** Genter never leaves the old answer unmarked in its first five and is worse than plain ranking on no
-  question; with `--guard`, the weekly run (`bench.yml`) fails otherwise.
+  question, the current answer counted with its chain ([counts]); with `--guard`, the weekly run (`bench.yml`) fails on
+  any loss RESULTS.md lists (these, or the old answer first), and passes when it lists none.
 * **[repos-gate]** The 50-repository gate runs the readers over public repositories picked by the rule in
   `bench/repos/candidates.json`, written before any count and checked only for whether the records named are in the
   tree, each pinned at a commit, in two samples: the first 50 (`repos.json`), which the readers were widened looking

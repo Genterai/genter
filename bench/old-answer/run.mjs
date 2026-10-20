@@ -6,14 +6,17 @@
 //   genter   the local engine as shipped: createLocal().add(folder), then find(question) (src/local.js)
 // counted per arm: "old answer first" (the first result is the replaced document) and "old answer unmarked in the first
 // five" (a section of the replaced document among the first five, with no replaced mark on it), with every loss listed.
+// A question's current answer is its written current document or a later one its chain of marks leads to (questions.json
+// `later`, written by hand, each mark's line checked in its document); the count as written is reported beside it.
 // Inputs: DriftBench's deprecated kind (bench/drift, the docs after its edits, offline) and the public archives of
 // questions.json, each at the commit it names (fetched once with git into --cache, the same checkout as bench/repos).
 // Usage: node bench/old-answer/run.mjs [--offline] [--cache dir] [--out results.json] [--md report.md] [--from results.json]
 //          [--before results.json] [--guard]
 // With no --out and no --md it writes results/<date>.json and RESULTS.md beside this file; with --offline it writes only
-// what --out and --md name (the published files hold the archives too). --guard fails the run when Genter leaves the old
-// answer unmarked in its first five or does worse than plain ranking on any question. --before names an earlier run,
-// whose first results RESULTS.md shows beside this run's, question by question.
+// what --out and --md name (the published files hold the archives too). --guard fails the run on any loss RESULTS.md
+// lists: Genter puts the old answer first, leaves it unmarked in its first five, or does worse than plain ranking (the
+// current answer with its chain). --before names an earlier run, whose first results RESULTS.md shows beside this run's,
+// question by question.
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, dirname, join, relative, sep } from "node:path";
@@ -89,22 +92,46 @@ export async function genterArm(dir, questions) {
 }
 
 // One question's counts from an arm's first five: old first, old unmarked in the first five, current first, current in
-// the first five. A question's current answer may live in more than one document (current: a list).
+// the first five, and the last two as written. A question's current answer may live in more than one document
+// (current: a list), and is also any later document its chain of marks leads to (later: [{ place, in, mark }], in
+// order, written by hand from the archive); never the replaced document. As written: the written current documents alone.
 const currents = (q) => [].concat(q.current);
+const laters = (q) => (q.later ?? []).map((l) => l.place);
+const chainOf = (q) => [...currents(q), ...laters(q)].filter((p) => p !== q.replaced);
 export function score(results, q) {
   const top = results.slice(0, K);
+  const chain = chainOf(q);
+  const written = currents(q).filter((p) => p !== q.replaced);
   return {
     old_first: top[0]?.place === q.replaced,
     old_unmarked: top.some((r) => r.place === q.replaced && !r.marked),
-    current_first: currents(q).includes(top[0]?.place),
-    current_top5: top.some((r) => currents(q).includes(r.place)),
+    current_first: chain.includes(top[0]?.place),
+    current_top5: top.some((r) => chain.includes(r.place)),
+    written_first: written.includes(top[0]?.place),
+    written_top5: top.some((r) => written.includes(r.place)),
   };
 }
 
+const COUNTS = ["old_first", "old_unmarked", "current_first", "current_top5", "written_first", "written_top5"];
 export function tally(rows) {
-  const t = { n: rows.length, old_first: 0, old_unmarked: 0, current_first: 0, current_top5: 0 };
-  for (const r of rows) for (const k of ["old_first", "old_unmarked", "current_first", "current_top5"]) if (r[k]) t[k]++;
+  const t = { n: rows.length, ...Object.fromEntries(COUNTS.map((k) => [k, 0])) };
+  for (const r of rows) for (const k of COUNTS) if (r[k]) t[k]++;
   return t;
+}
+
+// A chain's evidence: each `later` mark is a line of the document it says it is in, as checked out ([] when every one
+// is; else one line per mark not found). Plain text, not Genter's readers: the scorer never asks Genter what is current.
+export function laterMissing(dir, questions) {
+  const out = [];
+  for (const q of questions)
+    for (const l of q.later ?? []) {
+      let lines = [];
+      try {
+        lines = readFileSync(join(dir, l.in), "utf8").split(/\r?\n/).map((x) => x.trim());
+      } catch {}
+      if (!lines.includes(l.mark)) out.push(`${q.id}: ${l.in} has no line "${l.mark}"`);
+    }
+  return out;
 }
 
 // ---- the inputs ----
@@ -145,7 +172,10 @@ export async function run({ offline = false, cache = join(tmpdir(), "genter-benc
         continue;
       }
       const co = checkout(cache, s.repo, s.commit);
-      sources.push({ id: s.repo, title: s.title, url: `https://github.com/${s.repo}/tree/${s.commit}`, commit: s.commit, committed: co.committed, dir: co.dir, questions: spec.questions.filter((q) => q.source === s.repo) });
+      const questions = spec.questions.filter((q) => q.source === s.repo);
+      const missing = laterMissing(co.dir, questions);
+      if (missing.length) throw new Error(`a chain's mark is not in its document at ${s.commit.slice(0, 7)}: ${missing.join("; ")}`);
+      sources.push({ id: s.repo, title: s.title, url: `https://github.com/${s.repo}/tree/${s.commit}`, commit: s.commit, committed: co.committed, dir: co.dir, questions });
     }
     const rows = [];
     for (const src of sources) rows.push(...(await runSource(src)));
@@ -155,7 +185,7 @@ export async function run({ offline = false, cache = join(tmpdir(), "genter-benc
     });
     const plain = tally(rows.map((r) => r.plain));
     const genter = tally(rows.map((r) => r.genter));
-    return { date: new Date().toISOString().slice(0, 10), version, k: K, offline, skipped, totals: { plain, genter }, lead: { plain_current_first: plain.n ? plain.current_first / plain.n : 0, local_picture_leads: plain.n ? plain.current_first / plain.n < LEAD : null }, sources: bySource, questions: rows };
+    return { date: new Date().toISOString().slice(0, 10), version, k: K, offline, skipped, rule: spec.current_rule, totals: { plain, genter }, lead: { plain_current_first: plain.n ? plain.current_first / plain.n : 0, plain_written_first: plain.n ? plain.written_first / plain.n : 0, local_picture_leads: plain.n ? plain.current_first / plain.n < LEAD : null }, sources: bySource, questions: rows };
   } finally {
     rmSync(base, { recursive: true, force: true });
   }
@@ -166,7 +196,8 @@ export async function run({ offline = false, cache = join(tmpdir(), "genter-benc
 const pct = (x, n) => (n ? `${Math.round((100 * x) / n)}%` : "–");
 const cell = (t, k) => `${t[k]} of ${t.n} (${pct(t[k], t.n)})`;
 const link = (src, place) => [].concat(place).map((p) => (src?.commit ? `[${p}](https://github.com/${src.id}/blob/${src.commit}/${p})` : `\`${p}\``)).join(", ");
-const firstOf = (q, arm) => (arm.first === q.replaced ? "old" : currents(q).includes(arm.first) ? "current" : (arm.first ?? "nothing"));
+const firstOf = (q, arm) => (arm.first === q.replaced ? "old" : currents(q).includes(arm.first) ? "current" : chainOf(q).includes(arm.first) ? `current, later in its chain (${arm.first})` : (arm.first ?? "nothing"));
+const currentCell = (src, q) => `${link(src, q.current)}${q.later?.length ? `, then ${link(src, laters(q))} (later in its chain)` : ""}`;
 
 // What the decision rule rests on, as bullets: what each arm puts first (the old answer, the current one, another
 // document), on how many questions Genter's first result differs from plain ranking's, in all and on the public archives,
@@ -174,7 +205,7 @@ const firstOf = (q, arm) => (arm.first === q.replaced ? "old" : currents(q).incl
 function rests(results) {
   const qs = results.questions;
   const archived = new Set(results.sources.filter((s) => s.commit).map((s) => s.id));
-  const kind = (q, arm) => (q[arm].first === q.replaced ? "old" : currents(q).includes(q[arm].first) ? "current" : "other");
+  const kind = (q, arm) => (q[arm].first === q.replaced ? "old" : chainOf(q).includes(q[arm].first) ? "current" : "other");
   const c = (arm) => {
     const out = { old: 0, current: 0, other: 0 };
     for (const q of qs) out[kind(q, arm)]++;
@@ -200,10 +231,18 @@ function rests(results) {
 }
 
 // The losses: every question where Genter puts the old answer first or leaves it unmarked in the first five, and every
-// question where Genter does worse than plain ranking on any count.
+// question where Genter does worse than plain ranking on any count (the current answer with its chain).
 export function losses(results) {
   const worse = (q) => (q.genter.old_first && !q.plain.old_first) || (q.genter.old_unmarked && !q.plain.old_unmarked) || (!q.genter.current_first && q.plain.current_first) || (!q.genter.current_top5 && q.plain.current_top5);
   return results.questions.filter((q) => q.genter.old_first || q.genter.old_unmarked || worse(q)).map((q) => ({ ...q, worse: worse(q), why: why(q) }));
+}
+
+// The questions where, counted as written (the written current documents alone), Genter does worse than plain ranking
+// although with the chain it is no loss: what the chain rule changes, published beside the counts.
+export function writtenOnly(results) {
+  const worse = (q) => (!q.genter.written_first && q.plain.written_first) || (!q.genter.written_top5 && q.plain.written_top5);
+  const lost = new Set(losses(results).map((q) => q.id));
+  return results.questions.filter((q) => worse(q) && !lost.has(q.id));
 }
 // Why Genter lost a question, from what it returned.
 function why(q) {
@@ -211,16 +250,20 @@ function why(q) {
   if (q.genter.old_unmarked) return "the replaced document carries no mark the readers read";
   if (q.genter.old_first) return "the old document ranks first and carries no mark";
   const marked = (q.genter.top ?? []).filter((t) => t.endsWith(" (marked)")).map((t) => t.slice(0, -" (marked)".length));
-  if (!q.genter.current_first && currents(q).some((c) => marked.includes(c))) return `the current answer's own document is marked as replaced too, and Genter follows the replacements among the sections it found, so a later document of that chain (${q.genter.first}) comes first`;
+  if (!q.genter.current_first && currents(q).some((c) => marked.includes(c))) return `the current answer's own document is marked as replaced too, and Genter follows the replacements among the sections it found, so a document further along that chain (${q.genter.first}) comes first, one the question's \`later\` does not name`;
   return "the ranking differs from plain ranking's";
 }
 
-// What the weekly run is held to: Genter never leaves the old answer unmarked in its first five, and is nowhere worse
-// than plain ranking. [] when it holds, else one line per problem.
+// What the weekly run is held to: no loss. Genter never leaves the old answer unmarked in its first five, never puts it
+// first, and is nowhere worse than plain ranking, the current answer counted with its chain. [] when it holds (no loss
+// in RESULTS.md), else one line per problem.
 export function guard(results) {
   const out = [];
   if (results.totals.genter.old_unmarked) out.push(`Genter leaves the old answer unmarked in its first five on ${results.totals.genter.old_unmarked} questions`);
-  for (const q of losses(results).filter((x) => x.worse)) out.push(`Genter does worse than plain ranking on ${q.id}`);
+  for (const q of losses(results)) {
+    if (q.worse) out.push(`Genter does worse than plain ranking on ${q.id}`);
+    else if (q.genter.old_first) out.push(`Genter puts the old answer first on ${q.id}`);
+  }
   return out;
 }
 
@@ -233,8 +276,9 @@ export function beforeOf(earlier, file) {
 function beforeLines(results) {
   const b = results.before;
   if (!b) return [];
+  // A run from before the chain rule counted the current answer as written: like is shown with like.
   const was = new Map(b.questions.map((q) => [q.id, q]));
-  const t = (x) => `${x.old_first} old first, ${x.old_unmarked} old unmarked in five, ${x.current_first} current first, ${x.current_top5} current in five`;
+  const t = (x) => `${x.old_first} old first, ${x.old_unmarked} old unmarked in five, ${x.written_first ?? x.current_first} current first, ${x.written_top5 ?? x.current_top5} current in five`;
   const changed = results.questions.filter((q) => {
     const w = was.get(q.id);
     return !w || w.plain.first !== q.plain.first || w.genter.first !== q.genter.first || JSON.stringify(w.current) !== JSON.stringify(q.current);
@@ -242,12 +286,12 @@ function beforeLines(results) {
   return [
     "## Before and after",
     "",
-    `The same questions in the run of ${b.date} (genter-cli ${b.version}, [${b.file}](${b.file})): plain ranking ${t(b.totals.plain)}, then; now ${t(results.totals.plain)}. Genter ${t(b.totals.genter)}, then; now ${t(results.totals.genter)}. ${changed.length} of ${results.questions.length} questions changed what an arm puts first, or their current answer (in bold); the rest put first what they did. Old: the replaced document; current: the replacing one; else the document an arm put first.`,
+    `The same questions in the run of ${b.date} (genter-cli ${b.version}, [${b.file}](${b.file})), the current answer counted as written in both: plain ranking ${t(b.totals.plain)}, then; now ${t(results.totals.plain)}. Genter ${t(b.totals.genter)}, then; now ${t(results.totals.genter)}. ${changed.length} of ${results.questions.length} questions changed what an arm puts first, or their current answer (in bold); the rest put first what they did. Old: the replaced document; current: the replacing one, or a later document of its chain, named; else the document an arm put first.`,
     "",
     "| question | plain first, then | plain first, now | Genter first, then | Genter first, now |",
     "| -- | -- | -- | -- | -- |",
     ...results.questions.map((q) => {
-      const w = was.get(q.id);
+      const w = was.get(q.id) && { ...was.get(q.id), later: q.later };
       const id = changed.includes(q) ? `**${q.id}**` : q.id;
       return `| ${id}${w && corrected(w, q) ? " (its current answer corrected: below)" : ""} | ${w ? firstOf(w, w.plain) : "–"} | ${firstOf(q, q.plain)} | ${w ? firstOf(w, w.genter) : "–"} | ${firstOf(q, q.genter)} |`;
     }),
@@ -266,11 +310,40 @@ function beforeLines(results) {
 }
 const corrected = (w, q) => JSON.stringify(w.current) !== JSON.stringify(q.current);
 
+// The current answer as written and with its chain: the rule, both counts per arm, every question whose current
+// document is itself replaced with what each arm put first there, and the questions the chain takes out of the losses.
+function chainLines(results, srcOf) {
+  const { plain, genter } = results.totals;
+  const chained = results.questions.filter((q) => q.later?.length);
+  const only = writtenOnly(results);
+  const placeOf = (q, arm) => `${arm.first ?? "nothing"}${arm.first === q.replaced ? " (the old answer)" : currents(q).includes(arm.first) ? " (the current answer as written)" : chainOf(q).includes(arm.first) ? " (later in its chain)" : ""}`;
+  const firsts = (q) => `plain ranking puts ${placeOf(q, q.plain)} first, Genter ${placeOf(q, q.genter)}`;
+  return [
+    "## The current answer, as written and with its chain",
+    "",
+    `${results.rule ?? "A question's current answer is its written current document."} The counts above take the current answer with its chain; as written, the written current document alone:`,
+    "",
+    "| arm | current answer first, as written | with its chain | current answer in the first five, as written | with its chain |",
+    "| -- | --: | --: | --: | --: |",
+    `| plain ranking | ${cell(plain, "written_first")} | ${cell(plain, "current_first")} | ${cell(plain, "written_top5")} | ${cell(plain, "current_top5")} |`,
+    `| **Genter** | **${cell(genter, "written_first")}** | **${cell(genter, "current_first")}** | **${cell(genter, "written_top5")}** | **${cell(genter, "current_top5")}** |`,
+    "",
+    chained.length ? `The questions whose current document is itself replaced, by a mark of the archive's own (${chained.length}):` : "No question's current document is itself replaced.",
+    ...(chained.length ? [""] : []),
+    ...chained.map((q) => `* **${q.id}**: ${link(srcOf[q.source], q.current)}, then ${q.later.map((l) => `${link(srcOf[q.source], l.place)} (${l.in} says "${l.mark}")`).join(", then ")}. Here ${firsts(q)}.`),
+    "",
+    only.length ? `Counted as written, Genter does worse than plain ranking on ${only.length} question(s) that with the chain are no loss: ${only.map((q) => `**${q.id}**, where ${firsts(q)}`).join("; ")}.` : "Counted as written too, Genter does worse than plain ranking on no question.",
+    "",
+  ];
+}
+
 export function resultsMd(results, file) {
   const { plain, genter } = results.totals;
   const srcOf = Object.fromEntries(results.sources.map((s) => [s.id, s]));
   const lost = losses(results);
   const share = Math.round(results.lead.plain_current_first * 100);
+  const written = results.lead.plain_written_first == null ? share : Math.round(results.lead.plain_written_first * 100);
+  const asWritten = written === share ? "" : ` (${written}% as written)`;
   const lines = [
     "# The old-answer test: results",
     "",
@@ -281,13 +354,14 @@ export function resultsMd(results, file) {
     `| plain ranking (BM25 over the same sections, no marks, no reordering) | ${cell(plain, "old_first")} | ${cell(plain, "old_unmarked")} | ${cell(plain, "current_first")} | ${cell(plain, "current_top5")} |`,
     `| **Genter** (the local engine as shipped, no key) | **${cell(genter, "old_first")}** | **${cell(genter, "old_unmarked")}** | **${cell(genter, "current_first")}** | **${cell(genter, "current_top5")}** |`,
     "",
+    ...chainLines(results, srcOf),
     "## The plan's decision rule",
     "",
     results.lead.local_picture_leads === null
       ? "No question ran."
       : results.lead.local_picture_leads
-        ? `Plain ranking puts the current answer first on ${share}% of the questions, under 90%: by the plan's rule the local picture can lead. That is the rule applied as written; what it rests on:`
-        : `Plain ranking already puts the current answer first on ${share}% of the questions, 90% or more: **the local picture is not the lead**; the hero leads with the hosted try page (step 1.10 of the plan). What that rests on:`,
+        ? `Plain ranking puts the current answer first on ${share}% of the questions${asWritten}, under 90%: by the plan's rule the local picture can lead. That is the plan's rule applied to the letter; what it rests on:`
+        : `Plain ranking already puts the current answer first on ${share}% of the questions${asWritten}, 90% or more: **the local picture is not the lead**; the hero leads with the hosted try page (step 1.10 of the plan). What that rests on:`,
     ...(results.questions.length ? ["", ...rests(results)] : []),
     "",
     "## Per source",
@@ -301,13 +375,13 @@ export function resultsMd(results, file) {
     "",
     lost.length ? `${lost.length} questions where Genter puts the old answer first, leaves it unmarked in the first five, or does worse than plain ranking:` : "None: Genter never puts the old answer first, never leaves it unmarked in the first five, and is nowhere worse than plain ranking.",
     ...(lost.length ? [""] : []),
-    ...lost.map((q) => `* **${q.id}** "${q.question}" — ${[q.genter.old_first && "Genter puts the old answer first", q.genter.old_unmarked && "the old answer is unmarked in Genter's first five", q.worse && "worse than plain ranking"].filter(Boolean).join("; ")}: ${q.why}. ${q.pair ? `The pair: ${q.pair}. ` : ""}Replaced: ${link(srcOf[q.source], q.replaced)}; current: ${link(srcOf[q.source], q.current)}. Genter's first five: ${q.genter.top.join(", ") || "nothing"}.${q.note ? ` ${q.note}` : ""}`),
+    ...lost.map((q) => `* **${q.id}** "${q.question}" — ${[q.genter.old_first && "Genter puts the old answer first", q.genter.old_unmarked && "the old answer is unmarked in Genter's first five", q.worse && "worse than plain ranking"].filter(Boolean).join("; ")}: ${q.why}. ${q.pair ? `The pair: ${q.pair}. ` : ""}Replaced: ${link(srcOf[q.source], q.replaced)}; current: ${currentCell(srcOf[q.source], q)}. Genter's first five: ${q.genter.top.join(", ") || "nothing"}.${q.note ? ` ${q.note}` : ""}`),
     "",
     "## Every question",
     "",
     "| question | replaced | current | plain first | Genter first | reviewed |",
     "| -- | -- | -- | -- | -- | -- |",
-    ...results.questions.map((q) => `| ${q.id}: ${q.question.replace(/\|/g, "\\|")} | ${link(srcOf[q.source], q.replaced)} | ${link(srcOf[q.source], q.current)} | ${firstOf(q, q.plain)} | ${firstOf(q, q.genter)} | ${q.reviewed} |`),
+    ...results.questions.map((q) => `| ${q.id}: ${q.question.replace(/\|/g, "\\|")} | ${link(srcOf[q.source], q.replaced)} | ${currentCell(srcOf[q.source], q)} | ${firstOf(q, q.plain)} | ${firstOf(q, q.genter)} | ${q.reviewed} |`),
     "",
     "Out of scope here: memory layers (mem0 and others) and a real agent with its own grep are arms of step 3.5 of the plan, each in its own recommended configuration.",
   ];
@@ -321,6 +395,11 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const option = (name) => (args.includes(name) ? args[args.indexOf(name) + 1] : null);
   const from = option("--from");
   const results = from ? JSON.parse(readFileSync(from, "utf8")) : await run({ offline: args.includes("--offline"), ...(option("--cache") && { cache: option("--cache") }) });
+  // A run from before the chain rule holds the current answer as written only: its RESULTS.md cannot be written again.
+  if (from && results.totals.genter.written_first == null) {
+    console.error(`${from} was written before the chain rule (questions.json current_rule): run the test again`);
+    process.exit(1);
+  }
   if (option("--before") && !from) results.before = beforeOf(JSON.parse(readFileSync(option("--before"), "utf8")), relative(here, option("--before")).split(sep).join("/"));
   const defaults = !option("--out") && !option("--md") && !from && !results.offline;
   const out = option("--out") ?? (defaults ? join(here, "results", `${results.date}.json`) : null);

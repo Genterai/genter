@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
-import { beforeOf, genterArm, guard, LEAD, losses, plainArm, resultsMd, run, score, sectionsOf, tally } from "../bench/old-answer/run.mjs";
+import { beforeOf, genterArm, guard, LEAD, laterMissing, losses, plainArm, resultsMd, run, score, sectionsOf, tally, writtenOnly } from "../bench/old-answer/run.mjs";
 import { countFolder, GATE, pick, resultsMd as reposMd, verdict } from "../bench/repos/run.mjs";
 
 const bench = fileURLToPath(new URL("../bench/", import.meta.url));
@@ -35,16 +35,25 @@ function results(rows) {
   return { date: "2026-10-20", version: "0", skipped: [], totals: { plain, genter }, lead: { plain_current_first: plain.current_first / plain.n, local_picture_leads: plain.current_first / plain.n < LEAD }, sources: [{ id: "fixture", title: "Fixture", url: "https://example.org", plain, genter }], questions: rows };
 }
 const row = (id, plain, genter) => ({ id, source: "fixture", question: `question ${id}?`, replaced: OLD, current: NEW, reviewed: "pending owner", plain: { ...plain, first: plain.current_first ? NEW : OLD }, genter: { ...genter, first: genter.current_first ? NEW : OLD, first_marked: true, top: [] } });
-const won = { old_first: false, old_unmarked: false, current_first: true, current_top5: true };
-const lost = { old_first: true, old_unmarked: true, current_first: false, current_top5: true };
+const won = { old_first: false, old_unmarked: false, current_first: true, current_top5: true, written_first: true, written_top5: true };
+const lost = { old_first: true, old_unmarked: true, current_first: false, current_top5: true, written_first: false, written_top5: true };
+// A question whose current document is itself replaced: ADR 11 by ADR 12 (later), as the archive's own mark says.
+const LATER = "docs/adr/0012-run-background-jobs-on-kafka.md";
+const chainQuestion = { ...question, id: "c", later: [{ place: LATER, in: NEW, mark: "Superseded by [ADR 12](0012-run-background-jobs-on-kafka.md)" }] };
+// Plain ranking puts the written current document first, Genter the later one: scored as run() scores them.
+function chainRow() {
+  const plain = [{ place: NEW, marked: false }, { place: OLD, marked: false }];
+  const genter = [{ place: LATER, marked: false }, { place: NEW, marked: true }, { place: OLD, marked: true }];
+  return { ...chainQuestion, source: "fixture", question: "question c?", reviewed: "pending owner", plain: { ...score(plain, chainQuestion), first: NEW }, genter: { ...score(genter, chainQuestion), first: LATER, first_marked: false, top: [LATER, `${NEW} (marked)`, `${OLD} (marked)`] } };
+}
 
 describe("the old-answer test", () => {
   it("[rl:old-answer/same-sections] [rl:old-answer/counts] on a replaced ADR, plain ranking puts the old answer first and leaves it unmarked; Genter, over the same sections, puts the current one first and marks the old one", async () => {
     await inCopy(async (dir) => {
       const [plain] = plainArm(dir, [question]);
       const { results: [genter], sections: ranked } = await genterArm(dir, [question]);
-      assert.deepEqual(score(plain, question), { old_first: true, old_unmarked: true, current_first: false, current_top5: true });
-      assert.deepEqual(score(genter, question), { old_first: false, old_unmarked: false, current_first: true, current_top5: true });
+      assert.deepEqual(score(plain, question), lost);
+      assert.deepEqual(score(genter, question), won);
       assert.equal(genter[0].place, NEW);
       assert.ok(genter.some((r) => r.place === OLD && r.marked), "the replaced ADR follows, marked");
       assert.ok(plain.every((r) => !r.marked), "plain ranking marks nothing");
@@ -54,6 +63,25 @@ describe("the old-answer test", () => {
       assert.equal(ranked, sections.length);
       for (const r of genter) assert.ok(sections.some((s) => s.place === r.place && s.from <= r.lines[0] && r.lines[1] <= s.to), `${r.place}:${r.lines}`);
     });
+  });
+
+  it("[rl:old-answer/counts] a document later in the current answer's chain counts as current, the replaced document never does, and the count as written is reported beside it", () => {
+    const top = [{ place: LATER, marked: false }, { place: NEW, marked: true }, { place: OLD, marked: true }];
+    assert.deepEqual(score(top, chainQuestion), { old_first: false, old_unmarked: false, current_first: true, current_top5: true, written_first: false, written_top5: true });
+    assert.deepEqual(score(top, question), { old_first: false, old_unmarked: false, current_first: false, current_top5: true, written_first: false, written_top5: true }, "without later, only the written document");
+    // A chain that names the replaced document again (two documents that name each other) never makes it current.
+    const loop = { ...chainQuestion, later: [...chainQuestion.later, { place: OLD, in: LATER, mark: "Superseded by ADR 3" }] };
+    assert.deepEqual(score([{ place: OLD, marked: false }, { place: LATER, marked: false }], loop), { old_first: true, old_unmarked: true, current_first: false, current_top5: true, written_first: false, written_top5: false });
+    // Both counts are tallied and published; the losses and the guard take the chain.
+    const r = results([chainRow(), row("a", won, won)]);
+    assert.deepEqual([r.totals.genter.current_first, r.totals.genter.written_first, r.totals.plain.current_first, r.totals.plain.written_first], [2, 1, 2, 2]);
+    assert.deepEqual(losses(r), []);
+    const md = resultsMd(r);
+    assert.match(md, /\| \*\*Genter\*\* \| \*\*1 of 2 \(50%\)\*\* \| \*\*2 of 2 \(100%\)\*\* \| \*\*2 of 2 \(100%\)\*\* \| \*\*2 of 2 \(100%\)\*\* \|/);
+    assert.match(md, new RegExp(`\\* \\*\\*c\\*\\*: \`${NEW}\`, then \`${LATER}\` \\(${NEW} says "Superseded by \\[ADR 12\\]\\(0012-run-background-jobs-on-kafka\\.md\\)"\\)\\. Here plain ranking puts ${NEW} \\(the current answer as written\\) first, Genter ${LATER} \\(later in its chain\\)\\.`));
+    assert.match(md, /Counted as written, Genter does worse than plain ranking on 1 question\(s\) that with the chain are no loss: \*\*c\*\*/);
+    assert.match(md, /None: Genter never puts the old answer first/);
+    assert.match(md, new RegExp(`\\| c: question c\\? \\| \`${OLD}\` \\| \`${NEW}\`, then \`${LATER}\` \\(later in its chain\\) \\| current \\| current, later in its chain \\(${LATER}\\) \\|`));
   });
 
   it("[rl:old-answer/same-sections] with the replaced mark taken out, the two arms rank the same number of sections and return the same places in the same order", async () => {
@@ -95,7 +123,7 @@ describe("the old-answer test", () => {
     assert.equal(losses(leads).length, 1);
     // The current answer's own document marked as replaced, and a later document of its chain first: said so.
     const chain = results([{ ...row("d", won, { ...won, current_first: false }), genter: { ...won, current_first: false, first: "docs/adr/0012-x.md", first_marked: false, top: ["docs/adr/0012-x.md", `${NEW} (marked)`, `${OLD} (marked)`] } }]);
-    assert.match(resultsMd(chain), /\*\*d\*\* "question d\?" — worse than plain ranking: the current answer's own document is marked as replaced too, and Genter follows the replacements among the sections it found, so a later document of that chain \(docs\/adr\/0012-x\.md\) comes first\./);
+    assert.match(resultsMd(chain), /\*\*d\*\* "question d\?" — worse than plain ranking: the current answer's own document is marked as replaced too, and Genter follows the replacements among the sections it found, so a document further along that chain \(docs\/adr\/0012-x\.md\) comes first, one the question's `later` does not name\./);
     const notLead = results(Array.from({ length: 10 }, (_, i) => row(`q${i}`, i < 9 ? won : lost, won)));
     assert.match(resultsMd(notLead), /already puts the current answer first on 90% of the questions, 90% or more: \*\*the local picture is not the lead\*\*/);
     assert.match(resultsMd(notLead), /None: Genter never puts the old answer first/);
@@ -112,12 +140,25 @@ describe("the old-answer test", () => {
     assert.match(offline.stdout, /^5 questions/);
     assert.equal(readFileSync(md, "utf8"), before, "RESULTS.md untouched");
     assert.equal(readFileSync(join(bench, "old-answer", file), "utf8"), published, `${file} untouched`);
+    // A run from before the chain rule counted only as written: --from refuses it and writes nothing.
+    const old = spawnSync(process.execPath, [join(bench, "old-answer", "run.mjs"), "--from", join(bench, "old-answer", "results", "2026-10-20-by-id.json")], { encoding: "utf8" });
+    assert.equal(old.status, 1);
+    assert.match(old.stderr, /was written before the chain rule/);
+    assert.equal(readFileSync(md, "utf8"), before, "RESULTS.md untouched");
   });
 
-  it("[rl:old-answer/never-worse] the guard fails a run where Genter leaves the old answer unmarked in its first five or does worse than plain ranking", () => {
+  it("[rl:old-answer/never-worse] the guard fails a run on any loss: Genter leaves the old answer unmarked in its first five, puts it first, or does worse than plain ranking, the current answer counted with its chain", () => {
     assert.deepEqual(guard(results([row("a", lost, won)])), []);
     assert.deepEqual(guard(results([row("a", won, lost)])), ["Genter leaves the old answer unmarked in its first five on 1 questions", "Genter does worse than plain ranking on a"]);
     assert.deepEqual(guard(results([row("a", won, { ...won, current_first: false })])), ["Genter does worse than plain ranking on a"]);
+    // The old answer first, marked, where plain ranking puts it first too: no worse, but a loss, so the guard fails.
+    const both = results([row("a", lost, { ...lost, old_unmarked: false })]);
+    assert.deepEqual(losses(both).map((q) => q.id), ["a"]);
+    assert.deepEqual(guard(both), ["Genter puts the old answer first on a"]);
+    // A later document of the current answer's chain first is no loss; counted as written it would be, and is said so.
+    const chained = results([chainRow()]);
+    assert.deepEqual(guard(chained), []);
+    assert.deepEqual(writtenOnly(chained).map((q) => q.id), ["c"]);
   });
 
   it("[rl:old-answer/questions-reviewed] every question names a public archive at a commit, its replaced and current documents, the mark that pairs them and who reviewed it", () => {
@@ -145,6 +186,41 @@ describe("the old-answer test", () => {
       assert.equal(q.reviewed, "pending owner", q.id);
     }
     assert.equal(spec.reviewed, "pending owner");
+  });
+
+  it("[rl:old-answer/questions-reviewed] [rl:old-answer/counts] every later document of a chain names the document whose mark leads to it and quotes that mark's line, written by hand; the run checks each line is in its document", () => {
+    const spec = json("old-answer/questions.json");
+    assert.match(spec.current_rule, /written current document or any later document reached from it by the archive's own explicit replacement marks/);
+    assert.match(spec.current_rule, /showed one question affected, peps\/0241/);
+    // Every question whose current document carries a replacement mark of its own, checked by hand at the pinned commits.
+    const chained = spec.questions.filter((q) => q.later);
+    assert.deepEqual(chained.map((q) => q.id), ["peps/0241", "peps/0314"]);
+    for (const q of chained) {
+      assert.ok(q.later.length > 0, q.id);
+      const seen = new Set([q.replaced, ...[].concat(q.current)]);
+      q.later.forEach((l, i) => {
+        assert.deepEqual(Object.keys(l).sort(), ["in", "mark", "place"], q.id);
+        assert.match(l.place, /^[\w./-]+$/, q.id);
+        assert.ok(!seen.has(l.place), `${q.id}: ${l.place} once, never the replaced or a written current document`);
+        seen.add(l.place);
+        assert.ok(i ? l.in === q.later[i - 1].place : [].concat(q.current).includes(l.in), `${q.id}: ${l.place} follows the document before it in the chain`);
+        assert.match(l.mark, /^\S(?:[^\n]*\S)?$/, `${q.id}: the mark is one quoted line`);
+        if (q.source === "python/peps") assert.equal(l.mark, `Superseded-By: ${Number(/pep-(\d+)\./.exec(l.place)[1])}`, `${q.id}: a PEP header names ${l.place}`);
+      });
+    }
+    // The check the run makes at each pinned commit, on plain text: a mark's line is in its document, else it stops.
+    const dir = mkdtempSync(join(tmpdir(), "old-answer-later-"));
+    try {
+      mkdirSync(join(dir, "peps"));
+      writeFileSync(join(dir, "peps/pep-0314.rst"), "PEP: 314\nStatus: Superseded\nSuperseded-By: 345\n\nAbstract\n");
+      const q = (mark, at = "peps/pep-0314.rst") => [{ id: "peps/0241", later: [{ place: "peps/pep-0345.rst", in: at, mark }] }];
+      assert.deepEqual(laterMissing(dir, q("Superseded-By: 345")), []);
+      assert.deepEqual(laterMissing(dir, q("Superseded-By: 34")), ['peps/0241: peps/pep-0314.rst has no line "Superseded-By: 34"']);
+      assert.deepEqual(laterMissing(dir, q("Superseded-By: 345", "peps/pep-9999.rst")), ['peps/0241: peps/pep-9999.rst has no line "Superseded-By: 345"']);
+      assert.deepEqual(laterMissing(dir, [{ id: "x" }]), []);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   it("[rl:old-answer/repos-gate] the readers' counts per repository, the gate and the three picks follow their stated rules; the 50 were picked and pinned before the count", () => {

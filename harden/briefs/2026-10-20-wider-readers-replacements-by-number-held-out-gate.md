@@ -13,7 +13,9 @@ readers schema extension, so that a manifest says how a replacement named by an 
 Evolution, Rust/React/Vue-style RFC folders, EIPs/ERCs, NEPs, RFDs, PIPs, KEPs' kep.yaml status and the other families
 with two or more repositories); (3) the gate re-run on a held-out sample of new repositories picked by the same written
 rule, committed before the readers run on it, with both samples published and the pass rule applied to the held-out
-one; (4) the old-answer test re-run with before and after per question; (5) DriftBench's guard green.
+one; (4) the old-answer test re-run with before and after per question; (5) DriftBench's guard green. Its last part,
+the old-answer test's count for a chain of replacements (peps/0241), was decided by the plan's lead on 2026-10-20
+(Decided, below) and built in this pull request.
 
 Intent: the readers take the decision records real repositories keep, a replacement named by number brings the
 replacing document first, and whether the readers generalize is measured on repositories they were not written for —
@@ -27,13 +29,19 @@ file of the project, else the name or the link the notice gives) and `src/local.
 resolved to one of the project's files, else nothing), the two places an id's file now resolves; `ask "how were the 50
 repositories of the gate picked, and what does the gate's verdict count?"`: `bench/repos/run.mjs` `verdict`,
 `harden/redlines/old-answer.md` [repos-gate] and the old-answer brief (the rule written before any count, the check
-looks only at whether the records are in the tree), the rule the held-out sample repeats.
+looks only at whether the records are in the tree), the rule the held-out sample repeats; `ask "when a replacing
+document is itself superseded, which document counts as the current answer in the old-answer test?"` (from a folder
+outside the package, the worktree added): `bench/old-answer/RESULTS.md` "Losses" (peps/0241), `bench/old-answer/
+README.md` "Limits" (a chain of replacements) and this brief's Open line on peps/0241, the question the decision answers.
 Sources: `src/readers.js` (`lintReader`, `placeLint`, `fillPlace`, `findPlace`, `compileReader` records, `marksIn`);
 `readers/reader.schema.json` (`records`, a mark's `id` and `place`); `readers/*/reader.json` with their fixtures and
 `expected.json` (adr, rfc widened; pep, kep, eip, nep, rfd, pip, proposals new; decisions gains `records`);
 `src/local.js` (`placeLink`, `replacedMark`, `documentsOf`); `src/page.js` (`decisionReaders`, `decisionsOf`);
 `bench/repos/` (`candidates.json` `heldout`, `heldout.json`, `run.mjs` `treeOf`, `pick`, `resultsMd`, `README.md`);
-`bench/old-answer/` (`run.mjs` `beforeOf`, `questions.json`, `README.md`); `harden/redlines/{readers,old-answer,
+`bench/old-answer/` (`run.mjs` `beforeOf`, `score`, `laterMissing`, `writtenOnly`, `losses`, `guard`, `resultsMd`;
+`questions.json` `current_rule` and `later`; `README.md`; `.github/workflows/bench.yml`'s old-answer job); the current
+documents of every old-answer question at the pinned commits, read by hand for marks of their own (python/peps
+`peps/pep-0314.rst` line 12 "Superseded-By: 345", `peps/pep-0345.rst` line 12 "Superseded-By: 566"); `harden/redlines/{readers,old-answer,
 local-search,decisions-page,driftbench}.md`; the repositories, each at the commit in `bench/repos/repos.json` or
 `bench/repos/heldout.json`, cited with URLs in `bench/repos/RESULTS.md`; stars from GitHub's repository search on
 2026-10-20 (the queries are in candidates.json).
@@ -45,8 +53,29 @@ explicit-only and local-search/current-first name the new paths without changing
 readers/declarative, restricted-patterns, no-network, secrets-never-read, off-honoured, contract-tested (every new reader
 has fixtures and expected output, checked by `genter reader check` and `test/readers.test.js` in CI);
 local-search/current-first (a replacement is brought first only for a file inside the project this search reads);
-driftbench/old-first; zero runtime dependencies; nothing in `src/` spawns a process. old-answer/never-worse does not
-hold on one question, peps/0241 (Open).
+driftbench/old-first; zero runtime dependencies; nothing in `src/` spawns a process; old-answer/never-worse holds again
+(no loss with the chain rule), its guard now failing on any loss. old-answer/counts changed (a question's current
+answer includes its chain, both counts published) and old-answer/questions-reviewed (`later`).
+Decided:
+* **A question's current answer includes its chain** (the plan's lead, 2026-10-20, under the product's principle
+  "current over history", answering the peps/0241 Open line below): a question's current answer is its written
+  `current` document or any later document reached from it by the archive's own explicit replacement marks (the same
+  kind of mark the question's `pair` quotes, e.g. a PEP header "Superseded-By: 345"), for every question alike. The old
+  answer stays the `replaced` document only, never current. The rule was set after a run
+  (`bench/old-answer/results/2026-10-20-by-id.json`) showed one question affected, peps/0241, and RESULTS.md says so
+  beside both counts, as written and with the chain, naming the question the chain takes out of the losses. The later
+  documents are written by hand from the archive as `later` in questions.json, each with its mark's line quoted; the run
+  checks each line as plain text at the pinned commit and stops if one is not there. They are never computed with
+  Genter's own readers, which would make Genter grade itself.
+* **Which questions have a chain.** Every question's current document was read at the pinned commits for a replacement
+  mark of its own: two carry one, PEP 314 ("Superseded-By: 345") and PEP 345 ("Superseded-By: 566"), so peps/0241 has
+  `later` PEP 345 then PEP 566, and peps/0314 has PEP 566. The other 26 current PEPs (PEP 566, the chains' end, among
+  them; PEPs 699 and 749 mention a superseded or deprecated thing in their text, not a mark on themselves), KEP 1205,
+  Jaeger's RFC 0008 and mcptools README, and DriftBench's four replacing pages carry none.
+* **The guard fails on any loss.** `--guard` exits 1 when RESULTS.md lists a loss and 0 when it lists none: the old
+  answer first, even marked and where plain ranking puts it first too, now fails it, beside the old answer unmarked in
+  the first five and a count worse than plain ranking. Before, an old answer first that plain ranking also put first
+  passed the guard.
 Open:
 * **The gate does not pass on the held-out sample.** The median of the 46 held out has 0 decision records read (9 of
   46 have 5 or more: 3 of 14 decision archives, 5 of 16 projects with records in their tree, 1 changelog project); 20
@@ -78,17 +107,17 @@ Open:
   seeing them would bias this sample. → Proposal: the next readers pull request (a sentence about code, a list heading,
   a state's name are no mark of a document), measured on the next held-out sample; the old-answer brief's open banners
   issues (partial status lines, titles) still stand. [non-blocking]
-* **peps/0241 is a loss, published as one.** Its current answer, written before any run, is PEP 314, the document PEP
-  241's mark names. PEP 314 is itself "Superseded-By: 345", and PEP 345 "Superseded-By: 566" (PEP 345 renamed the
-  fields the question asks about). Now that those numbers lead to files, Genter follows the chain (below) and puts PEP
-  566 first, where plain ranking puts PEP 314: Genter does worse than plain ranking on this question, RESULTS.md lists
-  it under "Losses", and `--guard` fails on it, so old-answer/never-worse does not hold and the weekly old-answer job
-  (bench.yml, not run on pull requests) is red until this is decided. An earlier draft of this step changed the
-  question's current answer after seeing that run; that is undone, and the question is scored as it was written. →
-  Proposal: a rule in old-answer [counts] and [questions-reviewed], written down before the next run and applied to
-  every question, that a document later in the replacing document's own chain of marks counts as current too; or the
-  loss accepted as it is. [non-blocking here, for the owner: this step publishes the loss; until the owner decides,
-  old-answer/never-worse is broken on this question]
+* **peps/0241: a loss as written, none with the chain.** Its current answer, written before any run, is PEP 314, the
+  document PEP 241's mark names. PEP 314 is itself "Superseded-By: 345", and PEP 345 "Superseded-By: 566" (PEP 345
+  renamed the fields the question asks about). Now that those numbers lead to files, Genter follows the chain (below)
+  and puts PEP 566 first, where plain ranking puts PEP 314: counted as written, Genter does worse than plain ranking on
+  this question, and the by-id run's `--guard` failed on it. An earlier draft of this step changed the question's
+  current answer after seeing that run; that was undone, and the question keeps the current answer it was written with.
+  → Answered by the plan's lead on 2026-10-20 (Decided): the current answer includes the later documents of its chain,
+  for every question alike, a rule set after that run and published as such. With it Genter puts the current answer
+  first on peps/0241, RESULTS.md lists no loss, `--guard` passes and old-answer/never-worse holds; RESULTS.md keeps
+  the count as written beside it (Genter 27 of 39 current first as written, 28 with the chain) and names peps/0241 as
+  the one question the chain takes out of the losses. [non-blocking, answered]
 * **Chains of replacements.** Genter follows replacements among the sections a search found (local-search/
   current-first, as before this step), each place once so two documents that name each other end: on peps/0241 it
   brings PEP 314, then PEP 345, then PEP 566 ahead of PEP 241. Only a replacement brought from outside the sections
@@ -125,7 +154,16 @@ none twice, each group at most its take and most stars first, the verdict on the
 what the published results give; the pick takes the first that pass the check alone, skips the first 50 and a repository
 an earlier group took, and says why for every one it does not take / "[rl:old-answer/repos-gate] [rl:readers/by-id] a
 replacement named by a number counts as there…": `countFolder` pairs PEP 42 with PEP 57, and PEP 61, a link, is not
-there / "[rl:old-answer/losses-published]": a loss to a chain says so / "[rl:old-answer/one-command] an earlier run
+there / "[rl:old-answer/losses-published]": a loss to a chain its `later` does not name says so /
+"[rl:old-answer/counts] a document later in the current answer's chain counts as current…": a later document first
+counts as current and as written does not, the replaced document named again in a chain never counts, both counts
+tallied and published, no loss and the chain question named / "[rl:old-answer/questions-reviewed]
+[rl:old-answer/counts] every later document of a chain…": peps/0241 and peps/0314 alone have `later`, each entry in
+chain order with one quoted line (a PEP's naming its number), and `laterMissing` finds a line that is there and
+reports one that is not / "[rl:old-answer/never-worse] the guard fails a run on any loss…": the old answer first,
+marked, where plain ranking puts it first too, fails it; a later document of the chain first does not /
+"[rl:old-answer/one-command] the published RESULTS.md…": `--from` refuses a results file written before the chain
+rule / "[rl:old-answer/one-command] an earlier run
 beside this one…": what each arm put first then and now, and a corrected question scored both ways / `genter reader
 check` (13 readers, every fixture as expected). The runs: the held-out list committed and pushed (a93d935) before `node
 bench/repos/run.mjs --out bench/repos/results/2026-10-20-heldout.json --before bench/repos/results/2026-10-20.json` (96
@@ -134,7 +172,13 @@ a document there, picks python/peps, ethereum/EIPs, numpy/numpy); `node bench/ol
 bench/old-answer/results/2026-10-20-by-id.json --md bench/old-answer/RESULTS.md --before
 bench/old-answer/results/2026-10-20.json --guard` (39 questions; old answer first: plain 8, Genter 0, was 7; old answer
 unmarked in the first five: plain 31, Genter 0; current answer first: plain 20, Genter 27, was 20 and 21; the 7 losses
-to a number are gone; one loss, peps/0241, to a chain: the guard fails on it, Open); `node bench/drift/check.mjs` and
+to a number are gone; one loss, peps/0241, to a chain: the guard failed on it); then, with the chain rule, `node
+bench/old-answer/run.mjs --cache <the archives already fetched> --out bench/old-answer/results/2026-10-20-chain.json
+--md bench/old-answer/RESULTS.md --before bench/old-answer/results/2026-10-20.json --guard` (exit 0; every
+question's places, first results, Genter's first five and the sections per source identical to the by-id run's, only
+the scoring changed: current answer first, plain 20 and Genter 28 with the chain, 20 and 27 as written; in the first
+five plain 32 and Genter 35 both ways; old answer first plain 8, Genter 0; unmarked in five plain 31, Genter 0; no
+loss; counted as written, Genter would do worse on peps/0241 alone); `node bench/drift/check.mjs` and
 `node bench/drift/run.mjs --no-takes --guard README.md` (green: genter 77% current and 0% stale after the edits,
 deprecated 3 fresh · 0 stale · 0 old first, 0 of 65 old first; an index built once 24). Warm searches of python/peps at
 its pinned commit: 51 to 64 ms with a folder listed once per pass, 88 to 105 ms when each mark listed it. `npm test`,
@@ -149,3 +193,8 @@ its pinned commit: 51 to 64 ms with a folder listed once per pass, 88 to 105 ms 
 - decisions-page/explicit-only (changed: every document a reader of decision records reads, not only the adr and rfc
   readers')
 - local-search/current-first (changed: what replaces a file may be the file its id names, readers/by-id)
+- old-answer/counts (changed: a question's current answer is its written current document or a later one its chain of
+  the archive's own marks leads to, listed by hand as `later`; both counts published)
+- old-answer/questions-reviewed (changed: `later`, the later documents of a chain in order, each mark's line quoted)
+- old-answer/never-worse (changed: the current answer counted with its chain, and `--guard` fails on any loss; it holds
+  again)

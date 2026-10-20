@@ -1,6 +1,7 @@
 {
-  "about": "The questions of the old-answer test (step 1.7 of Genter's open-source plan): one per pair of a document that says of itself that it is replaced and the document that replaces it, in the archives bench/repos picked, asked so that the current answer lives in the replacing document. DriftBench's deprecated kind is read from bench/drift/questions.json by run.mjs. Each question here was written from both documents at the commit below and waits for a person's review: \"reviewed\" says who checked it.",
+  "about": "The questions of the old-answer test (step 1.7 of Genter's open-source plan): one per pair of a document that says of itself that it is replaced and the document that replaces it, in the archives bench/repos picked, asked so that the current answer lives in the replacing document. DriftBench's deprecated kind is read from bench/drift/questions.json by run.mjs. Each question here was written from both documents at the commit below and waits for a person's review: \"reviewed\" says who checked it. Where the replacing document is itself replaced, \"later\" names the documents that chain of marks leads to (\"current_rule\").",
   "reviewed": "pending owner",
+  "current_rule": "A question's current answer is its written current document or any later document reached from it by the archive's own explicit replacement marks, the same kind of mark its pair quotes (a PEP's \"Superseded-By: 345\"); the old answer stays the replaced document alone. Those later documents are listed by hand from the archive, in order, under \"later\", each with the line of the document before it that names it, quoted; Genter's readers do not compute them. The rule was decided on 2026-10-20 by the lead of Genter's open-source plan, under the product's principle \"current over history\", for every question alike. It was set after a run (results/2026-10-20-by-id.json) showed one question affected, peps/0241.",
   "sources": [
     {
       "repo": "python/peps",
@@ -66,9 +67,21 @@
       "replaced": "peps/pep-0241.rst",
       "current": "peps/pep-0314.rst",
       "pair": "peps/pep-0241.rst says \"Superseded-By: 314\" in its header (a number: the pep reader makes it peps/pep-0314.*, which Genter finds in the archive)",
+      "later": [
+        {
+          "place": "peps/pep-0345.rst",
+          "in": "peps/pep-0314.rst",
+          "mark": "Superseded-By: 345"
+        },
+        {
+          "place": "peps/pep-0566.rst",
+          "in": "peps/pep-0345.rst",
+          "mark": "Superseded-By: 566"
+        }
+      ],
       "current_says": "Requires, Provides and Obsoletes, added in metadata 1.1.",
       "reviewed": "pending owner",
-      "note": "The current answer is the one written before any run: PEP 314, the document PEP 241's mark names. PEP 314 is itself marked \"Superseded-By: 345\" (and PEP 345 \"Superseded-By: 566\"), and PEP 345 renamed the fields the question asks about; whether a later document of that chain counts as current is the owner's to decide, for every question alike."
+      "note": "PEP 314, the current answer written before any run, is itself \"Superseded-By: 345\", and PEP 345 \"Superseded-By: 566\" (PEP 345 renamed the fields the question asks about): by the current rule PEP 345 and PEP 566 count as current too. As written, with PEP 314 alone, Genter does worse than plain ranking here; that run is why the rule was set."
     },
     {
       "id": "peps/0248",
@@ -97,6 +110,13 @@
       "replaced": "peps/pep-0314.rst",
       "current": "peps/pep-0345.rst",
       "pair": "peps/pep-0314.rst says \"Superseded-By: 345\" in its header (a number: the pep reader makes it peps/pep-0345.*, which Genter finds in the archive)",
+      "later": [
+        {
+          "place": "peps/pep-0566.rst",
+          "in": "peps/pep-0345.rst",
+          "mark": "Superseded-By: 566"
+        }
+      ],
       "current_says": "Requires-Python (metadata 1.2).",
       "reviewed": "pending owner"
     },

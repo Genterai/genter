@@ -41,11 +41,25 @@ decision, not a string (DriftBench's own report scores the same questions by the
 | -- | -- |
 | **old answer first** | the first result comes from the replaced document |
 | **old answer unmarked in the first five** | a result among the first five comes from the replaced document and carries no replaced mark |
-| current answer first | the first result comes from the replacing document |
+| current answer first | the first result comes from the current answer: the replacing document, or a later document of its chain (below) |
 | current answer in the first five | a result among the first five comes from it |
 
+**The current answer and its chain.** A question's current answer is its written `current` document or any later
+document reached from it by the archive's own explicit replacement marks, the same kind of mark the question's `pair`
+quotes (a PEP header's `Superseded-By: 345`). It applies to every question alike; the old answer stays the `replaced`
+document alone. Those later documents are written by hand from the archive, the way `pair` is, as a `later` list in
+[questions.json](questions.json): each names its place, the document whose mark leads to it and that mark's line,
+quoted. The run checks, as plain text at the pinned commit, that each line is in its document, and stops if one is not;
+it never asks Genter's own readers what is current, which would make Genter grade itself. Every question whose current
+document carries such a mark has its `later`: peps/0241 (PEP 314, then PEP 345, then PEP 566) and peps/0314 (PEP 345,
+then PEP 566). The rule was decided on 2026-10-20, under the product's principle "current over history", after a run
+(`results/2026-10-20-by-id.json`) showed one question affected, peps/0241; so RESULTS.md gives the current answer's
+counts both ways, as written (the written `current` alone) and with the chain, and names every question the chain
+takes out of the losses.
+
 **Losses** are published in RESULTS.md, one by one with their places and why: every question where Genter puts the old
-answer first, leaves it unmarked in its first five, or does worse than plain ranking on any count.
+answer first, leaves it unmarked in its first five, or does worse than plain ranking on any count (the current answer
+with its chain).
 
 **The plan's decision rule.** If plain ranking already puts the current answer first on 90% or more of the questions,
 the local picture (the old answer and the new one, the new one first) is not the lead of the README; RESULTS.md says
@@ -58,8 +72,8 @@ archives, and whether Genter's gain there is the order or the marks.
 ```bash
 node bench/old-answer/run.mjs              # results/<date>.json and RESULTS.md (~15 s once the archives are fetched)
 node bench/old-answer/run.mjs --offline    # DriftBench's deprecated kind only, no network; prints the counts, writes only --out / --md
-node bench/old-answer/run.mjs --guard      # fails if Genter leaves the old answer unmarked or does worse than plain ranking
-node bench/old-answer/run.mjs --from bench/old-answer/results/2026-10-20-by-id.json   # RESULTS.md again, no run
+node bench/old-answer/run.mjs --guard      # fails on any loss: the old answer first or unmarked in five, or worse than plain ranking
+node bench/old-answer/run.mjs --from bench/old-answer/results/2026-10-20-chain.json   # RESULTS.md again, no run
 node bench/old-answer/run.mjs --before bench/old-answer/results/2026-10-20.json   # a run with the first run's results beside it
 ```
 
@@ -82,9 +96,9 @@ no key and no clock in the ranking, so the same commits give the same numbers. T
 - **A chain of replacements.** PEP 241's replacement, PEP 314, is itself replaced by PEP 345, and PEP 345 by PEP 566.
   Genter follows a chain among the sections a search found (each place once, so two documents that name each other
   end); only a replacement brought from outside them stops after one step, its own mark showing. On peps/0241 it puts
-  PEP 566 first where plain ranking puts PEP 314, the current answer written before any run: a loss as the question is
-  written, listed under RESULTS.md's "Losses", and `--guard` fails on it until the owner decides whether a later
-  document of a chain counts as current (for every question alike).
+  PEP 566 first where plain ranking puts PEP 314, the current answer written before any run. Counted as written that
+  is a loss; with the chain rule (above), set after that run, it is not. RESULTS.md shows both counts and names the
+  question, and a reader who does not accept the rule reads the "as written" column.
 - **One agent wrote the questions.** Until they are reviewed, read the numbers with that in mind; the pairs come from the
   documents' own marks, not from a judgment.
 - **Out of scope here:** memory layers (mem0 and the others) and a real agent with its own grep, with and without Genter.
