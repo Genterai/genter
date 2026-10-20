@@ -19,10 +19,10 @@ Issues and pull requests are welcome.
 A reader for a text format, or the phrases of a language, is data, so it needs no brief: CI is its brief.
 
 - **A reader:** `genter reader new <name>` makes `readers/<name>/`: `reader.json`, `fixtures/` and `expected.json`.
-  Say which files it takes, and read their date, status and marks with the patterns of
-  [`readers/reader.schema.json`](readers/reader.schema.json); put documents shaped like the real ones (with invented
-  content) under `fixtures/`, where its globs find them; write what each gives in `expected.json`; then run
-  `genter reader check readers/<name>`. A pattern is a small language: literals, classes, anchors, groups and bounded
+  Set its `owner` to your GitHub handle, say which files it takes, and read their date, status and marks with the
+  patterns of [`readers/reader.schema.json`](readers/reader.schema.json); put documents shaped like the real ones
+  (with invented content) under `fixtures/`, where its globs find them; write what each gives in `expected.json`; then
+  run `genter reader check readers/<name>`. A pattern is a small language: literals, classes, anchors, groups and bounded
   repeats, with no `*`, `+`, backreference or lookaround. A manifest holds no address, no code and no free text.
 - **A language:** `rules/<lang>.json`, each phrase with lines it marks (`hits`) and lines it must not (`misses`).
 - **CI** (`.github/workflows/readers.yml`) lints every manifest and runs every reader's contract: its fixtures, a

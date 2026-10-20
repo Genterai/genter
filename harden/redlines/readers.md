@@ -21,8 +21,9 @@ and the language rules (`rules/`) are outside Sources on purpose: CI is their br
   alternation, with bounded repeats only (`?`, `{n}`, `{n,m}` up to 200) of something that holds no repeat; nested
   quantifiers, unbounded repeats (`*`, `+`, `{n,}`), backreferences, lookarounds and every other syntax are refused,
   saying where. A pattern has at most 300 characters and 2,000 steps once its repeats are counted, and is matched
-  without case (`\w` and `\b` know every alphabet), one trimmed line of at most 400 characters at a time, in time
-  linear in the line; a reader reads at most 400 lines of a document.
+  without case (`\w` and `\b` know every alphabet), one trimmed line of at most 400 characters at a time, in time linear
+  in the line; a reader reads at most 400 lines of a document, and gives up on one (gives nothing) past 1,000,000 steps
+  of the machine, the same way for the same text.
 * **[no-network]** A manifest names no address and has no field that reaches the network, holds code or carries text
   to follow (`url`, `fetch`, `script`, `exec`, `prompt`, `description` and the like are refused, and so is any value
   that is an address); a reader reads only the text of the document it is given.
@@ -40,8 +41,9 @@ and the language rules (`rules/`) are outside Sources on purpose: CI is their br
 
 ## Proof
 
-* **[ac-reader]** Given `genter reader new sample`, when `genter reader check` runs, then it passes; given a manifest
-  with a `url` key, or a pattern `(a+)+`, it fails, saying which and where.
+* **[ac-reader]** Given `genter reader new sample`, when `genter reader check` runs, then it asks for the owner, and
+  passes once the owner is set; given a manifest with a `url` key, or a pattern `(a+)+`, it fails, saying which and
+  where.
 
 ## Open
 

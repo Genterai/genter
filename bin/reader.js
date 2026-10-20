@@ -8,6 +8,8 @@ import { compileReader, lintReader, lintRules, pattern, readWith } from "../src/
 
 // Secret-looking names a reader is given next to a fixture: it must read none of them.
 const SECRETS = [".env", "id_rsa", "server.pem", "tls.key"];
+// The owner `genter reader new` writes, which check refuses until it is a person's own handle.
+const PLACEHOLDER_OWNER = "@your-github-handle";
 
 const readJson = (file) => JSON.parse(readFileSync(file, "utf8"));
 function filesUnder(dir) {
@@ -25,9 +27,9 @@ function filesUnder(dir) {
 // The line numbers an expected output names (date, status, marks, entries).
 const linesIn = (x) => (Array.isArray(x) ? x.flatMap(linesIn) : x && typeof x === "object" ? Object.entries(x).flatMap(([k, v]) => (k === "line" && Number.isInteger(v) ? [v] : linesIn(v))) : []);
 
-// One reader's folder, checked: the manifest lints; every fixture gives exactly what expected.json says (null: the
-// reader does not take that file); blanking a line it read changes what it gives; and a secret-looking file next to a
-// fixture is never read. { name, fixtures, problems }.
+// One reader's folder, checked: the manifest lints and names its owner; every fixture gives exactly what expected.json
+// says (null: the reader does not take that file); blanking a line it read changes what it gives; and a secret-looking
+// file next to a fixture is never read. { name, fixtures, problems }.
 export function checkReader(folder) {
   const name = basename(folder);
   const problems = [];
@@ -39,13 +41,14 @@ export function checkReader(folder) {
   }
   const lint = lintReader(manifest, { folder: name });
   if (lint.length) return { name, fixtures: 0, problems: lint.map((p) => `reader.json: ${p}`) };
+  if (manifest.owner === PLACEHOLDER_OWNER) problems.push(`reader.json: owner: set it to your GitHub handle (it is ${PLACEHOLDER_OWNER})`);
   const reader = compileReader(manifest);
   let expected;
   try {
     expected = readJson(join(folder, "expected.json"));
     if (!expected || typeof expected !== "object" || Array.isArray(expected)) throw new Error("an object of fixture paths");
   } catch (e) {
-    return { name, fixtures: 0, problems: [`expected.json: ${e.code === "ENOENT" ? "missing: what each fixture gives" : e.message}`] };
+    return { name, fixtures: 0, problems: [...problems, `expected.json: ${e.code === "ENOENT" ? "missing: what each fixture gives" : e.message}`] };
   }
   const fixtures = existsSync(join(folder, "fixtures")) ? filesUnder(join(folder, "fixtures")) : [];
   for (const f of fixtures) if (!(f in expected)) problems.push(`expected.json: nothing for fixtures/${f}`);
@@ -100,7 +103,7 @@ export function checkRules(dir) {
 const NAME = /^[a-z0-9][a-z0-9-]{1,39}$/;
 
 // readers/<name>/ in a folder: a manifest that reads "Date:" and "Status:" lines and a "Status: superseded by" mark, two
-// fixtures, and the output expected of them, which `genter reader check` passes as it is. { folder, files }.
+// fixtures, and the output expected of them, which `genter reader check` passes once its owner is set. { folder, files }.
 export function newReader(cwd, name) {
   if (!NAME.test(name ?? "")) throw new Error("genter reader new <name>: a name of 2 to 40 lowercase letters, digits and -, like madr or sphinx-deprecated");
   const folder = resolve(cwd, "readers", name);
@@ -109,7 +112,7 @@ export function newReader(cwd, name) {
     $schema: "../reader.schema.json",
     dsl: 1,
     name,
-    owner: "@your-github-handle",
+    owner: PLACEHOLDER_OWNER,
     matches: { files: [`**/${name}/*.md`] },
     lines: 40,
     fields: {

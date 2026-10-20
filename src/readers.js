@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync } from "node:fs";
-import { basename, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 // Format readers: data that turns a document's text into what the document says about itself: its date, its status,
@@ -11,9 +11,11 @@ import { fileURLToPath } from "node:url";
 // whatever it says. The phrases that mark a document as replaced are data too (rules/<lang>.json), each with the lines
 // it must mark and the lines it must not.
 
-export const LIMITS = { lines: 400, lineChars: 400, noticeChars: 200, patternChars: 300, repeat: 200, states: 2000, groups: 6, classItems: 64, marks: 20, entries: 200, globChars: 120, globWildcards: 6 };
+export const LIMITS = { lines: 400, lineChars: 400, noticeChars: 200, patternChars: 300, repeat: 200, states: 2000, groups: 6, classItems: 64, marks: 20, entries: 200, globChars: 120, globWildcards: 6, work: 1_000_000 };
 export const KINDS = ["superseded", "deprecated", "obsolete", "archived", "moved", "removed", "unmaintained"];
-const DIR = fileURLToPath(new URL("..", import.meta.url));
+// The package's folder, from this file's own path: a URL made of a relative path and import.meta.url is, to a bundler,
+// a file to bring in that is not there, and an app that imports genter-cli/local (which imports this file) is bundled.
+const DIR = join(dirname(fileURLToPath(import.meta.url)), "..");
 export const READERS_DIR = join(DIR, "readers");
 export const RULES_DIR = join(DIR, "rules");
 
@@ -248,6 +250,11 @@ const inItems = (items, ch) =>
   });
 const inSet = (set, ch) => (inItems(set.items, ch) || inItems(set.items, lower(ch)) || inItems(set.items, upper(ch))) !== set.neg;
 
+// The steps the machine may still take while one reader reads one document (readWith): a reader whose patterns are each
+// linear but many and wide gives up on a document past LIMITS.work steps, the same way for the same text.
+let work = Infinity;
+const OUT_OF_WORK = new Error("out of work");
+
 // The leftmost match in a line, preferring the longer way at each repeat and the earlier branch at each alternative (as
 // JavaScript would), by running every thread of the machine side by side: time linear in the line. The slots of the
 // match (start, end, then each group's), or null.
@@ -258,6 +265,7 @@ function run({ code, slots }, line) {
   const add = (list, pc, caps, i) => {
     if (mark[pc] === i) return;
     mark[pc] = i;
+    work--;
     const ins = code[pc];
     if (ins.op === JMP) add(list, ins.x, caps, i);
     else if (ins.op === SPLIT) {
@@ -277,6 +285,7 @@ function run({ code, slots }, line) {
   };
   let list = [];
   for (let i = 0; i <= len; i++) {
+    if (work < 0) throw OUT_OF_WORK;
     if (!matched) add(list, 0, new Array(slots).fill(-1), i);
     if (!list.length) {
       if (matched) break;
@@ -650,7 +659,12 @@ export function loadRules(dir = RULES_DIR) {
   loaded.set(key, out);
   return out;
 }
-export const phrases = () => loadRules().phrases;
+// The phrases themselves; rules that cannot be read are an error, never a document left unmarked.
+export function phrases(dir = RULES_DIR) {
+  const { phrases: list, problems } = loadRules(dir);
+  if (!list.length) throw new Error(`Genter's language rules cannot be read: ${problems.join("; ") || "no phrase in them"}`);
+  return list;
+}
 
 // ---- reading ----
 
@@ -820,17 +834,26 @@ function entriesOf(e, v) {
 }
 
 // What one reader reads in a document: null when the reader does not take it (its globs and headings, or a
-// secret-looking path), else { date?, status?, marks?, entries? }, each with the line it is on (from 1). With no date of
-// its own, a document with entries is dated by its latest one. path: from the project's root, "/" between folders.
+// secret-looking path) or runs out of work on it (LIMITS.work), else { date?, status?, marks?, entries? }, each with the
+// line it is on (from 1). With no date of its own, a document with entries is dated by its latest one. path: from the
+// project's root, "/" between folders.
 export function readWith(reader, path, text) {
   if (typeof text !== "string" || !path || secretLooking(path) || !reader.files.some((f) => f(path))) return null;
-  const v = view(text, reader.lines);
-  if (reader.headings.length && !v.headings.some((h) => reader.headings.some((re) => re.exec(h.text)))) return null;
-  const f = reader.fields ? fieldsIn(reader.fields, v, { from: v.body, to: v.lines.length }, true) : { marks: [] };
-  const entries = reader.entries ? entriesOf(reader.entries, v) : [];
-  let date = f.date;
-  if (!date) for (const e of entries) if (e.date && (!date || e.date.value > date.value)) date = e.date;
-  return { ...(date && { date }), ...(f.status && { status: f.status }), ...(f.marks.length && { marks: f.marks }), ...(entries.length && { entries }) };
+  work = LIMITS.work;
+  try {
+    const v = view(text, reader.lines);
+    if (reader.headings.length && !v.headings.some((h) => reader.headings.some((re) => re.exec(h.text)))) return null;
+    const f = reader.fields ? fieldsIn(reader.fields, v, { from: v.body, to: v.lines.length }, true) : { marks: [] };
+    const entries = reader.entries ? entriesOf(reader.entries, v) : [];
+    let date = f.date;
+    if (!date) for (const e of entries) if (e.date && (!date || e.date.value > date.value)) date = e.date;
+    return { ...(date && { date }), ...(f.status && { status: f.status }), ...(f.marks.length && { marks: f.marks }), ...(entries.length && { entries }) };
+  } catch (e) {
+    if (e === OUT_OF_WORK) return null;
+    throw e;
+  } finally {
+    work = Infinity;
+  }
 }
 
 // What the readers read in a document, together: { readers (those that read something), date?, status?, marks?,

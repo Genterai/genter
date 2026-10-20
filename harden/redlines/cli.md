@@ -22,9 +22,10 @@ keys), [cloud-own-server] (no token on the person's disk), and the local MCP con
 * **[demo]** `genter demo` runs on a temp folder with no key: an answer, an edit nobody tells Genter about, the new
   answer beside the stale one a memory would give, and a replaced doc.
 * **[reader-commands]** `genter reader new <name>` makes `readers/<name>/` in the folder it runs in (a manifest, two
-  fixtures and what they give) that `genter reader check` passes as it is, and never writes over a folder that is
-  there; `genter reader check [folder ...]` lints each reader named (with none, every one in `./readers`, and
-  `./rules`) and checks it against its fixtures (readers/contract-tested), printing each problem and exiting 1 on any.
+  fixtures and what they give) that `genter reader check` passes once its owner is set (the placeholder owner is
+  refused), and never writes over a folder that is there; `genter reader check [folder ...]` lints each reader named
+  (with none, every one in `./readers`, and `./rules`) and checks it against its fixtures (readers/contract-tested),
+  printing each problem and exiting 1 on any.
 
 ### Genter Cloud
 

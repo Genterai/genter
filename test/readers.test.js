@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 import { checkReader, checkRules } from "../bin/reader.js";
 import { supersededOf } from "../src/drift.js";
 import { createLocal } from "../src/local.js";
-import { compileReader, isoDate, KINDS, lintPattern, lintReader, loadReaders, loadRules, pattern, readDocument, readerSchema, readWith, secretLooking } from "../src/readers.js";
+import { compileReader, isoDate, KINDS, LIMITS, lintPattern, lintReader, loadReaders, loadRules, pattern, phrases, readDocument, readerSchema, readWith, secretLooking } from "../src/readers.js";
 import { cipher } from "../src/seal.js";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
@@ -96,6 +96,20 @@ describe("the pattern language", () => {
     for (const p of [ambiguous, widest]) assert.equal(p.exec("a".repeat(400)), null);
     assert.ok(Date.now() - started < 2000, `${Date.now() - started} ms`);
   });
+
+  it("[rl:readers/restricted-patterns] a reader of many wide patterns over every line gives up on a document past its work limit, the same way every time", () => {
+    const wide = { in: "any", pattern: "(.{0,200}.{0,200}.{0,200}.{0,200}.{0,190}[xy])" };
+    const m = { dsl: 1, name: "wide", owner: "@someone", fallback: true, matches: { files: ["**/*.md"] }, lines: 400, fields: { date: Array(16).fill(wide), status: Array(16).fill(wide) } };
+    assert.deepEqual(lintReader(m, { folder: "wide" }), []);
+    const reader = compileReader(m);
+    const doc = Array.from({ length: 400 }, () => "a".repeat(399)).join("\n");
+    const started = Date.now();
+    assert.equal(readWith(reader, "docs/x.md", doc), null);
+    assert.equal(readWith(reader, "docs/x.md", doc), null);
+    assert.ok(Date.now() - started < 2000, `${Date.now() - started} ms`);
+    // Within its limit it reads as ever.
+    assert.deepEqual(readWith(reader, "docs/x.md", "ab x"), { status: { value: "ab x", line: 1 } });
+  });
 });
 
 describe("manifests", () => {
@@ -175,6 +189,14 @@ describe("the language rules", () => {
     assert.deepEqual(checkRules(join(root, "rules")).problems, []);
     // The phrases that were code (src/drift.js) are data now, in the same order.
     assert.deepEqual(loadRules().phrases.map((p) => p.marker), ["deprecated", "obsolete", "superseded", "replaced by", "moved to", "no longer maintained", "archived", "устарел", "заменён", "перенесён"]);
+    // Rules that cannot be read are an error, never every document left unmarked.
+    const empty = mkdtempSync(join(tmpdir(), "genter-rules-"));
+    try {
+      assert.throws(() => phrases(empty), /language rules cannot be read/);
+      assert.throws(() => phrases(join(empty, "nowhere")), /language rules cannot be read: no rules in/);
+    } finally {
+      rmSync(empty, { recursive: true, force: true });
+    }
   });
   for (const file of files) {
     for (const p of JSON.parse(readFileSync(join(root, "rules", file), "utf8")).marks) {
@@ -213,8 +235,13 @@ describe("each reader's contract", () => {
       assert.deepEqual(checkReader(join(READERS, name)).problems, []);
     });
 
-    it(`[rl:readers/contract-tested] [rl:readers/off-honoured] ${name}: the engine reads its fixtures with it, and never one the person switched off`, async () => {
+    it(`[rl:readers/contract-tested] [rl:readers/off-honoured] ${name}: the engine reads its fixtures with it, and never gives one the person switched off to a reader`, async () => {
       const box = project(name);
+      // A reader beside the engine's own (loadReaders() is what it reads with) that only notes each path it is given.
+      const given = [];
+      const spy = { name: "spy", files: [(p) => given.push(p) < 0], headings: [] };
+      const readers = loadReaders().readers;
+      readers.push(spy);
       try {
         const [path, out] = read[0];
         const file = join(box.dir, path);
@@ -223,14 +250,34 @@ describe("each reader's contract", () => {
         writeFileSync(join(box.home, "config.json"), JSON.stringify({ secret: "s", off: [file] }));
         const off = await createLocal({ home: box.home, secret: "s", cwd: box.dir }).find(question, { limit: 20 });
         assert.ok(!off.results.some((r) => r.path === file), "a switched-off fixture never answers");
+        assert.ok(!given.includes(path), `${path} is given to a reader while it is off`);
         writeFileSync(join(box.home, "config.json"), JSON.stringify({ secret: "s" }));
         const on = await createLocal({ home: box.home, secret: "s", cwd: box.dir }).find(question, { limit: 20 });
         const hit = on.results.find((r) => r.path === file);
         assert.ok(hit, `${path} answers once it is on`);
+        assert.ok(given.includes(path), `${path} is given to the readers once it is on`);
         assert.ok(hit.anchor.document.readers.includes(name), JSON.stringify(hit.anchor.document));
         if (out.date) assert.equal(hit.anchor.document.date, out.date.value);
       } finally {
+        readers.splice(readers.indexOf(spy), 1);
         box.done();
+      }
+    });
+
+    it(`[rl:readers/restricted-patterns] ${name}: its fixtures, each repeated up to the lines it reads, need far less than its work limit`, () => {
+      const reader = loadReaders().readers.find((r) => r.name === name);
+      for (const [path] of Object.entries(expected)) {
+        const text = readFileSync(join(READERS, name, "fixtures", path), "utf8");
+        let long = text;
+        while (long.split("\n").length < reader.lines) long += `\n${text}`;
+        const limited = readWith(reader, path, long);
+        const saved = LIMITS.work;
+        try {
+          LIMITS.work = LIMITS.work / 10;
+          assert.deepEqual(readWith(reader, path, long), limited, `${path} with a tenth of the work`);
+        } finally {
+          LIMITS.work = saved;
+        }
       }
     });
 
@@ -306,6 +353,86 @@ describe("the engine reads with the readers", () => {
     }
   });
 
+  it("[rl:local-search/reader-marks] a store made before the readers shows their marks, and the language rules', without the files being edited", async () => {
+    const base = mkdtempSync(join(tmpdir(), "genter-readers-"));
+    const dir = join(base, "project");
+    const home = join(base, "home");
+    mkdirSync(join(dir, "docs/adr"), { recursive: true });
+    writeFileSync(join(dir, "docs/adr/0003-run-jobs-on-postgres.md"), ADR_OLD);
+    writeFileSync(join(dir, "docs/adr/0011-run-jobs-on-redis.md"), ADR_NEW);
+    writeFileSync(join(dir, "regulations.md"), "# Регламент выгрузок\n\nУстарело: см. [новый регламент](https://example.com/new)\n\nВыгрузки идут в конце месяца.\n");
+    try {
+      const q = "background jobs run on Postgres SKIP LOCKED";
+      await createLocal({ home, secret: "s", cwd: dir }).find(q, { limit: 3 });
+      // The store as a version before readers kept it: the same digests, no mark from a reader or from "устарело".
+      const box = cipher("s:default:local");
+      const file = join(home, "local.json");
+      const store = box.open(JSON.parse(readFileSync(file, "utf8")).blob);
+      for (const a of Object.values(store.anchors)) delete a.superseded;
+      writeFileSync(file, JSON.stringify({ v: 1, blob: box.seal(store) }));
+      const g = createLocal({ home, secret: "s", cwd: dir });
+      const out = await g.find(q, { limit: 3 });
+      const adr = out.results.find((r) => r.path === join(dir, "docs/adr/0003-run-jobs-on-postgres.md"));
+      assert.deepEqual(adr.anchor.superseded, { marker: "superseded", line: 9, reader: "adr", by: join(dir, "docs/adr/0011-run-jobs-on-redis.md") });
+      assert.equal(out.results[out.results.indexOf(adr) + 1].replaces, adr.ref);
+      const ru = await g.find("регламент выгрузок конце месяца", { limit: 1 });
+      assert.equal(ru.results[0].anchor.superseded?.marker, "устарел");
+      // and the store keeps what it found, so the next look starts from it.
+      const kept = box.open(JSON.parse(readFileSync(file, "utf8")).blob);
+      assert.ok(Object.values(kept.anchors).some((a) => a.superseded?.reader === "adr"));
+    } finally {
+      rmSync(base, { recursive: true, force: true });
+    }
+  });
+
+  it("[rl:local-search/reader-marks] [rl:anchor-drift/mark-link] a reader's mark that names no place there has none: a link at the file's top is not what replaces it", async () => {
+    const base = mkdtempSync(join(tmpdir(), "genter-readers-"));
+    const dir = join(base, "project");
+    const files = {
+      "docs/adr/0005-cache-sessions-in-memcached.md": "# 5. Cache sessions in Memcached\n\nDate: 2026-02-01\nTechnical story: [month-end load](../stories/month-end-load.md)\n\n## Status\n\nDeprecated\n\n## Decision\n\nSessions are cached in Memcached with a one hour expiry.\n",
+      "docs/adr/0006-queue-exports.md": "# 6. Queue exports\n\nDate: 2026-02-02\nTechnical story: [month-end load](../stories/month-end-load.md)\n\n## Status\n\nSuperseded by [9. Stream exports](0009-stream-exports.md)\n\n## Decision\n\nExports wait in a queue until the night run.\n",
+      "docs/stories/month-end-load.md": "# Month-end load\n\nAt month end the export job and sessions compete for memory. Sessions cached expiry hour, exports queue night.\n",
+    };
+    for (const [path, text] of Object.entries(files)) {
+      mkdirSync(dirname(join(dir, path)), { recursive: true });
+      writeFileSync(join(dir, path), text);
+    }
+    try {
+      const g = createLocal({ home: join(base, "home"), secret: "s", cwd: dir });
+      const out = await g.find("sessions cached in Memcached one hour expiry", { limit: 3 });
+      const adr = out.results.find((r) => r.path === join(dir, "docs/adr/0005-cache-sessions-in-memcached.md"));
+      assert.deepEqual(adr.anchor.superseded, { marker: "deprecated", line: 8, reader: "adr" });
+      assert.ok(adr.facts.includes("marked as deprecated in its own text"), adr.facts.join(" | "));
+      assert.ok(out.results.every((r) => r.replaces === undefined));
+      // Its own link, to a file that is not there, is no replacement either.
+      const queued = await g.find("exports wait in a queue until the night run", { limit: 3 });
+      const six = queued.results.find((r) => r.path === join(dir, "docs/adr/0006-queue-exports.md"));
+      assert.deepEqual(six.anchor.superseded, { marker: "superseded", line: 8, reader: "adr" });
+      assert.ok(queued.results.every((r) => r.replaces === undefined));
+    } finally {
+      rmSync(base, { recursive: true, force: true });
+    }
+  });
+
+  it("[rl:local-search/reader-marks] a link with a % that is no escape, where a reader marks, is taken as written and never stops a search", async () => {
+    const base = mkdtempSync(join(tmpdir(), "genter-readers-"));
+    const dir = join(base, "project");
+    mkdirSync(join(dir, "docs/adr"), { recursive: true });
+    writeFileSync(join(dir, "docs/adr/0003-x.md"), "# 3. Run jobs on Postgres\n\nDate: 2026-03-03\n\nSome context line one.\n\nSome context line two.\n\n## Status\n\nSuperseded by [11. Redis at 100%](0011-redis-100%.md)\n\n## Decision\n\nJobs run on Postgres.\n");
+    writeFileSync(join(dir, "docs/adr/0004-y.md"), "# 4. Keep logs\n\n> Deprecated: replaced by [v2](v2-100%.md)\n\nLogs are kept on Postgres for jobs.\n");
+    try {
+      const g = createLocal({ home: join(base, "home"), secret: "s", cwd: dir });
+      const out = await g.find("jobs run on Postgres", { limit: 5 });
+      const three = out.results.find((r) => r.path === join(dir, "docs/adr/0003-x.md"));
+      assert.deepEqual(three.anchor.superseded, { marker: "superseded", line: 11, reader: "adr" });
+      writeFileSync(join(dir, "docs/adr/0011-redis-100%.md"), "# 11. Run jobs on Redis\n\nJobs run on Redis.\n");
+      const again = await g.find("jobs run on Postgres", { limit: 5 });
+      assert.equal(again.results.find((r) => r.path === join(dir, "docs/adr/0003-x.md")).anchor.superseded.by, join(dir, "docs/adr/0011-redis-100%.md"));
+    } finally {
+      rmSync(base, { recursive: true, force: true });
+    }
+  });
+
   it("dates as documents write them, and only real days", () => {
     assert.equal(isoDate("2026-03-03"), "2026-03-03");
     assert.equal(isoDate("2026/3/3"), "2026-03-03");
@@ -318,13 +445,19 @@ describe("the engine reads with the readers", () => {
 });
 
 describe("genter reader", () => {
-  it("[rl:cli/reader-commands] [rl:readers/ac-reader] genter reader new makes a reader that genter reader check passes, never over one that is there; check says each problem and exits 1", () => {
+  it("[rl:cli/reader-commands] [rl:readers/ac-reader] genter reader new makes a reader that genter reader check passes once its owner is set, never over one that is there; check says each problem and exits 1", () => {
     const cwd = mkdtempSync(join(tmpdir(), "genter-reader-cli-"));
     try {
       assert.match(genter(["reader", "check"], cwd).stderr, /No readers\/ folder here/);
       const made = genter(["reader", "new", "sample"], cwd);
       assert.equal(made.status, 0, made.stderr);
       assert.match(made.stdout, /Made readers\/sample\/: reader\.json, fixtures\/docs\/sample\/0001-first-way\.md, fixtures\/docs\/sample\/0002-second-way\.md, expected\.json/);
+      // Its owner is a placeholder until it is set.
+      const file = join(cwd, "readers/sample/reader.json");
+      const unowned = genter(["reader", "check"], cwd);
+      assert.equal(unowned.status, 1);
+      assert.match(unowned.stderr, /sample: reader\.json: owner: set it to your GitHub handle/);
+      writeFileSync(file, readFileSync(file, "utf8").replace("@your-github-handle", "@sample-owner"));
       const checked = genter(["reader", "check"], cwd);
       assert.equal(checked.status, 0, checked.stderr);
       assert.equal(checked.stdout, "ok sample: 2 fixtures\n");
@@ -334,7 +467,6 @@ describe("genter reader", () => {
       assert.equal(genter(["reader", "new", "Bad_Name"], cwd).status, 1);
       assert.equal(genter(["reader", "new"], cwd).status, 1);
       // A broken manifest, and a fixture that no longer gives what expected.json says.
-      const file = join(cwd, "readers/sample/reader.json");
       const m = JSON.parse(readFileSync(file, "utf8"));
       writeFileSync(file, JSON.stringify({ ...m, url: "https://example.com/reader" }));
       const bad = genter(["reader", "check", "readers/sample"], cwd);
@@ -359,5 +491,13 @@ describe("genter reader", () => {
     assert.equal(out.status, 0, out.stderr);
     for (const name of NAMES) assert.match(out.stdout, new RegExp(`^ok ${name}: \\d+ fixtures$`, "m"));
     assert.match(out.stdout, /^ok rules: en\.json, ru\.json$/m);
+  });
+});
+
+describe("the package", () => {
+  it("src/ finds its own files from its path, never by new URL(<relative>, import.meta.url), which a bundler of genter-cli/local takes for a file it cannot find", () => {
+    const files = readdirSync(join(root, "src"), { recursive: true }).filter((f) => f.endsWith(".js"));
+    assert.ok(files.includes("readers.js"));
+    for (const f of files) assert.doesNotMatch(readFileSync(join(root, "src", f), "utf8"), /new URL\(\s*["'`][^"'`]*["'`]\s*,\s*import\.meta\.url/, f);
   });
 });

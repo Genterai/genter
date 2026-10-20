@@ -251,8 +251,11 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
       dirty = true;
       return { record: s.anchors[id], text: hit.text, event: "changed" };
     }
-    if (prev.status !== "fresh" || prev.mtimeMs !== st.mtimeMs) {
-      s.anchors[id] = { ...prev, status: "fresh", mtimeMs: st.mtimeMs, checked_at: at };
+    // The replaced mark of a file whose text did not change is still read again: the readers, the language rules or the
+    // place it points to may have changed since it was kept (a store made by an earlier version).
+    const remarked = JSON.stringify(prev.superseded) !== JSON.stringify(about.superseded);
+    if (prev.status !== "fresh" || prev.mtimeMs !== st.mtimeMs || remarked) {
+      s.anchors[id] = { ...prev, superseded: about.superseded, status: "fresh", mtimeMs: st.mtimeMs, checked_at: at };
       dirty = true;
       return { record: s.anchors[id], text: hit.text, event: prev.status !== "fresh" ? "back" : "unchanged" };
     }
@@ -261,7 +264,7 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
 
   // Title, headings, dates and the replaced mark of a file, from its own text: no model. What the readers read in it, and
   // the mark at its top, are kept with the text this process read (hit.read, hit.top), not in the store, and read again
-  // when the file changes; the place a mark points to is looked for at every read.
+  // when the file changes; the place a mark points to is looked for at every read (readFile keeps what it finds).
   function describeFile(path, hit, st) {
     const { text } = hit;
     const title = /^#\s+(.+)$/m.exec(text)?.[1].replace(/[`*_]/g, "").trim() || basename(path);
@@ -849,9 +852,13 @@ function readText(path) {
   return PRIVATE_KEY.test(text) ? null : text;
 }
 
-// A link at the top of a file to the file it points to, when that file is there.
+// A link in a file to the file it points to, when that file is there; a link that is not a valid escape is as written.
 function localLink(from, link) {
-  const clean = decodeURIComponent(link.replace(/[#?].*$/, ""));
+  const raw = link.replace(/[#?].*$/, "");
+  let clean = raw;
+  try {
+    clean = decodeURIComponent(raw);
+  } catch {}
   if (!clean) return null;
   const target = resolve(dirname(from), clean);
   return existsSync(target) ? target : null;
@@ -869,19 +876,18 @@ const documentOf = (read) => read && { readers: read.readers, ...(read.date && {
 
 // The replaced mark of a document: where a reader says it is (an ADR's Status section, a banner at its top, front
 // matter), the one that names what replaces it first; else the language rules' phrases at its top (drift.js). A
-// relative link beside it is resolved; a place that is not there is no replacement.
+// relative link beside it is resolved; a place that is not there is no replacement. Only a mark at the top with no
+// place beside it takes the first link of the top lines (as before readers); a reader's mark that names no place that
+// is there has none.
 function replacedMark(doc, resolveLink, read, top = supersededOf(doc)) {
   const found = read?.marks?.find((m) => m.by) ?? read?.marks?.[0];
-  let mark = found ? { marker: found.marker ?? found.kind, line: found.line, reader: found.reader } : top;
-  if (found?.by) {
-    const by = /^https?:/i.test(found.by) ? found.by : resolveLink(found.by);
-    if (by) mark = { ...mark, by };
-  }
-  if (!mark || mark.by) return mark;
+  const named = found?.by && (/^https?:/i.test(found.by) ? found.by : resolveLink(found.by));
+  if (found && (named || !top)) return { marker: found.marker ?? found.kind, line: found.line, reader: found.reader, ...(named && { by: named }) };
+  if (!top || top.by) return top;
   const head = String(doc.text).split("\n").map((l) => l.trim()).filter(Boolean).slice(0, 5).join("\n");
   const link = /\]\(\s*<?([^)\s>]+)>?\s*\)/.exec(head)?.[1];
   const by = link && resolveLink(link);
-  return by ? { ...mark, by } : mark;
+  return by ? { ...top, by } : top;
 }
 
 // ---- text ----

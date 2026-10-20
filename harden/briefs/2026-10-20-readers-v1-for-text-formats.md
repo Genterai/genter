@@ -66,6 +66,20 @@ Open:
   and exports `genter-cli/readers`, as the plan's list of exports says. [non-blocking]
 * `.claude/AGENTS.md`'s map and `CONTRIBUTING.md`'s split into core and manifests are the plan's step 1.9; this step
   adds only a short "Readers and language rules" section to CONTRIBUTING. [non-blocking]
+* A manifest that passes the lint can still be costly: many wide patterns over every one of 400 lines. → A reader
+  gives up on a document (gives nothing for it) past 1,000,000 steps of the machine, counted the same way for the
+  same text; the first-party readers need at most about 53,000 on their fixtures repeated up to their line caps, and
+  the costly manifest gives up in about 70 ms. [non-blocking, decided here]
+* A store made before readers kept each file's mark as the old code found it, and an unchanged file was not marked
+  again. → The mark is read at every look and the store keeps what is found, so readers' marks and "устарело" show
+  without the file being edited. [non-blocking]
+* A reader's mark found past a file's top, with no place beside it that is there, could take the first link of the
+  top lines (a "Technical story" link) as what replaces it. → Only a mark at the top takes that link, as before
+  readers. [non-blocking]
+* `genter reader new` writes a placeholder owner; `check` refuses it until it is set, so no reader reaches `readers/`
+  with a placeholder as its owner. Rules that cannot be read are an error, never every document left unmarked.
+  `src/` finds its package folder from its own path, so an app that bundles `genter-cli/local` builds (checked with
+  a Next.js 16 build that imports it, which failed before). [non-blocking]
 Proof: `test/readers.test.js`: the lint refuses `(a+)+`, `(a{1,3}){1,3}`, backreferences, lookarounds and the rest
 with where, the machine matches as JavaScript would on the shared cases and stays linear on an ambiguous pattern; every
 manifest lints, a key outside the schema, a network field, code, an instruction or an address is refused; a glob that
@@ -74,9 +88,16 @@ phrase marks its own lines and none of its misses (one test per phrase); per rea
 `expected.json`, blanking a line it read changes that, the engine reads its fixtures with it but never one switched off,
 and secret-looking files beside them are never read; an ADR marked in its Status section past its first lines is
 followed by ADR 11, the same words outside an ADR folder mark nothing; `anchor.document` changes with the file and is
-not in the store; `genter reader new` then `check` pass, a `url` key or `(a+)+` fails, a drifted fixture fails. Each
-fails when its part is undone (checked by hand: the interpreter's secret check, the glob's secret check, `+` accepted,
-nested repeats accepted, network keys accepted, the engine ignoring readers' marks). / `npm test`, `npm run lint`,
+not in the store; a store made before readers shows their marks without the files being edited; a reader's mark with
+no place there takes no link from the file's top; a link with a `%` that is no escape stops no search; a place
+switched off is never given to a reader (a reader beside them notes every path); a costly manifest gives up on a
+document within its work limit and each reader's fixtures need a tenth of it; rules that cannot be read throw; no file
+in `src/` builds a URL from a relative path and `import.meta.url`; `genter reader new` then `check` asks for the
+owner and passes once it is set, a `url` key or `(a+)+` fails, a drifted fixture fails. Each fails when its part is
+undone (checked by hand: the interpreter's secret check, the glob's secret check, `+` accepted, nested repeats
+accepted, network keys accepted, the engine ignoring readers' marks, unchanged files not marked again, the top link
+for a reader's mark, decoding without a guard, the placeholder owner accepted, an off file given to a reader, rules
+failing silently, the old package-folder line). / `npm test`, `npm run lint`,
 `node bin/genter.js reader check`, `node bench/drift/run.mjs --no-takes --guard README.md` (same tables; median search
 2 ms against 3 on main), the packed package imports `genter-cli/readers` and loads 6 readers and 10 phrases in a clean
 folder, `harden check`.
