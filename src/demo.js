@@ -4,7 +4,8 @@ import { join } from "node:path";
 import { createLocal, findText } from "./local.js";
 
 // `genter demo`: what Genter does, in a second and on nothing of the person's: a folder of two docs in a temp folder,
-// a question, an edit nobody tells Genter about, the same question, a doc marked as replaced. Its own store, removed after.
+// a question, an edit nobody tells Genter about, the same question, then a doc marked as replaced: the doc that replaces
+// it first, the old one after it quoting its own notice. Its own store, removed after.
 
 const DEPLOY = "# Deploy\n\n## Staging\n\nStaging deploys every Tuesday from `main`. The pooler listens on port 6432.\n\n## Production\n\nProduction ships on Thursday after the change review.\n";
 const RUNBOOK = "# Runbook\n\n## Restarting the probes\n\nRestart the probes with `beacon restart --all`, then watch the probe dashboard.\n";
@@ -41,7 +42,7 @@ export async function runDemo({ print = console.log } = {}) {
 
     write("docs/runbook-v2.md", RUNBOOK_V2);
     write("docs/runbook.md", `> **Deprecated:** replaced by [Runbook v2](runbook-v2.md)\n\n${RUNBOOK}`);
-    print("\nSomeone writes docs/runbook-v2.md and marks the old runbook: \"> Deprecated: replaced by [Runbook v2](runbook-v2.md)\".");
+    print("\nSomeone writes docs/runbook-v2.md and puts \"> Deprecated: replaced by [Runbook v2](runbook-v2.md)\" at the top of the old runbook.\nNobody tells Genter: the new runbook comes first, and the old one after it, quoting its own notice.");
     await ask("how do I restart the probes?");
 
     print(`

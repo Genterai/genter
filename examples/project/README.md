@@ -34,8 +34,9 @@ with no key, or `GENTER_SEMANTIC` removed from `.mcp.json`, ranks by words and s
 
 Start with the same two files and a `docs/` folder. Write a decision down where it is made (`docs/decisions.md`, a
 heading per decision, a date), and mark a page that a newer one replaces with
-`> Deprecated: replaced by [v2](v2.md)`: Genter then answers with the new page right after the old one. The agent
-finds both by meaning from the first day, and nothing has to be kept in sync: there is no index to rebuild.
+`> Deprecated: replaced by [v2](v2.md)`: Genter then answers with the new page first and the old one right after it,
+quoting its own notice. The agent finds both by meaning from the first day, and nothing has to be kept in sync: there
+is no index to rebuild.
 
 ## The team's apps
 

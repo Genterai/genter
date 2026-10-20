@@ -1,0 +1,17 @@
+{
+  "name": "genter",
+  "description": "Genter for Claude Code: your agent searches what your project decided before it answers, cites where it is written, and repeats what is marked replaced as a quote. Also harden: a brief before code.",
+  "owner": { "name": "Genterai", "url": "https://github.com/Genterai" },
+  "plugins": [
+    {
+      "name": "genter",
+      "source": "./plugins/genter",
+      "description": "The local Genter server (search and read over this project's files and your notes, read again at every question, no key) and the genter skill: search first, cite the [id] and place, repeat a mark as the quote Genter shows."
+    },
+    {
+      "name": "harden",
+      "source": { "source": "github", "repo": "Genterai/harden" },
+      "description": "The hardening-changes skill: a brief before code, red lines that tests tag, and harden check; genter-cli finds what exists before a question reaches the owner."
+    }
+  ]
+}

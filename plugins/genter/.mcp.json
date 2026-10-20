@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "genter": {
+      "command": "npx",
+      "args": ["-y", "genter-cli@0.4", "mcp"]
+    }
+  }
+}

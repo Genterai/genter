@@ -1,55 +1,16 @@
 import { phrases } from "./readers.js";
 
 // Anchor Drift: facts about how fresh an anchor's source is, shown next to a result. Genter states facts only (dates, a
-// "replaced" mark the source carries itself) and never says whether the source is right: comparing sources by meaning
-// is the client's agent's job. No model is called here, no connector is named: fields are found by their names.
+// "replaced" mark the source carries itself, quoted as the source says it) and never says whether the source is right:
+// comparing sources by meaning is the client's agent's job. No model is called here.
 
 export const STALE_DAYS = 365; // an anchor's source older than this is "old" ...
 export const SIBLING_RECENT_DAYS = 30; // ... when another source in the same answer changed within this
-export const AREA_RECENT_DAYS = 90; // ... or when most of its area changed within this
-export const AREA_MIN_ITEMS = 5; // an area smaller than this says nothing
-export const AREA_MIN_SHARE = 0.5; // share of the area's items changed within AREA_RECENT_DAYS
 export const HEAD_LINES = 4; // a replaced-mark counts only in the first lines of a document ...
 export const HEAD_LINE_MAX = 200; // ... and in a short line (a notice or a heading, not a paragraph)
+export const CLONE_MIN_FILES = 5; // a folder whose files were written at once (a fresh clone) has at least this many ...
+export const CLONE_GAP_MS = 2000; // ... each written within this of the one before
 const DAY = 86_400_000;
-
-const norm = (k) => String(k).toLowerCase().replace(/[^a-z]/g, "");
-const MODIFIED = new Set(["modifiedtime", "modifiedat", "modified", "updatedat", "updatedtime", "updated", "lastedited", "lasteditedtime", "lastmodified", "lastmodifiedtime", "lastupdated", "datemodified", "pushedat", "mtime"]);
-const CREATED = new Set(["createdtime", "createdat", "created", "datecreated", "creationtime", "createdon"]);
-const PERSON = new Set(["committer", "author", "commit"]); // {commit: {committer: {date}}}: the date of a person's act
-
-// An ISO-like string (or an HTTP date) as ms, or null; nothing before 1990 or later than tomorrow.
-export function toMs(v, now = Date.now()) {
-  if (typeof v !== "string" || v.length < 8 || v.length > 40) return null;
-  if (!/^\d{4}-\d{2}-\d{2}/.test(v) && !/^[A-Z][a-z]{2}, \d{1,2} [A-Z][a-z]{2} \d{4}/.test(v)) return null;
-  const t = Date.parse(v);
-  return Number.isFinite(t) && t >= Date.parse("1990-01-01") && t <= now + DAY ? t : null;
-}
-
-// { source_at, source_created_at } (ISO) found in a result by field names: the freshest modified date, and the freshest
-// creation date. A list takes the freshest of its items. `headers`: { last_modified } of a site, folded in as a modified date.
-export function sourceDates(data, { lastModified, now = Date.now() } = {}) {
-  let modified = toMs(lastModified, now) ?? 0;
-  let created = 0;
-  let seen = 0;
-  const walk = (v, depth, inPerson) => {
-    if (seen++ > 3000 || depth > 5 || !v || typeof v !== "object") return;
-    if (Array.isArray(v)) return v.slice(0, 200).forEach((x) => {
-      walk(x, depth + 1, inPerson);
-    });
-    for (const [k, x] of Object.entries(v)) {
-      const key = norm(k);
-      if (typeof x === "string") {
-        const t = toMs(x, now);
-        if (!t) continue;
-        if (MODIFIED.has(key) || (inPerson && key === "date")) modified = Math.max(modified, t);
-        else if (CREATED.has(key)) created = Math.max(created, t);
-      } else if (x && typeof x === "object") walk(x, depth + 1, inPerson || PERSON.has(key));
-    }
-  };
-  walk(data, 0, false);
-  return { ...(modified && { source_at: new Date(modified).toISOString() }), ...(created && { source_created_at: new Date(created).toISOString() }) };
-}
 
 // The marks of "this is replaced", as a document puts them at its top: the phrases of the language rules
 // (rules/<lang>.json, read by readers.js). Each is a notice form, so a word inside a sentence about something else
@@ -98,49 +59,65 @@ const pageKey = (u) => String(u).replace(/#.*$/, "").replace(/^https?:\/\/(www\.
 // A requested URL that ended up on another page after redirects is that page's replacement.
 export const redirectOf = (requested, final) => (requested && final && pageKey(requested) !== pageKey(final) ? { marker: "redirect", by: final } : null);
 
-// What an execution learned about its source: { source_at?, source_created_at?, superseded? }.
-// extra: { last_modified?, redirect? } from a call made here (web.js) that saw HTTP headers.
-export function signalsOf(data, extra = {}) {
-  const dates = sourceDates(data, { lastModified: extra.last_modified });
-  const superseded = extra.redirect ?? supersededOf(data);
-  return { ...dates, ...(superseded && { superseded }) };
+// The files of a folder written here at one moment (a fresh clone, a copy, an unpacked archive): their times say when
+// they were written here, not when anyone changed them. The run of times from the oldest, each within CLONE_GAP_MS of
+// the one before, when it holds at least CLONE_MIN_FILES files and at least half of them: [first, last] in ms; else
+// null. A clone writes every file first, so a later run (a pull, a branch switch, a formatter) is edits, and a file
+// changed after the clone has a time of its own, outside the run.
+export function cloneWindow(times) {
+  const t = times.filter(Number.isFinite).sort((a, b) => a - b);
+  let end = 0;
+  while (end + 1 < t.length && t[end + 1] - t[end] <= CLONE_GAP_MS) end++;
+  const n = t.length ? end + 1 : 0;
+  return n >= CLONE_MIN_FILES && n * 2 >= t.length ? [t[0], t[end]] : null;
 }
 
-// Simple statistics of an area from the version dates of its listed items: { items, recent, median, days, at }.
-// null with no dates at all (the list has no modified date: nothing to say).
-export function areaStats(versions, { now = Date.now(), days = AREA_RECENT_DAYS } = {}) {
-  const times = [...versions].map((v) => toMs(String(v), now)).filter(Boolean).sort((a, b) => a - b);
-  if (!times.length) return null;
-  const median = times[Math.floor(times.length / 2)];
-  return { items: times.length, recent: times.filter((t) => t >= now - days * DAY).length, median: new Date(median).toISOString(), days, at: new Date(now).toISOString() };
+// A notice as plain words, the way a person reads it: the line without Markdown's signs (a quote's ">", a heading's "#",
+// a list's "-", emphasis, code ticks, an alert's "[!WARNING]", HTML tags and comments, a code comment's "//"), a link as
+// its text, and a code span word for word, only its ticks gone. A line that is all signs stays as it is.
+const HTML_TAG = /<\/?(?:a|abbr|aside|b|blockquote|br|center|code|del|details|div|em|font|h[1-6]|hr|i|img|ins|kbd|mark|p|pre|s|section|small|span|strike|strong|sub|summary|sup|u)\b[^>\n]{0,200}>|<!--|-->/gi;
+export function noticeWords(line) {
+  const raw = String(line ?? "").trim();
+  const code = [];
+  const words = raw
+    .replace(/[\uE000\uE001]/g, "")
+    .replace(/(`+)([^\n]{0,300}?[^`\n])\1(?!`)/g, (_, _ticks, span) => `\uE000${code.push(span.trim()) - 1}\uE001`)
+    .replace(/!?\[([^\]\n]{0,200})\]\([^)\n]{0,400}\)/g, "$1")
+    .replace(/\[\[([^\]|\n]{1,200})(?:\|([^\]\n]{1,200}))?\]\]/g, (_, page, label) => label ?? page)
+    .replace(HTML_TAG, "")
+    .replace(/^\s*(?:\/\/+|\/\*+|\*\/)\s*|\s*\*\/\s*$/g, "")
+    .replace(/^(?:>\s*)+/, "")
+    .replace(/^#{1,6}\s+/, "")
+    .replace(/^(?:[-*+]|\d{1,3}[.)])\s+/, "")
+    .replace(/\[![a-z]{1,20}\]\s*/gi, "")
+    .replace(/\*\*|__|`/g, "")
+    .replace(/(^|[\s(])[*_](\S(?:[^*_\n]{0,200}\S)?)[*_](?=[\s).,:;!?]|$)/g, "$1$2")
+    .replace(/\uE000(\d+)\uE001/g, (_, i) => code[i])
+    .replace(/\s+/g, " ")
+    .trim();
+  return words || raw;
 }
 
 const month = (iso) => String(iso).slice(0, 7);
 const at = (s) => s?.source_at ?? s?.updated_at ?? null;
 
 // The facts shown next to one result, from its signals and the signals of the other results of the same answer:
-// [] when nothing deviates (then nothing is added: a note on every line would be ignored). No verdict, only facts.
+// [] when nothing deviates (then nothing is added: a note on every line would be ignored). No verdict, only facts: a
+// replaced mark is what the place says, quoted ({ place, quote, line? }: line when a reader found it past its top), and
+// an age is said only from a date the source gives (a file written in a fresh clone gives none: no source_at).
 export function driftFacts(signals, others = [], { now = Date.now() } = {}) {
   if (!signals) return [];
   const facts = [];
   const mine = at(signals);
   const t = mine && Date.parse(mine);
   if (signals.superseded) {
-    const { marker, by } = signals.superseded;
-    facts.push(marker === "redirect" ? `address now redirects to ${by}` : by ? `marked as replaced: ${by}` : `marked as ${marker} in its own text`);
+    const { marker, by, place, quote, line } = signals.superseded;
+    facts.push(marker === "redirect" ? `address now redirects to ${by}` : `${place} says ${line ? `at line ${line}` : "at its top"}: "${quote ?? marker}"`);
   }
   if (t && now - t > STALE_DAYS * DAY) {
     const label = `${signals.source_at ? "source" : "anchor content"} last changed ${month(mine)}`;
     const recent = others.filter((o) => o !== signals).map(at).map((d) => d && Date.parse(d)).filter((x) => x && now - x <= SIBLING_RECENT_DAYS * DAY);
-    const a = signals.area_stats;
-    const clauses = [];
-    if (recent.length) clauses.push(`${recent.length > 1 ? "other sources" : "another source"} in this answer changed within the last ${SIBLING_RECENT_DAYS} days`);
-    if (a && a.items >= AREA_MIN_ITEMS && a.recent / a.items >= AREA_MIN_SHARE) clauses.push(`${a.recent} of ${a.items} items in this area changed in the last ${a.days} days`);
-    if (clauses.length) facts.unshift([label, ...clauses].join("; "));
+    if (recent.length) facts.unshift(`${label}; ${recent.length > 1 ? "other sources" : "another source"} in this answer changed within the last ${SIBLING_RECENT_DAYS} days`);
   }
   return facts;
 }
-
-// Results of one answer, each with { signals }: how many different sources they come from (toolkit/account/area).
-export const sourceCount = (results) => new Set(results.map((r) => r.signals?.source).filter(Boolean)).size;
-export const sourcesLine = (n) => `These results come from ${n} different sources. Compare them before answering and tell the user if they disagree.`;

@@ -9,7 +9,8 @@
 //                     (--no-time skips it, --seeds N)
 // and what it takes to answer with genter (bench/drift/takes.mjs; --no-takes skips it).
 // A question is fresh when its current answer is in the top 5 passages; stale when an answer that is no longer true is
-// there (outside a passage marked as replaced) and the current one is not; else missed.
+// there (outside a passage marked as replaced) and the current one is not; else missed. Old first, after the edits: the
+// first passage holds the replaced answer (marked or not) and not the current one.
 // --answer also has a model answer each question from each arm's passages, judged by the same strings.
 // Usage: node bench/drift/run.mjs [--semantic] [--answer] [--memory a.json,b.json] [--out results.json] [--md report.md]
 //          [--readme] [--guard README.md] [--prepare dir] [--from results.json]
@@ -253,12 +254,16 @@ function verdict(q, passages, phase) {
   return "missed";
 }
 
+// The replaced answer first: the first passage holds an answer that is no longer true, and not the current one.
+export const oldFirst = (q, passages) => q.t0 != null && q.t0 !== q.t1 && passages[0] != null && has(passages[0].text, q.t0) && !has(passages[0].text, q.t1);
+
 function score(arm) {
   const by = (phase, filter = () => true) => {
-    const v = questions.map((q, i) => [q, verdict(q, arm[phase][i] ?? [], phase)]).filter(([q, x]) => x && filter(q));
+    const asked = questions.map((q, i) => [q, arm[phase][i] ?? []]).filter(([q]) => filter(q));
+    const v = asked.map(([q, passages]) => [q, verdict(q, passages, phase)]).filter(([, x]) => x);
     const n = v.length;
     const count = (x) => v.filter(([, y]) => y === x).length;
-    return { n, fresh: count("fresh"), stale: count("stale"), missed: count("missed") };
+    return { n, fresh: count("fresh"), stale: count("stale"), missed: count("missed"), ...(phase === "t1" && { old_first: asked.filter(([q, passages]) => oldFirst(q, passages)).length }) };
   };
   const changed = (q) => !["stable", "paraphrase", "crosslingual"].includes(q.kind);
   const kinds = [...new Set(questions.map((q) => q.kind))];

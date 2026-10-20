@@ -3,7 +3,7 @@ import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, realp
 import { homedir } from "node:os";
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { classifyFailure, contentHash, recipeId, splitMarkdown } from "./anchor.js";
-import { driftFacts, HEAD_LINES, supersededOf } from "./drift.js";
+import { cloneWindow, driftFacts, HEAD_LINES, noticeWords, supersededOf } from "./drift.js";
 import { bm25, prepare, terms, topTerms } from "./lexical.js";
 import { readDocument } from "./readers.js";
 import { cipher } from "./seal.js";
@@ -18,7 +18,10 @@ import { crawl, forgetPage, readPage, siteUrl } from "./web.js";
 // A search reads its own project's sources and the person's notes, never another project's (projectOf). A project's
 // genter.json can only narrow what it reads; the person's own "off" list, in Genter's config, holds in every project.
 // The readers in readers/ (readers.js) read what a file says about itself: its date, its status, and where it marks
-// itself as replaced.
+// itself as replaced. When a file of the project says so and what replaces it is in the project too, what replaces it
+// comes first and the file follows, quoting its own notice: the current answer first, in the file's own words.
+// A file's date is the one its document gives; its file time only when the folder was not written at one moment (a
+// fresh clone), whose times say when the files arrived, not when anyone changed them.
 // Every place has a number, the id search and read name it by over MCP; read reads a place whole, now, by that number,
 // and only a place of the project it runs in.
 
@@ -493,28 +496,69 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
     return { query: shrink(q, model), sections: keys.map((k) => fromB64(s.vectors[k])) };
   }
 
-  // ---- marks and whole reads ----
+  // ---- marks, dates and whole reads ----
 
-  // A place's replaced mark as search and read give it: { marker, by?, id?, at?, quote? }. by: what replaces it, shown;
-  // id and at: that place's number and day (its own date, else this place's), only when this project reads it, as a
-  // mark never names a place read would refuse; quote: the notice at the place's top as it reads now (never stored).
-  function markOf(a, text, skip) {
+  // Which places' file times are clone times (drift.js cloneWindow), source by source, as the store has them now: a test
+  // of an anchor, made once per answer. Such a file's date is unknown: no date of it is shown, and no age fact said.
+  function clones() {
+    const windows = new Map();
+    const windowOf = (id) => {
+      if (!windows.has(id)) windows.set(id, cloneWindow(Object.values(state.anchors).filter((a) => a.source === id && a.tool === FILE_READ && a.status === "fresh").map((a) => a.mtimeMs)));
+      return windows.get(id);
+    };
+    return (a) => {
+      if (a?.tool !== FILE_READ || a.args.path === notesPath) return false;
+      const w = windowOf(a.source);
+      return Boolean(w) && a.mtimeMs >= w[0] && a.mtimeMs <= w[1];
+    };
+  }
+  // What the readers read in a file now (readers.js): from the text this process read, else read now; never kept.
+  function documentAt(path) {
+    let st;
+    try {
+      st = statSync(path);
+    } catch {
+      return null;
+    }
+    let hit = texts.get(path);
+    if (!hit || hit.mtimeMs !== st.mtimeMs || hit.size !== st.size) {
+      const text = st.isFile() && st.size <= LIMITS.fileBytes ? readText(path) : null;
+      if (text == null) return null;
+      hit = { mtimeMs: st.mtimeMs, size: st.size, text, digest: contentHash(text) };
+      texts.set(path, hit);
+    }
+    if (hit.read === undefined) hit.read = readDocument(readerPath(path), hit.text);
+    return hit.read;
+  }
+  // The day a place gives itself: the date its document gives (as its readers read it), else its file's time unless that
+  // is a clone time; a page's Last-Modified, else when Genter saw it change. null when no day is known.
+  const dayOf = (a, cloned) => (a.tool === PAGE_READ ? (a.source_at ?? a.updated_at ?? null) : (documentAt(a.args.path)?.date?.value ?? (cloned(a) ? null : (a.source_at ?? null))));
+
+  // A place's replaced mark as search and read give it: { marker, by?, id?, at?, quote?, line? }. by: what replaces it,
+  // shown; id and at: that place's number and its own day, only when this project reads it and its day is known, as a
+  // mark never names a place read would refuse; quote: the notice as it reads now, in plain words (never stored); line:
+  // where it is, when a reader found it past the place's top.
+  function markOf(a, text, skip, cloned) {
     const mark = a.superseded;
     if (!mark) return undefined;
     const by = mark.by && state.anchors[/^https?:\/\//i.test(mark.by) ? anchorId(PAGE_READ, { url: mark.by }) : anchorId(FILE_READ, { path: mark.by })];
     const readable = by?.status === "fresh" && inProject(by, skip);
-    const quote = mark.marker === "redirect" ? undefined : (noticeOf(text) ?? a.title ?? mark.marker);
+    const day = readable ? dayOf(by, cloned) : null;
+    const notice = mark.marker === "redirect" ? null : noticeAt(text, mark.line);
+    const quote = mark.marker === "redirect" ? undefined : noticeWords(notice?.text ?? a.title ?? mark.marker);
     return {
       marker: mark.marker,
       ...(mark.by && { by: /^https?:/i.test(mark.by) ? mark.by : shown(mark.by, cwd) }),
-      ...(readable && { id: by.number, at: by.source_at ?? a.source_at ?? a.updated_at }),
+      ...(readable && day && { id: by.number, at: day }),
       ...(quote && { quote: quote.replace(/\s+/g, " ").slice(0, 300) }),
+      ...(notice && !notice.top && { line: notice.line }),
     };
   }
 
   // One place read whole, now, as read gives it: { id, kind, place, path? | url?, title, text?, more?, superseded?,
-  // seen, source_at?, gone? | error? }. The text is cut at LIMITS.readChars; more says how many characters were left out.
-  async function readWhole(a, skip) {
+  // seen, source_at?, dated?, fresh_clone?, gone? | error? }. The text is cut at LIMITS.readChars; more says how many
+  // characters were left out; dated: the date its document gives; fresh_clone: its file time is a clone time.
+  async function readWhole(a, skip, cloned) {
     let record = a;
     let text = null;
     let event = null;
@@ -534,10 +578,12 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
       event = r.event;
       if (text == null && record.status !== "gone") error = "it cannot be read now (not text, over 1 MB, or it holds a private key)";
     }
-    const out = { id: record.number, kind: kindOf(record), place: place(record), ...(record.args.path ? { path: record.args.path } : { url: record.args.url }), title: record.title, ...(record.source_at && { source_at: record.source_at }) };
+    const clone = cloned(record);
+    const dated = text != null && record.args.path ? texts.get(record.args.path)?.read?.date?.value : undefined;
+    const out = { id: record.number, kind: kindOf(record), place: place(record), ...(record.args.path ? { path: record.args.path } : { url: record.args.url }), title: record.title, ...(record.source_at && !clone && { source_at: record.source_at }), ...(dated && { dated }), ...(clone && { fresh_clone: true }) };
     if (text == null) return { ...out, seen: [], ...(error ? { error } : { gone: true }) };
     const seen = event === "changed" || event === "back" ? ["changed since the last look"] : event === "created" ? ["new since the last look"] : [];
-    const superseded = markOf(record, text, skip);
+    const superseded = markOf(record, text, skip, cloned);
     return { ...out, text: text.slice(0, LIMITS.readChars), more: Math.max(0, text.length - LIMITS.readChars), ...(superseded && { superseded }), seen };
   }
   const kindOf = (a) => (a.tool === PAGE_READ ? "page" : a.args.path === notesPath ? "notes" : "file");
@@ -717,7 +763,6 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
         if (picked.length >= limit) break;
       }
       save(); // the places' numbers settle (merge) before a result names them
-      // A section of a source marked as replaced brings the best section of what replaces it, when Genter reads that.
       const byPath = new Map();
       for (const x of sections) {
         const k = x.record.args.path ?? x.record.args.url;
@@ -727,32 +772,54 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
       const results = [];
       const changedNow = new Map(changes.map((c) => [c.place, c.event]));
       const textOf = new Map(reads.map((r) => [r.record.id, r.text]));
-      const mark = (x) => markOf(x.record, textOf.get(x.record.id), sc.skip);
+      const cloned = clones();
+      const mark = (x) => markOf(x.record, textOf.get(x.record.id), sc.skip, cloned);
       const qTerms = new Set(terms(q));
       const scoreOf = new Map(sections.map((x, i) => [x, scores[i]]));
-      // Each picked section in order; one whose place marks itself as replaced is followed by the place that replaces
-      // it: its section among the picked ones (moved up), else its best section of all.
-      const queue = [...picked];
       const placeOf = (x) => x.record.args.path ?? x.record.args.url;
-      while (queue.length) {
-        const [x, score] = queue.shift();
-        results.push(result(x, score, results.length + 1, qTerms, changedNow, mark));
-        const by = x.record.superseded?.by;
-        if (!by || placeOf(x) === by || results.some((r) => (r.path ?? r.url) === by && r.ref !== results.at(-1).ref)) continue;
-        const at = queue.findIndex(([y]) => placeOf(y) === by);
-        let next = at >= 0 ? queue.splice(at, 1)[0] : null;
-        if (!next && byPath.get(by)) {
-          const best = [...byPath.get(by)].sort((a, b) => (scoreOf.get(b) ?? 0) - (scoreOf.get(a) ?? 0))[0];
-          next = [best, scoreOf.get(best) ?? 0];
+      // The current answer first: a file inside the project's folder that its readers mark as replaced (a decision
+      // record's status, a banner at its top, its front matter) by another file inside it, read in this search. What
+      // replaces it, or null; any other mark (a place outside the folder on either side, the notes, a page, a mark no
+      // reader read) shows on its place and changes no order.
+      const inside = (a) => a?.tool === FILE_READ && a.args.path !== notesPath && under(a.args.path, [root]);
+      const replacerOf = (a) => {
+        const m = a.superseded;
+        if (!m?.reader || !m.by || /^https?:/i.test(m.by) || m.by === a.args.path || !inside(a) || !byPath.has(m.by)) return null;
+        const by = state.anchors[anchorId(FILE_READ, { path: m.by })];
+        return by?.status === "fresh" && inside(by) ? by : null;
+      };
+      // Each picked section in order. One whose place is replaced that way has what replaces it come first, in its rank:
+      // that place's section among the picked ones (moved up), else its best section of all; it follows right after.
+      // chain: the places on the way, so two places that name each other end. A place brought from outside the picked
+      // ones brings nothing more (follow false): its own mark shows, so a picked section adds one place at most and a
+      // chain of replaced files does not grow the answer past the limit.
+      const queue = [...picked];
+      const emit = ([x, score], chain, follow = true) => {
+        const by = follow ? replacerOf(x.record) : null;
+        let first = null;
+        if (by && !chain.has(by.args.path)) {
+          first = results.find((r) => r.path === by.args.path) ?? null;
+          if (!first) {
+            const at = queue.findIndex(([y]) => placeOf(y) === by.args.path);
+            if (at >= 0) first = emit(queue.splice(at, 1)[0], new Set([...chain, placeOf(x)]));
+            else {
+              const best = [...byPath.get(by.args.path)].sort((a, b) => (scoreOf.get(b) ?? 0) - (scoreOf.get(a) ?? 0))[0];
+              first = emit([best, scoreOf.get(best) ?? 0], chain, false);
+            }
+          }
         }
-        if (next) results.push({ ...result(next[0], next[1], results.length + 1, qTerms, changedNow, mark), replaces: results.at(-1).ref });
-      }
-      // The facts of each result's freshness, beside the others of the same answer: facts says all of them in words;
-      // freshness holds those about its age alone (its replaced mark is superseded).
+        const r = result(x, score, results.length + 1, qTerms, changedNow, mark, cloned);
+        results.push(r);
+        if (first && first.replaces === undefined) first.replaces = r.ref;
+        return r;
+      };
+      while (queue.length) emit(queue.shift(), new Set());
+      // The facts of each result's freshness, beside the others of the same answer: facts says all of them in words
+      // (the date its document gives, what a replaced place says); freshness holds those about its age alone.
       const others = results.map((o) => o.signals);
       for (const r of results) {
         r.freshness = driftFacts({ ...r.signals, superseded: undefined }, others);
-        r.facts = [...r.facts, ...driftFacts(r.signals, others).map((f) => f.replace(/marked as replaced: (\S+)/, (_, p) => `marked as replaced: ${shown(p, cwd)}`))];
+        r.facts = [...r.facts, ...(r.anchor.document?.date ? [`dated ${r.anchor.document.date}`] : []), ...driftFacts(r.signals, others)];
         delete r.signals;
       }
       save();
@@ -781,9 +848,10 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
       const byNumber = new Map(Object.values(state.anchors).map((a) => [a.number, a]));
       const results = [];
       const refused = [];
+      const cloned = clones();
       for (const n of wanted.slice(0, LIMITS.readIds)) {
         const a = byNumber.get(n);
-        if (a && inProject(a, sc.skip)) results.push(await readWhole(a, sc.skip));
+        if (a && inProject(a, sc.skip)) results.push(await readWhole(a, sc.skip, cloned));
         else refused.push(n);
       }
       save();
@@ -792,9 +860,11 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
   };
 
   // One section of the answer: ref is its rank, id its place's number (what read takes); seen holds what Genter saw of
-  // it (changed or new since the last look, a note's date), and facts adds what its freshness says, in words.
-  function result(x, score, ref, qTerms, changedNow, mark) {
+  // it (changed or new since the last look, a note's date), and facts adds what its freshness says, in words. A file
+  // whose time is a clone time (cloned) carries no file date: anchor.fresh_clone instead of anchor.source_at.
+  function result(x, score, ref, qTerms, changedNow, mark, cloned) {
     const a = x.record;
+    const clone = cloned(a);
     const passage = passageOf(x, qTerms);
     const event = changedNow.get(place(a));
     const document = documentOf(a.args.path ? texts.get(a.args.path)?.read : null);
@@ -814,23 +884,24 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
       headings: x.headings,
       text: passage.text,
       score: Number(score.toFixed(3)),
-      anchor: { id: a.id, tool: a.tool, args: a.args, status: a.status, updated_at: a.updated_at, ...(a.source_at && { source_at: a.source_at }), ...(a.superseded && { superseded: a.superseded }), ...(document && { document }) },
+      anchor: { id: a.id, tool: a.tool, args: a.args, status: a.status, updated_at: a.updated_at, ...(a.source_at && !clone && { source_at: a.source_at }), ...(clone && { fresh_clone: true }), ...(a.superseded && { superseded: a.superseded }), ...(document && { document }) },
       ...(superseded && { superseded }),
       seen: [...facts],
       facts,
-      signals: { source_at: a.source_at, updated_at: a.updated_at, superseded: a.superseded },
+      signals: { ...(!clone && { source_at: a.source_at, updated_at: a.updated_at }), superseded: superseded && { ...superseded, place: a.args.url ?? shown(a.args.path, cwd) } },
     };
   }
 
   return api;
 }
 
-// The answer as text, for a terminal and for MCP: what changed since the last look, then each section under the line
-// that says where it is.
+// The answer as text, for a terminal and for MCP: what changed since the last look (and, once, that the files' dates
+// are clone times), then each section under the line that says where it is.
 export function findText(out) {
   const lines = [];
   const what = { changed: "changed", created: "is new", gone: "is gone" };
   if (out.changes?.length) lines.push(`Since the last look: ${out.changes.slice(0, 12).map((c) => `${c.place} ${what[c.event] ?? c.event}`).join("; ")}${out.changes.length > 12 ? `; ${out.changes.length - 12} more` : ""}.`, "");
+  if (out.results.some((r) => r.anchor?.fresh_clone)) lines.push("File dates unknown (fresh clone): the files were written here within seconds of each other, so only the dates documents give themselves are said.", "");
   if (!out.results.length) {
     lines.push(`Nothing in ${out.searched.places} places matches "${out.question}". Add more with: genter add <folder|file|url>`);
     return lines.join("\n");
@@ -1045,11 +1116,20 @@ function replacedMark(doc, resolveLink, read, top = supersededOf(doc)) {
   return by ? { ...top, by } : top;
 }
 
-// The line at a document's top that marks it as replaced, as it reads now: its mark's quote. Read again each time,
-// never stored (the store keeps no line of a place's text).
-function noticeOf(text) {
-  const head = String(text ?? "").slice(0, 1500).split("\n").map((l) => l.trim()).filter(Boolean).slice(0, HEAD_LINES);
-  return head.find((line) => supersededOf({ text: line })) ?? null;
+// The line that marks a document as replaced, as it reads now: the line a reader found it on (from 1), else the first of
+// its top lines the language rules mark. { text, line, top } (top: among its first HEAD_LINES lines that are not empty),
+// or null. Read again each time, never stored (the store keeps no line of a place's text).
+function noticeAt(text, line) {
+  const lines = String(text ?? "").split("\n");
+  if (line && lines[line - 1]?.trim()) return { text: lines[line - 1].trim(), line, top: lines.slice(0, line).filter((l) => l.trim()).length <= HEAD_LINES };
+  const head = String(text ?? "").slice(0, 1500).split("\n");
+  for (let i = 0, seen = 0; i < head.length && seen < HEAD_LINES; i++) {
+    const l = head[i].trim();
+    if (!l) continue;
+    seen++;
+    if (supersededOf({ text: l })) return { text: l, line: i + 1, top: true };
+  }
+  return null;
 }
 
 // ---- text ----
