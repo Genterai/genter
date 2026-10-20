@@ -13,8 +13,8 @@ reaches a place of another project), and [conformance] ("works with Genter" mean
 
 ### Two tools
 
-* **[two-tools]** Every form of Genter serves `search {query, limit}` and `read {ids}`, as Genter Cloud's public MCP
-  contract does: tools/list gives each a title and `annotations: { readOnlyHint: true }`; `query` is a required
+* **[two-tools]** Every form of Genter serves `search {query, limit}` and `read {ids}` (`genter mcp` over stdio,
+  `genter serve` over HTTP, Genter Cloud), as Genter Cloud's public MCP contract does: tools/list gives each a title and `annotations: { readOnlyHint: true }`; `query` is a required
   string, `limit` a number (locally 5 by default, 20 at most); `ids` a required array of numbers, 10 read per call.
   Other tools a form lists are not part of the contract.
 * **[place-ids]** Places are named by number: each place (a file, a page, the notes file) has a positive whole number,
@@ -33,7 +33,8 @@ reaches a place of another project), and [conformance] ("works with Genter" mean
   (`replaces [id]`, changed or new since the last look, a note's date), then its marks, then the passage, four spaces
   in, so no line of it reads as a place or a mark. A place that replaces another comes right before it, or above it
   when it already ranked higher, as local-search/current-first says. What changed since the last look comes first (a
-  refused `genter.json` before it), and the answer ends saying that read takes the ids. Nothing found is a sentence
+  refused `genter.json` before it), then the files left out because their read took too long ("Not read in time, so
+  not in this answer: …", serve/async-reads), and the answer ends saying that read takes the ids. Nothing found is a sentence
   that names no place.
 * **[marks]** A mark is a line of its own, `  ⚠ ` then what it says; a place's marks are the lines right after its
   second line, and no line of a file (a passage four spaces in, a read text after an empty line) can join them or read
@@ -66,7 +67,7 @@ reaches a place of another project), and [conformance] ("works with Genter" mean
   lines right after the second) are in the format of [marks] and that no line after them reads as one, a read of a
   returned id and of two at once, a read of the id a mark names, an unknown id refused with a plain message, missing
   arguments as tool errors and an unknown tool as -32602, and resolves to `{ ok, checks, ids }`. Genter's own tests
-  run it against `genter mcp` over stdio.
+  run it against `genter mcp` over stdio and `genter serve` over HTTP (serve/same-contract).
 
 ## Proof
 
