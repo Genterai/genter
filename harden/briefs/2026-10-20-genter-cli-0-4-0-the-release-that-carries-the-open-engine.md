@@ -97,23 +97,38 @@ Open:
   (`io.github.Genterai/genter`), `gh release view v0.4.0 --json assets --jq '.assets[].name'` (`genter.mcpb`)
   [non-blocking: the owner's]
 * Once 0.4.0 is on npm, these become false or due → each in its own change: the README's "not on npm yet" note (lines
-  129–134) and `plugins/genter/README.md`'s line 14 (pull request #95 or a follow-up); the MCP Registry entry, published
-  by hand as `docs/listings.md` says; Genter Cloud's pin (`^0.3.0` never takes 0.4: a reviewed bump, plan D7; the
-  exports it imports, `fuse` from `genter-cli/local` and `genter-cli/lexical`, import from the 0.4.0 tarball) and
-  harden's pin and its `genter login` mention (local-engine-only brief); `npm deprecate genter-cli@0.3` and
-  `genter-cli@0.0.0-stage` (plan steps 0.2 and 0.7), after the agents' instructions that run `npx -y genter-cli@0.3 ask`
-  move to 0.4 [non-blocking]
+  129–134) and `plugins/genter/README.md`'s line 14 (pull request #95 or a follow-up); `examples/project/.mcp.json`
+  line 5 and `examples/project/README.md` line 31, which pin `genter-cli@0.3` while that README says the agent calls
+  `search`, move to `genter-cli@0.4`; the MCP Registry entry, published by hand as `docs/listings.md` says; Genter Cloud
+  moves to 0.4.0 in its own reviewed version bump (the plan's D7; `ip-boundary.md`); harden's pin and its `genter
+  login` mention (local-engine-only brief); `npm deprecate genter-cli@0.3` and `genter-cli@0.0.0-stage` (plan steps
+  0.2 and 0.7), after the agents' instructions that run `npx -y genter-cli@0.3 ask` move to 0.4 [non-blocking]
+* `README.md`'s Releases line (476–477, "raise `version` in `package.json` in a pull request. Merging it into `main`
+  publishes it") is incomplete once this merges: a version's pull request also adds its `CHANGELOG.md` section, or
+  `npm test` fails. It is not edited here because pull request #95 adds a bullet right above it and an edit here
+  conflicts (`git merge-tree` against `claude/readme`): the line gains "and add its `CHANGELOG.md` section" in #95 or
+  right after it; `CONTRIBUTING.md`'s Releases line already says so [non-blocking]
+* cli/cloud-own-server says "the first command removes the token 0.3's `genter login` kept"; on main (and here) only
+  the commands that open the store do (`add`, `ask`, `remember`, `forget`, `sources`, `mcp`, `serve`, `decisions`,
+  `login`, `logout`): `install`, `demo`, `reader`, `help` and `--version` leave it on disk and say nothing (checked with
+  a fake token in a scratch `GENTER_HOME`). `CHANGELOG.md` names the commands that remove it and says `install`, `demo`
+  and `reader` leave it, which is true as it stands. Proposal for its own change: `install` and `demo` drop it too (the
+  demo's last line suggests `genter install`), keeping the red line as written; that change touches a key on the
+  person's disk, so it goes to the owner first [non-blocking for this release, which does not change it]
 * People on genter-cli 0.3 get the address fix only by moving to 0.4, which breaks 0.3's apps engine → no 0.3.x from the
   `legacy` branch (unsupported; genter-cli had 40 downloads from 2026-10-12 to 2026-10-18, api.npmjs.org); the
   deprecation message points to 0.4 [non-blocking]
 Proof: `test/packaging.test.js` "[rl:cli/release-notes] CHANGELOG.md has this version's section…": `notesOf` finds `##
 0.4.0`, a "Breaking changes" heading comes first, every link is a whole address, the newest section is `package.json`'s
 version and the sections go newest first; the release job's tag step writes the section to a file and passes it with
-`--notes-file … --generate-notes`, after `npm publish`, and `npm test` runs before `npm publish` /
+`--notes-file … --generate-notes`, after `npm publish`, and `npm test` runs before `npm publish`; the sections are read
+with `notes.mjs`'s own `HEADING`, in semver's order (a release candidate before its release) /
 "[rl:cli/release-notes] notes.mjs takes a version's section…": both heading forms, a release candidate apart, an empty
 or missing section is none, the script prints the section and exits 1 naming a missing one. Each fails when its part is
 undone (on a copy: no 0.4.0 section 2 fail, "New" before "Breaking changes" 1, a relative link 1, `--notes-file` dropped
-1, `npm test` moved after the tag step 1, a 0.5.0 section after 0.4.0 1; the copy unchanged 0) /
+1, `npm test` moved after the tag step 1, a 0.5.0 section after 0.4.0 1, `0.5.0-rc.1` above `0.5.0` 1, `rc.2` above
+`rc.10` 1; `package.json` at `0.5.0-rc.1` with its section first 0, and 0.5.0, 0.5.0-rc.1, 0.4.0 in that order 0, where
+the previous check failed the first; the copy unchanged 0) /
 "[rl:cli/versions-agree]" and "[rl:plugin/local-server]" pass at 0.4.0 / `node .github/scripts/versions.mjs --check`
 exit 0 / `npm pack --dry-run`: genter-cli@0.4.0, 48 files (LICENSE, README.md, package.json, bin/ 3, readers/ 14, rules/
 2, src/ 25), 142.7 kB / the tarball installed alone in a clean folder: `node_modules` holds genter-cli only, the five

@@ -7,7 +7,7 @@ import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 import { mismatches, sync } from "../.github/scripts/versions.mjs";
 import { packedFiles, pointedAt, stage } from "../.github/scripts/mcpb.mjs";
-import { notesOf } from "../.github/scripts/notes.mjs";
+import { HEADING, notesOf } from "../.github/scripts/notes.mjs";
 import { conformance } from "../src/conformance.js";
 import { mcpTools } from "../src/mcp-server.js";
 
@@ -289,10 +289,19 @@ describe("the release notes", () => {
     assert.ok(breaking <= 0, `"${headings[breaking]}" comes first, before ${headings.slice(0, breaking).join(", ")}`);
     // A release page resolves no relative link, so the notes link to whole addresses.
     for (const [link] of notes.matchAll(/\]\(([^)]*)\)/g)) assert.match(link, /^\]\(https:\/\//, `${link}: a whole address`);
-    // Every section of CHANGELOG.md is a version once, newest first, so the notes of one are never another's.
-    const versions = [...text("CHANGELOG.md").matchAll(/^## \[?v?(\d+\.\d+\.\d+)/gm)].map((m) => m[1]);
+    // Every section of CHANGELOG.md is a version once, newest first, so the notes of one are never another's. The
+    // headings are the ones notes.mjs reads; a release candidate comes before its release (semver's order).
+    const versions = text("CHANGELOG.md").split(/\r?\n/).map((l) => HEADING.exec(l)?.[1]).filter(Boolean);
     assert.equal(versions[0], pkg.version, "the newest section is package.json's version");
-    const newer = (a, b) => a.split(".").map(Number).reduce((d, n, i) => d || n - b.split(".").map(Number)[i], 0) > 0;
+    const order = (v) => {
+      const [core, pre = ""] = v.split("+")[0].split(/-(.*)/);
+      return [...core.split(".").map(Number), pre ? 0 : 1, pre];
+    };
+    const newer = (a, b) => {
+      const [x, y] = [order(a), order(b)];
+      const i = x.findIndex((n, j) => j < 4 && n !== y[j]);
+      return i >= 0 ? x[i] > y[i] : x[4].localeCompare(y[4], "en", { numeric: true }) > 0;
+    };
     for (let i = 1; i < versions.length; i++) assert.ok(newer(versions[i - 1], versions[i]), `${versions[i]} after ${versions[i - 1]}`);
 
     // The tag step writes the section to a file and gives it to gh with --generate-notes, which puts it first.
@@ -302,9 +311,9 @@ describe("the release notes", () => {
     assert.match(tag, /V: \$\{\{ steps\.version\.outputs\.version \}\}/);
     // The tests (which ask for the section) run before npm publish, and the tag comes after it: a version without notes
     // stops before anything is published or tagged.
-    const at = (re) => steps.findIndex((s) => re.test(s));
-    assert.ok(at(/run: npm test$/m) >= 0 && at(/run: npm test$/m) < at(/npm publish/), "npm test before npm publish");
-    assert.ok(at(/npm publish/) < steps.indexOf(tag), "the tag after npm publish");
+    const stepOf = (re) => steps.findIndex((s) => re.test(s));
+    assert.ok(stepOf(/run: npm test$/m) >= 0 && stepOf(/run: npm test$/m) < stepOf(/npm publish/), "npm test before npm publish");
+    assert.ok(stepOf(/npm publish/) < steps.indexOf(tag), "the tag after npm publish");
   });
 
   it("[rl:cli/release-notes] notes.mjs takes a version's section up to the next one, in either heading form, and exits 1 without one", () => {

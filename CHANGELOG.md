@@ -17,9 +17,10 @@ own words. It needs no account and no key, and it has no dependencies.
   [`legacy`](https://github.com/Genterai/genter/tree/legacy) branch, unsupported. Your team's apps are Genter Cloud's.
 - **No more `genter login`.** genter-cli no longer calls Genter Cloud: `genter login`, `genter logout`, `GENTER_TOKEN`,
   `GENTER_URL` and `--cloud` are gone. Add Genter Cloud to your AI tool as its own MCP server,
-  `https://genter.ai/api/mcp` (the tool signs you in), or run `genter install --cloud`. The first command you run
-  removes the token that 0.3's `genter login` kept in `~/.genter/config.json`, and says so. `login`, `logout` and
-  `--cloud` now exit 1 and print that address. `--local` still works and changes nothing.
+  `https://genter.ai/api/mcp` (the tool signs you in), or run `genter install --cloud`. The first command that opens
+  Genter's store (`ask`, `add`, `remember`, `forget`, `sources`, `mcp`, `serve`, `decisions`) removes the token that
+  0.3's `genter login` kept in `~/.genter/config.json`, and says so; `install`, `demo` and `reader` leave it there.
+  `login`, `logout` and `--cloud` now exit 1 and print that address. `--local` still works and changes nothing.
 - **The MCP tools are `search` and `read`.** `genter mcp` serves the same two tools as Genter Cloud: `search` with a
   question, then `read` with the ids it returned. 0.3's `genter_find`, `genter_add`, `genter_remember` and
   `genter_sources` still answer, marked deprecated, until 0.5. Adding, remembering and listing sources are commands:
@@ -50,7 +51,8 @@ own words. It needs no account and no key, and it has no dependencies.
 - **`genter decisions`** writes a page of your project's decisions, current and replaced, each with where it is
   written, its own date and its notice quoted. The page goes outside the repository (`~/.genter/pages/`) unless you
   say where, opens offline and runs no script.
-- **`genter demo`** shows the idea in a second, offline: a rule is replaced, and the new one comes first.
+- **`genter demo`** now shows a rule replaced, offline: the new rule comes first, dated, and the old line follows with
+  its own notice quoted.
 - **`genter add https://…/mcp`** adds a vendor's MCP server (Notion, Linear, Atlassian…) as a source. You sign in
   once in your browser; only its read-only tools are called, again at every question, and the sign-in is kept sealed.
 - **`genter serve`** gives a small team `search` and `read` over HTTP, with one token per person, read-only. A
@@ -81,4 +83,5 @@ own words. It needs no account and no key, and it has no dependencies.
   [TRADEMARKS.md](https://github.com/Genterai/genter/blob/main/TRADEMARKS.md), and a DCO sign-off on every commit.
 
 In the list of pull requests since 0.3.0 on the GitHub release, #68 to #71 and #73 changed the apps engine, which then
-left the package; #79 names 0.3.1, which was never published, and its fix is in this release.
+left the package, and so did #72's `GENTER_CONNECT` and its saved marks for MCP (its DriftBench part stays in
+`bench/drift/`); #79 names 0.3.1, which was never published, and its fix is in this release.
