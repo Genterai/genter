@@ -3,6 +3,7 @@
 import { readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { runDemo } from "../src/demo.js";
+import { install, terminalAsk } from "../src/install/index.js";
 import { createLocal, embedderFor, embeddingProvider, findText, genterHome } from "../src/local.js";
 import { serveMcp } from "../src/mcp-server.js";
 
@@ -12,7 +13,8 @@ const version = JSON.parse(readFileSync(new URL("../package.json", import.meta.u
 // so no token is kept on this computer (the one 0.3's genter login kept is dropped, below).
 const CLOUD = "https://genter.ai/api/mcp";
 const CLOUD_LINE = `Genter Cloud finds in your team's apps (GitHub, Slack, Notion and 500 more): add it to your AI tool as its own MCP
-server, next to genter mcp. The tool signs in with OAuth, and nothing is kept on this computer: ${CLOUD}`;
+server, next to genter mcp (genter install offers it). The tool signs in with OAuth, and nothing is kept on this
+computer: ${CLOUD}`;
 
 const HELP = `genter ${version}: resolver for AI agents. A question resolves to where its answer is written, and Genter
 reads it there again, so the answer is what your docs say now.
@@ -25,6 +27,11 @@ reads it there again, so the answer is what your docs say now.
   genter forget <folder|file|url>    stop searching it
   genter mcp [folder|url ...]        all of it for your agent (MCP over stdio):
                                      claude mcp add genter -- npx -y genter-cli mcp
+  genter install [tool ...]          add genter mcp to the AI tools on this computer (Claude Code, Claude Desktop,
+                                     Cursor, VS Code, Codex, Gemini CLI, Zed, goose), in your own settings for each:
+                                     shows each change, then asks. --cloud adds Genter Cloud too, --semantic sets
+                                     GENTER_SEMANTIC=1, --folder <dir> is what Claude Desktop searches, --dry-run only
+                                     shows, --undo puts every file back
 
   --json             JSON
   --limit N          passages (default 5)
@@ -45,6 +52,10 @@ function parse(argv) {
     else if (a === "--limit" || a === "--depth") flags[a.slice(2)] = Number(argv[++i]);
     else if (a.startsWith("--limit=") || a.startsWith("--depth=")) flags[a.slice(2, 7)] = Number(a.slice(8));
     else if (a === "--cloud") flags.cloud = true;
+    else if (a === "--dry-run") flags.dryRun = true;
+    else if (a === "--undo") flags.undo = true;
+    else if (a === "--folder") flags.folder = argv[++i];
+    else if (a.startsWith("--folder=")) flags.folder = a.slice(9);
     else if (a !== "--local") words.push(a); // 0.3's --local: this computer is the only place now
   }
   return { flags, words };
@@ -82,6 +93,16 @@ export async function local(argv) {
   if (command === "--version" || command === "-v") return console.log(version);
   if (["help", "--help", "-h"].includes(command)) return console.log(HELP);
   if (command === "demo") return runDemo();
+  // It edits other tools' settings, not Genter's store: no store, no key, and its --cloud adds Genter Cloud's address.
+  if (command === "install") {
+    try {
+      process.exitCode = await install({ genterHome: genterHome(), only: words, semantic: flags.semantic, cloud: flags.cloud, folder: flags.folder, dryRun: flags.dryRun, undo: flags.undo, ask: terminalAsk() });
+    } catch (error) {
+      console.error(error.message);
+      process.exitCode = 1;
+    }
+    return;
+  }
   if (!["add", "ask", "remember", "forget", "sources", "mcp", "login", "logout"].includes(command)) {
     console.error(`Unknown command: ${command}\n\n${HELP}`);
     process.exitCode = 1;

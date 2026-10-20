@@ -12,8 +12,8 @@ keys), [cloud-own-server] (no token on the person's disk), and the local MCP con
 
 ### Commands
 
-* **[no-packages]** The commands (`ask`, `add`, `remember`, `forget`, `sources`, `mcp`, `demo`) run with no key and no
-  package beside genter-cli.
+* **[no-packages]** The commands (`ask`, `add`, `remember`, `forget`, `sources`, `mcp`, `demo`, `install`) run with no
+  key and no package beside genter-cli.
 * **[help]** No command prints the help, its last line Genter Cloud's MCP address `https://genter.ai/api/mcp`; an
   unknown command, or `ask` with no question, exits 1.
 * **[output-local]** `ask` prints each passage under `[n] place:lines · headings`, what Genter did on stderr;
@@ -28,7 +28,8 @@ keys), [cloud-own-server] (no token on the person's disk), and the local MCP con
   tool signs in with OAuth): genter-cli never calls it, reads no token for it and keeps nothing for it, and the first
   command removes the token 0.3's `genter login` kept in the config, saying so on stderr; `ask` and `mcp` answer from
   this computer only (0.3's `--local` changes nothing), and `genter login`, `genter logout` and `--cloud` exit 1
-  naming that address.
+  naming that address, except `genter install --cloud`, which adds that address to the person's AI tools
+  (install/cloud-asked).
 
 ### The local MCP server
 
