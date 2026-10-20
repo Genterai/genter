@@ -62,7 +62,7 @@ jobs:
           mkdir "$RUNNER_TEMP/clean" && cd "$RUNNER_TEMP/clean" && npm init -y >/dev/null
           npm i "$RUNNER_TEMP"/genter-cli-*.tgz
           test "$(ls node_modules)" = genter-cli
-          node --input-type=module -e 'for (const m of ["genter-cli", "genter-cli/local", "genter-cli/lexical"]) await import(m)'
+          node --input-type=module -e 'for (const m of ["genter-cli", "genter-cli/local", "genter-cli/lexical", "genter-cli/conformance"]) await import(m)'
           npx --no-install genter --version
       - name: The command starts
         run: node bin/genter.js

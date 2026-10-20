@@ -35,7 +35,8 @@
   "exports": {
     ".": "./src/local.js",
     "./local": "./src/local.js",
-    "./lexical": "./src/lexical.js"
+    "./lexical": "./src/lexical.js",
+    "./conformance": "./src/conformance.js"
   },
   "files": [
     "bin",
