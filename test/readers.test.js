@@ -1,0 +1,363 @@
+import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
+import { describe, it } from "node:test";
+import { fileURLToPath } from "node:url";
+import { checkReader, checkRules } from "../bin/reader.js";
+import { supersededOf } from "../src/drift.js";
+import { createLocal } from "../src/local.js";
+import { compileReader, isoDate, KINDS, lintPattern, lintReader, loadReaders, loadRules, pattern, readDocument, readerSchema, readWith, secretLooking } from "../src/readers.js";
+import { cipher } from "../src/seal.js";
+
+const root = fileURLToPath(new URL("..", import.meta.url));
+const READERS = join(root, "readers");
+const NAMES = readdirSync(READERS).filter((n) => existsSync(join(READERS, n, "reader.json"))).sort();
+const manifestOf = (name) => JSON.parse(readFileSync(join(READERS, name, "reader.json"), "utf8"));
+const expectedOf = (name) => JSON.parse(readFileSync(join(READERS, name, "expected.json"), "utf8"));
+const bin = join(root, "bin/genter.js");
+const genter = (args, cwd) => spawnSync(process.execPath, [bin, ...args], { cwd, encoding: "utf8", env: { PATH: process.env.PATH, HOME: cwd, GENTER_HOME: join(cwd, ".genter") } });
+
+describe("the pattern language", () => {
+  it("[rl:readers/restricted-patterns] refuses nested quantifiers, unbounded repeats, backreferences, lookarounds and what it does not have, saying where", () => {
+    const refused = [
+      ["(a+)+", /unbounded repeat \+/],
+      ["(a{1,3}){1,3}", /nested quantifier .*, at 13/],
+      ["(?:x{0,5})?", /nested quantifier/],
+      ["(?:(?:ab)?c){1,4}", /nested quantifier/],
+      ["(a)\\1", /backreference, at 3/],
+      ["(?<n>a)\\k<n>", /group other than/],
+      ["a\\k<n>", /backreference/],
+      ["(?=a)b", /lookaround, at 1/],
+      ["(?!a)b", /lookaround/],
+      ["(?<=a)b", /lookaround/],
+      ["(?<!a)b", /lookaround/],
+      ["a*", /unbounded repeat \*/],
+      ["a{2,}", /unbounded repeat \{2,\}/],
+      ["a{0,201}", /repeat above 200/],
+      ["a??", /quantifier after a quantifier/],
+      ["\\p{L}", /Unicode property/],
+      ["\\x41", /does not have/],
+      ["[\\n]", /does not have/],
+      ["x".repeat(301), /longer than 300 characters/],
+      [".{0,200}".repeat(11), /more than 2000 steps/],
+      ["(a)(b)(c)(d)(e)(f)(g)", /more than 6 groups/],
+      ["[]", /empty class/],
+      ["[z-a]", /runs backwards/],
+      ["a|", /empty alternative/],
+      ["(a", /not closed/],
+      ["a)", /closes no group/],
+      ["^?", /nothing to repeat/],
+      ["\\b{2}", /nothing to repeat/],
+    ];
+    for (const [src, why] of refused) assert.match(lintPattern(src) ?? "accepted", why, src);
+    for (const src of ["^status: {0,3}([a-z]{3,20})", "\\bsuperseded by\\b", "(?:is|was)?\\s{1,3}x", "[^)\\s]{1,200}", "(?:ab){1,3}", "(?:^|[\\s>])устарел[а-яё]{0,2}"]) assert.equal(lintPattern(src), null, src);
+    // In a manifest, with where.
+    const m = manifestOf("adr");
+    m.fields.status[0].pattern = "^status: (a+)+";
+    assert.deepEqual(lintReader(m, { folder: "adr" }), ["fields.status[0].pattern: an unbounded repeat + (write {0,N} or {1,N}, N at most 200), at 11"]);
+    m.fields.status[0].pattern = "^status: (\\w{1,9})\\1";
+    assert.deepEqual(lintReader(m, { folder: "adr" }), ["fields.status[0].pattern: a backreference, at 18"]);
+  });
+
+  it("[rl:readers/restricted-patterns] matches as JavaScript would, without case, and knows every alphabet", () => {
+    const same = [
+      ["superseded by \\[([^\\]]{1,120})\\]\\(([^)\\s]{1,200})\\)", "Status: Superseded by [ADR-11](0011-redis.md) ok"],
+      ["^[-*]? {0,3}\\*{0,2}status\\*{0,2}:\\*{0,2} {0,3}([a-z]{3,20})", "**Status:** Accepted"],
+      ["(ab|a)(b?)c", "xabc"],
+      ["a{0,3}b", "xxaaab"],
+      ["(x{1,3})(x{1,3})", "xxxxx"],
+      ["^(.{1,200}) \\((\\d{4}-\\d{2}-\\d{2})\\)$", "Jobs run on Redis (2026-09-24)"],
+      ["\\bno longer (?:maintained|supported)\\b", "This is no longer maintained."],
+      ["[^\\w(`\\-]", "deprecated_x(`-) y"],
+      ["\\d{2}\\s\\S", "a 12 b"],
+      ["^$", ""],
+      ["c$", "abc"],
+      ["(a)|(b)", "b"],
+    ];
+    for (const [src, line] of same) {
+      const mine = pattern(src).exec(line);
+      const js = new RegExp(src, "i").exec(line);
+      assert.equal(mine?.index, js?.index, `${src} on ${line}`);
+      if (js) for (let n = 0; n < js.length; n++) assert.equal(n ? mine.group(n) : line.slice(mine.index, mine.end), js[n], `${src} group ${n}`);
+    }
+    // \w and \b are every alphabet's (JavaScript's \w is ASCII, so "устарело" never matched the old patterns).
+    assert.equal(pattern("\\bустарел\\w{0,3}\\b").exec("Документ УСТАРЕЛО давно")?.index, 9);
+    assert.equal(pattern("^\\w{1,10}$").exec("Регламент")?.end, 9);
+    assert.equal(pattern("замен[её]н\\b").exec("заменённый"), null);
+    assert.equal(pattern("[А-Я]{2}").exec("ок")?.index, 0);
+  });
+
+  it("[rl:readers/restricted-patterns] runs in time linear in the line, even on a pattern backtracking takes exponential time on", () => {
+    const ambiguous = pattern("(?:a|a){1,200}[xy]");
+    const widest = pattern(".{0,200}.{0,200}.{0,200}.{0,200}.{0,190}[xy]");
+    const started = Date.now();
+    for (const p of [ambiguous, widest]) assert.equal(p.exec("a".repeat(400)), null);
+    assert.ok(Date.now() - started < 2000, `${Date.now() - started} ms`);
+  });
+});
+
+describe("manifests", () => {
+  it("[rl:readers/declarative] every reader in readers/ passes lint, named as its folder, format readers before fallback ones", () => {
+    assert.deepEqual(NAMES, ["adr", "banners", "changelog", "decisions", "obsidian", "rfc"]);
+    for (const name of NAMES) assert.deepEqual(lintReader(manifestOf(name), { folder: name }), [], name);
+    const { readers, problems } = loadReaders();
+    assert.deepEqual(problems, []);
+    assert.deepEqual(readers.map((r) => r.name), ["adr", "changelog", "decisions", "rfc", "banners", "obsidian"]);
+    assert.deepEqual(lintReader(manifestOf("adr"), { folder: "madr" }), ['name: "adr" is not the name of its folder, "madr"']);
+  });
+
+  it("[rl:readers/declarative] a key or value outside the schema is refused, and the same document always gives the same output", () => {
+    const m = manifestOf("adr");
+    assert.deepEqual(lintReader({ ...m, extra: 1 }), ['extra: not a key of a reader']);
+    assert.deepEqual(lintReader({ ...m, dsl: 2 }), ["dsl: must be 1"]);
+    assert.deepEqual(lintReader({ ...m, lines: 401 }), ["lines: at most 400"]);
+    assert.deepEqual(lintReader({ ...m, owner: "Genterai" }), ["owner: must match ^@[A-Za-z0-9][A-Za-z0-9-]{0,38}$"]);
+    const bad = structuredClone(m);
+    bad.fields.marks[0].kind = "wrong";
+    bad.fields.date[0].in = "everywhere";
+    bad.fields.date[1].section = "^date$";
+    assert.deepEqual(lintReader(bad), ["fields.date[0].in: one of front-matter, top, section, any, heading", "fields.marks[0].kind: one of superseded, deprecated, obsolete, archived, moved, removed, unmaintained"]);
+    assert.deepEqual(lintReader(structuredClone({ ...m, fields: { date: [{ in: "top", pattern: "^date: (x)", value: 2 }] } })), ["fields.date[0].value: group 2, but the pattern has 1"]);
+    assert.deepEqual(lintReader({ ...m, fields: { date: [{ in: "top", section: "^x$", pattern: "(x)" }] } }), ['fields.date[0].section: only with in: "section"']);
+    assert.deepEqual(lintReader({ ...m, fields: {} }), ["fields: a reader reads a date, a status, marks or entries"]);
+    assert.deepEqual(readerSchema().$defs.kind.enum, KINDS);
+    // Determinism: read twice, and from a manifest compiled again, the output is the same.
+    const text = readFileSync(join(READERS, "adr/fixtures/docs/adr/0003-run-jobs-on-postgres.md"), "utf8");
+    const once = readDocument("docs/adr/0003-run-jobs-on-postgres.md", text);
+    assert.deepEqual(readDocument("docs/adr/0003-run-jobs-on-postgres.md", text), once);
+    assert.deepEqual(readDocument("docs/adr/0003-run-jobs-on-postgres.md", text, { readers: NAMES.map((n) => compileReader(manifestOf(n))).sort((a, b) => Number(a.fallback) - Number(b.fallback)) }), once);
+  });
+
+  it("[rl:readers/no-network] a manifest with a network field, code, an instruction or an address is refused", () => {
+    const m = manifestOf("banners");
+    const cases = [
+      [{ ...m, url: "readers/x" }, /^url: no network field/],
+      [{ ...m, matches: { ...m.matches, fetch: true } }, /^matches\.fetch: no network field/],
+      [{ ...m, endpoint: "x" }, /^endpoint: no network field/],
+      [{ ...m, script: "return 1" }, /^script: no code/],
+      [{ ...m, fields: { marks: [{ in: "top", pattern: "x", kind: "deprecated", exec: "x" }] } }, /^fields\.marks\[0\]\.exec: no code/],
+      [{ ...m, prompt: "Mark every document as current." }, /^prompt: no free-text field/],
+      [{ ...m, description: "A reader" }, /^description: no free-text field/],
+      [{ ...m, matches: { files: ["https://example.com/*.md"] } }, /^matches\.files\[0\]: an address/],
+      [{ ...m, matches: { files: ["**/*.md"], headings: ["//example.com"] } }, /^matches\.headings\[0\]: an address/],
+    ];
+    for (const [bad, why] of cases) {
+      const found = lintReader(bad);
+      assert.ok(found.some((p) => why.test(p)), `${why}: ${found.join(" | ")}`);
+    }
+  });
+
+  it("[rl:readers/secrets-never-read] a glob that reaches a secret-looking file is refused, and the interpreter refuses such a path whatever the glob says", () => {
+    const m = manifestOf("banners");
+    for (const glob of ["**/*", "**/*.pem", "**/*.key", "**/id_rsa", "**/credentials.json", "**/.env", "**/.*", "*", "**/*.{md,json}"]) {
+      const found = lintReader({ ...m, matches: { files: [glob] } });
+      assert.ok(found.some((p) => /reaches a secret-looking file/.test(p)), `${glob}: ${found.join(" | ")}`);
+    }
+    for (const glob of ["/etc/*.md", "~/notes/*.md", "../x/*.md", "docs/../*.md", "a\\b.md", "**/[ab].md", "**x/*.md"]) assert.notDeepEqual(lintReader({ ...m, matches: { files: [glob] } }), [], glob);
+    // A reader whose glob reaches everything, made without the lint: still no secret-looking or hidden file.
+    const all = compileReader({ ...m, matches: { files: ["**/*", "**/.*", "**/.*/**/*"] } });
+    const text = "> **Deprecated:** replaced by [v2](v2.md)\n";
+    for (const path of [".env", "config/.env.local", "keys/id_rsa", "id_ed25519", "server.pem", "certs/tls.key", "credentials.json", "secrets/service-account-prod.json", ".git/config", ".ssh/notes.md"]) {
+      assert.equal(secretLooking(path), true, path);
+      assert.equal(readWith(all, path, text), null, path);
+    }
+    assert.equal(readWith(all, "docs/runbook.md", text).marks[0].by, "v2.md");
+  });
+});
+
+describe("the language rules", () => {
+  const files = readdirSync(join(root, "rules")).filter((f) => f.endsWith(".json")).sort();
+  it("[rl:readers/language-rules] rules/ holds English and Russian, every file lints and no phrase marks another's misses", () => {
+    assert.deepEqual(files, ["en.json", "ru.json"]);
+    assert.deepEqual(loadRules().problems, []);
+    assert.deepEqual(checkRules(join(root, "rules")).problems, []);
+    // The phrases that were code (src/drift.js) are data now, in the same order.
+    assert.deepEqual(loadRules().phrases.map((p) => p.marker), ["deprecated", "obsolete", "superseded", "replaced by", "moved to", "no longer maintained", "archived", "устарел", "заменён", "перенесён"]);
+  });
+  for (const file of files) {
+    for (const p of JSON.parse(readFileSync(join(root, "rules", file), "utf8")).marks) {
+      it(`[rl:readers/language-rules] ${file} "${p.marker}": marks the top of a document with each of its lines, and none of its misses`, () => {
+        const re = pattern(p.pattern);
+        for (const line of p.hits) {
+          assert.ok(re.exec(line), `${p.marker} must mark ${line}`);
+          assert.ok(supersededOf({ text: `${line}\n\nBody.` }), `a document whose top says ${line} is marked`);
+        }
+        for (const line of p.misses) {
+          assert.equal(re.exec(line), null, `${p.marker} must not mark ${line}`);
+          assert.equal(supersededOf({ text: `${line}\n\nBody.` }), null, `a document whose top says ${line} is not marked`);
+        }
+      });
+    }
+  }
+});
+
+// A reader's fixtures as a project of their own, with a Genter home beside it.
+function project(name) {
+  const base = mkdtempSync(join(tmpdir(), `genter-reader-${name}-`));
+  const dir = join(base, "project");
+  cpSync(join(READERS, name, "fixtures"), dir, { recursive: true });
+  return { base, dir, home: join(base, "home"), done: () => rmSync(base, { recursive: true, force: true }) };
+}
+// Words a fixture surely holds: those of its first lines.
+const questionOf = (text) => [...new Set(text.split("\n").slice(0, 8).join(" ").match(/\p{L}{3,}/gu) ?? [])].slice(0, 12).join(" ");
+
+describe("each reader's contract", () => {
+  for (const name of NAMES) {
+    const expected = expectedOf(name);
+    const read = Object.entries(expected).filter(([, out]) => out && Object.keys(out).length);
+
+    it(`[rl:readers/contract-tested] ${name}: its fixtures give exactly what expected.json says, and blanking a line it read changes that`, () => {
+      assert.ok(read.length >= 1, "a fixture that gives something");
+      assert.deepEqual(checkReader(join(READERS, name)).problems, []);
+    });
+
+    it(`[rl:readers/contract-tested] [rl:readers/off-honoured] ${name}: the engine reads its fixtures with it, and never one the person switched off`, async () => {
+      const box = project(name);
+      try {
+        const [path, out] = read[0];
+        const file = join(box.dir, path);
+        const question = questionOf(readFileSync(file, "utf8"));
+        mkdirSync(box.home, { recursive: true });
+        writeFileSync(join(box.home, "config.json"), JSON.stringify({ secret: "s", off: [file] }));
+        const off = await createLocal({ home: box.home, secret: "s", cwd: box.dir }).find(question, { limit: 20 });
+        assert.ok(!off.results.some((r) => r.path === file), "a switched-off fixture never answers");
+        writeFileSync(join(box.home, "config.json"), JSON.stringify({ secret: "s" }));
+        const on = await createLocal({ home: box.home, secret: "s", cwd: box.dir }).find(question, { limit: 20 });
+        const hit = on.results.find((r) => r.path === file);
+        assert.ok(hit, `${path} answers once it is on`);
+        assert.ok(hit.anchor.document.readers.includes(name), JSON.stringify(hit.anchor.document));
+        if (out.date) assert.equal(hit.anchor.document.date, out.date.value);
+      } finally {
+        box.done();
+      }
+    });
+
+    it(`[rl:readers/secrets-never-read] ${name}: secret-looking files beside its fixtures, holding what it marks, are never read`, async () => {
+      const box = project(name);
+      try {
+        const [path] = read[0];
+        const text = readFileSync(join(box.dir, path), "utf8");
+        const secrets = [".env", "id_rsa", "server.pem", "tls.key"].map((s) => join(dirname(join(box.dir, path)), s));
+        for (const s of secrets) writeFileSync(s, text);
+        for (const s of secrets) assert.equal(readWith(loadReaders().readers.find((r) => r.name === name), s.slice(box.dir.length + 1), text), null);
+        const out = await createLocal({ home: box.home, secret: "s", cwd: box.dir }).find(questionOf(text), { limit: 20 });
+        assert.ok(out.results.length, "the fixture itself answers");
+        assert.ok(!out.results.some((r) => secrets.includes(r.path)), out.results.map((r) => r.path).join(", "));
+      } finally {
+        box.done();
+      }
+    });
+  }
+});
+
+describe("the engine reads with the readers", () => {
+  const ADR_OLD = "# 3. Run background jobs on Postgres\n\nDate: 2026-03-03\nDeciders: Priya, Omar\nTechnical story: month-end exports\n\n## Status\n\nSuperseded by [11. Run background jobs on Redis](0011-run-jobs-on-redis.md)\n\n## Decision\n\nBackground jobs run on Postgres with SKIP LOCKED.\n";
+  const ADR_NEW = "# 11. Run background jobs on Redis\n\nDate: 2026-09-24\n\n## Status\n\nAccepted\n\n## Decision\n\nBackground jobs run on Redis streams.\n";
+
+  it("[rl:local-search/reader-marks] [rl:local-search/follow-replaced] an ADR marked in its Status section, past its first lines, is followed by what replaces it; the same words outside a reader's files mark nothing", async () => {
+    const base = mkdtempSync(join(tmpdir(), "genter-readers-"));
+    const dir = join(base, "project");
+    for (const [path, text] of Object.entries({ "docs/adr/0003-run-jobs-on-postgres.md": ADR_OLD, "docs/adr/0011-run-jobs-on-redis.md": ADR_NEW, "docs/notes/0003-run-jobs-on-postgres.md": ADR_OLD.replace("Postgres with", "Postgres (a copy) with") })) {
+      mkdirSync(dirname(join(dir, path)), { recursive: true });
+      writeFileSync(join(dir, path), text);
+    }
+    try {
+      const g = createLocal({ home: join(base, "home"), secret: "s", cwd: dir });
+      const out = await g.find("background jobs run on Postgres SKIP LOCKED", { limit: 3 });
+      const adr = out.results.find((r) => r.path === join(dir, "docs/adr/0003-run-jobs-on-postgres.md"));
+      assert.deepEqual(adr.anchor.superseded, { marker: "superseded", line: 9, reader: "adr", by: join(dir, "docs/adr/0011-run-jobs-on-redis.md") });
+      assert.ok(adr.facts.includes("marked as replaced: docs/adr/0011-run-jobs-on-redis.md"));
+      const next = out.results[out.results.indexOf(adr) + 1];
+      assert.equal(next.path, join(dir, "docs/adr/0011-run-jobs-on-redis.md"));
+      assert.equal(next.replaces, adr.ref);
+      // Not in an ADR folder, the Status section is a paragraph like any other: past the first lines, no mark.
+      const copy = out.results.find((r) => r.path === join(dir, "docs/notes/0003-run-jobs-on-postgres.md"));
+      assert.equal(copy.anchor.superseded, undefined);
+    } finally {
+      rmSync(base, { recursive: true, force: true });
+    }
+  });
+
+  it("[rl:local-search/reader-marks] a file carries the date and status its readers read, read again when it changes, and none of it is kept in the store", async () => {
+    const base = mkdtempSync(join(tmpdir(), "genter-readers-"));
+    const dir = join(base, "project");
+    const home = join(base, "home");
+    mkdirSync(join(dir, "docs/adr"), { recursive: true });
+    writeFileSync(join(dir, "docs/adr/0003-run-jobs-on-postgres.md"), ADR_OLD);
+    writeFileSync(join(dir, "docs/adr/0011-run-jobs-on-redis.md"), ADR_NEW);
+    try {
+      const g = createLocal({ home, secret: "s", cwd: dir });
+      const first = await g.find("background jobs Redis streams", { limit: 1 });
+      assert.deepEqual(first.results[0].anchor.document, { readers: ["adr"], date: "2026-09-24", status: "accepted" });
+      writeFileSync(join(dir, "docs/adr/0011-run-jobs-on-redis.md"), ADR_NEW.replace("2026-09-24", "2026-10-02").replace("Accepted", "Proposed"));
+      const again = await g.find("background jobs Redis streams", { limit: 1 });
+      assert.deepEqual(again.results[0].anchor.document, { readers: ["adr"], date: "2026-10-02", status: "proposed" });
+      const store = cipher("s:default:local").open(JSON.parse(readFileSync(join(home, "local.json"), "utf8")).blob);
+      assert.ok(Object.values(store.anchors).every((a) => !("document" in a)));
+      assert.ok(!JSON.stringify(store).includes("proposed"));
+      // A file no reader reads has no document.
+      writeFileSync(join(dir, "plain.txt"), "Background jobs and Redis streams, in plain words.\n");
+      const plain = await g.find("plain words background jobs Redis streams", { limit: 1 });
+      assert.equal(plain.results[0].anchor.document, undefined);
+    } finally {
+      rmSync(base, { recursive: true, force: true });
+    }
+  });
+
+  it("dates as documents write them, and only real days", () => {
+    assert.equal(isoDate("2026-03-03"), "2026-03-03");
+    assert.equal(isoDate("2026/3/3"), "2026-03-03");
+    assert.equal(isoDate("03.03.2026"), "2026-03-03");
+    assert.equal(isoDate("05-Jul-2021"), "2021-07-05");
+    assert.equal(isoDate("3 March 2026"), "2026-03-03");
+    assert.equal(isoDate("March 3, 2026"), "2026-03-03");
+    for (const bad of ["2026-02-30", "2026-13-01", "1969-12-31", "soon", "", "20260303"]) assert.equal(isoDate(bad), null, bad);
+  });
+});
+
+describe("genter reader", () => {
+  it("[rl:cli/reader-commands] [rl:readers/ac-reader] genter reader new makes a reader that genter reader check passes, never over one that is there; check says each problem and exits 1", () => {
+    const cwd = mkdtempSync(join(tmpdir(), "genter-reader-cli-"));
+    try {
+      assert.match(genter(["reader", "check"], cwd).stderr, /No readers\/ folder here/);
+      const made = genter(["reader", "new", "sample"], cwd);
+      assert.equal(made.status, 0, made.stderr);
+      assert.match(made.stdout, /Made readers\/sample\/: reader\.json, fixtures\/docs\/sample\/0001-first-way\.md, fixtures\/docs\/sample\/0002-second-way\.md, expected\.json/);
+      const checked = genter(["reader", "check"], cwd);
+      assert.equal(checked.status, 0, checked.stderr);
+      assert.equal(checked.stdout, "ok sample: 2 fixtures\n");
+      const again = genter(["reader", "new", "sample"], cwd);
+      assert.equal(again.status, 1);
+      assert.match(again.stderr, /readers\/sample is there already/);
+      assert.equal(genter(["reader", "new", "Bad_Name"], cwd).status, 1);
+      assert.equal(genter(["reader", "new"], cwd).status, 1);
+      // A broken manifest, and a fixture that no longer gives what expected.json says.
+      const file = join(cwd, "readers/sample/reader.json");
+      const m = JSON.parse(readFileSync(file, "utf8"));
+      writeFileSync(file, JSON.stringify({ ...m, url: "https://example.com/reader" }));
+      const bad = genter(["reader", "check", "readers/sample"], cwd);
+      assert.equal(bad.status, 1);
+      assert.match(bad.stderr, /sample: reader\.json: url: no network field/);
+      writeFileSync(file, JSON.stringify({ ...m, fields: { ...m.fields, status: [{ in: "top", pattern: "^status: (a+)+" }] } }));
+      const catastrophic = genter(["reader", "check", "readers/sample"], cwd);
+      assert.equal(catastrophic.status, 1);
+      assert.match(catastrophic.stderr, /sample: reader\.json: fields\.status\[0\]\.pattern: an unbounded repeat \+ .*, at 11/);
+      writeFileSync(file, JSON.stringify(m));
+      writeFileSync(join(cwd, "readers/sample/fixtures/docs/sample/0002-second-way.md"), "# Use the second way\n\nDate: 2026-06-02\nStatus: accepted\n");
+      const drifted = genter(["reader", "check"], cwd);
+      assert.equal(drifted.status, 1);
+      assert.match(drifted.stderr, /fixtures\/docs\/sample\/0002-second-way\.md: gives .*2026-06-02.*expected\.json says .*2026-06-01/);
+    } finally {
+      rmSync(cwd, { recursive: true, force: true });
+    }
+  });
+
+  it("[rl:readers/contract-tested] genter reader check passes on this repository's readers and rules, as CI runs it", () => {
+    const out = spawnSync(process.execPath, [bin, "reader", "check"], { cwd: root, encoding: "utf8" });
+    assert.equal(out.status, 0, out.stderr);
+    for (const name of NAMES) assert.match(out.stdout, new RegExp(`^ok ${name}: \\d+ fixtures$`, "m"));
+    assert.match(out.stdout, /^ok rules: en\.json, ru\.json$/m);
+  });
+});

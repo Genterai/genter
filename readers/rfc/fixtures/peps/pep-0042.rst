@@ -1,0 +1,12 @@
+PEP: 42
+Title: Exporting invoices as one file per month
+Author: Omar <omar@example.com>
+Status: Superseded
+Type: Standards Track
+Created: 05-Jul-2021
+Superseded-By: 57
+
+Abstract
+========
+
+Invoices are exported as one file per month.

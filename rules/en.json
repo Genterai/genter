@@ -1,0 +1,105 @@
+{
+  "lang": "en",
+  "marks": [
+    {
+      "marker": "deprecated",
+      "kind": "deprecated",
+      "pattern": "(?:\\b(?:is|was|has been|are|now)\\s{1,3}(?:now\\s)?|^[\\s>#*_\\-\\[(]{0,12}|[\\[(*]\\s{0,3})deprecated(?:[^\\w(`\\-]|$)",
+      "hits": [
+        "> **Deprecated:** replaced by [Deploy v2](deploy-v2.md)",
+        "[DEPRECATED] Old API",
+        "This page is deprecated. See https://docs.example.com/new for the current guide.",
+        "The v1 endpoint is now deprecated.",
+        "# Deprecated"
+      ],
+      "misses": [
+        "Notes on deprecated API handling",
+        "## deprecate_user()",
+        "Call `deprecated(x)` to mark it.",
+        "We deprecate a flag one minor release before we remove it."
+      ]
+    },
+    {
+      "marker": "obsolete",
+      "kind": "obsolete",
+      "pattern": "(?:\\b(?:is|was|has been|are|now)\\s{1,3}(?:now\\s)?|^[\\s>#*_\\-\\[(]{0,12}|[\\[(*]\\s{0,3})obsolete(?:[^\\w(`\\-]|$)",
+      "hits": [
+        "> **Obsolete:** see the new runbook.",
+        "This guide is obsolete.",
+        "(obsolete) Release checklist"
+      ],
+      "misses": [
+        "How we retire obsolete feature flags",
+        "Run `obsolete-check` before a release."
+      ]
+    },
+    {
+      "marker": "superseded",
+      "kind": "superseded",
+      "pattern": "\\b(?:is|was|has been|are|now)\\s{1,3}superseded\\b|^[\\s>#*_\\-\\[(]{0,12}superseded\\b|\\bsuperseded by\\b",
+      "hits": [
+        "Superseded by https://x.io/v2",
+        "> Superseded by [Release process v2](release-process-v2.md)",
+        "This decision was superseded in March.",
+        "Status: superseded by ADR-0011"
+      ],
+      "misses": [
+        "Supersedes [1. Record architecture decisions](0001-record-architecture-decisions.md)",
+        "How a superseding decision is written"
+      ]
+    },
+    {
+      "marker": "replaced by",
+      "kind": "superseded",
+      "pattern": "\\b(?:is|was|has been|are|now)\\s{1,3}(?:now\\s)?replaced by\\b|\\breplaced by\\b\\s{0,8}(?:\\[|<|https?:)",
+      "hits": [
+        "This guide has been replaced by the onboarding checklist.",
+        "Replaced by [Incident management](incident-management.md)",
+        "Replaced by https://docs.example.com/v2"
+      ],
+      "misses": [
+        "Replaced by default when the field is empty.",
+        "Parts that get replaced by hand go in the log."
+      ]
+    },
+    {
+      "marker": "moved to",
+      "kind": "moved",
+      "pattern": "\\bmoved to\\b.{0,80}(?:https?://|\\]\\()",
+      "hits": [
+        "Moved to https://new.example.com/page",
+        "This page has moved to [the handbook](handbook/index.md)."
+      ],
+      "misses": [
+        "Moved to Trash is a folder label",
+        "We moved to Postgres in 2024."
+      ]
+    },
+    {
+      "marker": "no longer maintained",
+      "kind": "unmaintained",
+      "pattern": "\\bno longer (?:maintained|supported|updated)\\b",
+      "hits": [
+        "This project is no longer maintained.",
+        "> This page is no longer updated."
+      ],
+      "misses": [
+        "Ask in #help when a page looks old."
+      ]
+    },
+    {
+      "marker": "archived",
+      "kind": "archived",
+      "pattern": "\\b(?:is|was|has been)\\s{1,3}archived\\b|^[\\s>#*_\\-\\[(]{0,12}archived\\s{0,8}[:\\]\\-–—!)]",
+      "hits": [
+        "This repository has been archived.",
+        "> **Archived:** kept for reference only.",
+        "[Archived] Q3 planning"
+      ],
+      "misses": [
+        "How archived projects are kept",
+        "Archived pages live in docs/archive."
+      ]
+    }
+  ]
+}

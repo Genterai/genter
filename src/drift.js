@@ -1,3 +1,5 @@
+import { phrases } from "./readers.js";
+
 // Anchor Drift: facts about how fresh an anchor's source is, shown next to a result. Genter states facts only (dates, a
 // "replaced" mark the source carries itself) and never says whether the source is right: comparing sources by meaning
 // is the client's agent's job. No model is called here, no connector is named: fields are found by their names.
@@ -49,20 +51,9 @@ export function sourceDates(data, { lastModified, now = Date.now() } = {}) {
   return { ...(modified && { source_at: new Date(modified).toISOString() }), ...(created && { source_created_at: new Date(created).toISOString() }) };
 }
 
-// The marks of "this is replaced", as a document puts them at its top. Each needs a notice form, so a word inside a
-// sentence about something else ("deprecated API handling", `deprecated_fn()`) is not one.
-const MARKS = [
-  ["deprecated", /(?:\b(?:is|was|has been|are|now)\s+(?:now\s+)?|^[\s>#*_\-\[(]*|[\[(*]\s*)deprecated\b(?![\w(`-])/i],
-  ["obsolete", /(?:\b(?:is|was|has been|are|now)\s+(?:now\s+)?|^[\s>#*_\-\[(]*|[\[(*]\s*)obsolete\b(?![\w(`-])/i],
-  ["superseded", /\b(?:is|was|has been|are|now)\s+superseded\b|^[\s>#*_\-\[(]*superseded\b|\bsuperseded by\b/i],
-  ["replaced by", /\b(?:is|was|has been|are|now)\s+(?:now\s+)?replaced by\b|\breplaced by\b\s*(?:\[|<|https?:)/i],
-  ["moved to", /\b(?:has|have)?\s*moved to\b(?=[^\n]{0,80}(?:https?:\/\/|\]\())/i],
-  ["no longer maintained", /\bno longer (?:maintained|supported|updated)\b/i],
-  ["archived", /\b(?:is|was|has been)\s+archived\b|^[\s>#*_\-\[(]*archived\b\s*[:\]\-–—!)]/i],
-  ["устарел", /(?:^|[\s>#*_\[(])(?:устарел\w*|устаревш\w+)(?![\wа-я-])/iu],
-  ["заменён", /(?:^|[\s>#*_\[(])(?:заменён\w*|заменен\w*|заменено|заменена)(?![\wа-я-])/iu],
-  ["перенесён", /(?:^|[\s>#*_\[(])(?:перенесён\w*|перенесен\w*)(?![\wа-я-])/iu],
-];
+// The marks of "this is replaced", as a document puts them at its top: the phrases of the language rules
+// (rules/<lang>.json, read by readers.js). Each is a notice form, so a word inside a sentence about something else
+// ("deprecated API handling", `deprecated_fn()`) is not one.
 const TEXT_KEYS = ["title", "name", "subject", "heading", "text", "content", "body", "markdown", "description", "plain_text"];
 const BOOL_MARKS = [["archived", /^(is_?)?archived$/i], ["deprecated", /^(is_?)?deprecated$/i], ["obsolete", /^(is_?)?obsolete$/i]];
 const URL_RE = /https?:\/\/[^\s)>\]"'<]+/;
@@ -91,10 +82,10 @@ export function supersededOf(data) {
   }
   for (const [line, next] of lines) {
     if (line.length > HEAD_LINE_MAX) continue;
-    for (const [marker, re] of MARKS) {
-      const m = re.exec(line);
-      if (!m) continue;
-      const rest = line.slice(m.index);
+    for (const { marker, find } of phrases()) {
+      const at = find(line);
+      if (at < 0) continue;
+      const rest = line.slice(at);
       const by = URL_RE.exec(rest)?.[0] ?? (next && next.length <= HEAD_LINE_MAX ? URL_RE.exec(next)?.[0] : undefined);
       return { marker, ...(by && { by: by.replace(/[.,;:!?]+$/, "") }) };
     }

@@ -1,0 +1,65 @@
+{
+  "vault/notes/Release process v2.md": {
+    "date": {
+      "value": "2026-10-03",
+      "line": 2
+    },
+    "status": {
+      "value": "current",
+      "line": 3
+    }
+  },
+  "vault/notes/Release process.md": {
+    "date": {
+      "value": "2026-03-01",
+      "line": 2
+    },
+    "status": {
+      "value": "superseded",
+      "line": 3
+    },
+    "marks": [
+      {
+        "kind": "superseded",
+        "line": 3,
+        "quote": "status: superseded"
+      },
+      {
+        "kind": "superseded",
+        "line": 4,
+        "quote": "superseded_by: \"[[Release process v2]]\"",
+        "name": "Release process v2"
+      }
+    ]
+  },
+  "vault/notes/billing-faq.md": {
+    "date": {
+      "value": "2026-05-05",
+      "line": 2
+    },
+    "marks": [
+      {
+        "kind": "superseded",
+        "line": 3,
+        "quote": "replaced_by: billing-faq-2026.md",
+        "by": "billing-faq-2026.md"
+      }
+    ]
+  },
+  "vault/notes/meeting-2026-06-02.md": {
+    "date": {
+      "value": "2026-06-02",
+      "line": 2
+    }
+  },
+  "vault/notes/old-dashboard.md": {
+    "marks": [
+      {
+        "kind": "archived",
+        "line": 2,
+        "quote": "archived: true"
+      }
+    ]
+  },
+  "vault/notes/scratch.md": {}
+}

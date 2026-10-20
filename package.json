@@ -35,11 +35,15 @@
   "exports": {
     ".": "./src/local.js",
     "./local": "./src/local.js",
-    "./lexical": "./src/lexical.js"
+    "./lexical": "./src/lexical.js",
+    "./readers": "./src/readers.js"
   },
   "files": [
     "bin",
     "src",
+    "readers/reader.schema.json",
+    "readers/*/reader.json",
+    "rules/*.json",
     "LICENSE",
     "README.md"
   ],

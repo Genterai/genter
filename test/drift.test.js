@@ -22,7 +22,7 @@ describe("Anchor Drift: source dates", () => {
 });
 
 describe("Anchor Drift: replaced marks", () => {
-  it("finds a mark at the top of a document, with its link", () => {
+  it("[rl:anchor-drift/top-marks] [rl:anchor-drift/mark-link] finds a mark at the top of a document, with its link", () => {
     assert.deepEqual(supersededOf({ title: "Old guide", text: "> This page is deprecated. See https://docs.example.com/new for the current guide.\n\nSteps..." }), { marker: "deprecated", by: "https://docs.example.com/new" });
     assert.deepEqual(supersededOf({ title: "[DEPRECATED] Old API", text: "x" }), { marker: "deprecated" });
     assert.equal(supersededOf({ text: "Superseded by https://x.io/v2\nbody" }).by, "https://x.io/v2");
@@ -30,10 +30,10 @@ describe("Anchor Drift: replaced marks", () => {
     assert.equal(supersededOf({ text: "Moved to https://new.example.com/page" }).marker, "moved to");
     assert.equal(supersededOf({ text: "This project is no longer maintained.\n" }).marker, "no longer maintained");
   });
-  it("an archived flag counts", () => {
+  it("[rl:anchor-drift/top-marks] an archived flag counts", () => {
     assert.deepEqual(supersededOf({ name: "repo", archived: true }), { marker: "archived" });
   });
-  it("does not fire on a word deep in a long document, in a function, or in a list", () => {
+  it("[rl:anchor-drift/top-marks] does not fire on a word deep in a long document, in a function, or in a list", () => {
     const body = `# Guide\n\nIntro line.\n\nSecond paragraph.\n\nThird.\n\nFourth.\n\n${"filler text. ".repeat(40)}\n\nThe old helper is deprecated and replaced by newHelper().`;
     assert.equal(supersededOf({ title: "Guide", text: body }), null);
     assert.equal(supersededOf({ title: "API", text: "## deprecate_user()\nRemoves a user." }), null);
@@ -48,10 +48,10 @@ describe("Anchor Drift: replaced marks", () => {
 describe("Anchor Drift: facts only on deviation", () => {
   const old = { source_at: "2019-03-10T00:00:00Z", updated_at: "2026-10-01T00:00:00Z" };
   const fresh = { source_at: "2026-09-20T00:00:00Z", updated_at: "2026-09-20T00:00:00Z" };
-  it("an old source next to fresh ones in the same answer", () => {
+  it("[rl:anchor-drift/facts-on-deviation] an old source next to fresh ones in the same answer", () => {
     assert.deepEqual(driftFacts(old, [old, fresh], { now: NOW }), ["source last changed 2019-03; another source in this answer changed within the last 30 days"]);
   });
-  it("says nothing when nothing deviates", () => {
+  it("[rl:anchor-drift/facts-on-deviation] says nothing when nothing deviates", () => {
     assert.deepEqual(driftFacts(fresh, [old, fresh], { now: NOW }), []); // fresh itself
     assert.deepEqual(driftFacts(old, [old], { now: NOW }), []); // old, but nothing around it is fresh
     assert.deepEqual(driftFacts(old, [old, { source_at: "2019-05-01T00:00:00Z" }], { now: NOW }), []); // everything is old
@@ -64,7 +64,7 @@ describe("Anchor Drift: facts only on deviation", () => {
     assert.deepEqual(driftFacts({ ...old, area_stats: { items: 16, recent: 2, days: 90 } }, [], { now: NOW }), []);
     assert.deepEqual(driftFacts({ ...old, area_stats: { items: 3, recent: 3, days: 90 } }, [], { now: NOW }), []); // too small an area
   });
-  it("a replaced mark is shown even when the date is fine", () => {
+  it("[rl:anchor-drift/facts-on-deviation] a replaced mark is shown even when the date is fine", () => {
     assert.deepEqual(driftFacts({ ...fresh, superseded: { marker: "deprecated", by: "https://x.io/new" } }, [], { now: NOW }), ["marked as replaced: https://x.io/new"]);
     assert.deepEqual(driftFacts({ superseded: { marker: "redirect", by: "https://x.io/b" } }, [], { now: NOW }), ["address now redirects to https://x.io/b"]);
   });

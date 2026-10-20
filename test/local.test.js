@@ -650,10 +650,12 @@ describe("embedding providers", () => {
 });
 
 describe("the genter command", () => {
-  // The package as installed: bin, src and package.json with no node_modules anywhere above it.
+  // The package as installed: what package.json's files ship, with no node_modules anywhere above it.
   function installed() {
     const base = mkdtempSync(join(tmpdir(), "genter-bin-"));
-    for (const part of ["bin", "src", "package.json"]) cpSync(join(root, part), join(base, "pkg", part), { recursive: true });
+    for (const part of ["bin", "src", "rules", "package.json"]) cpSync(join(root, part), join(base, "pkg", part), { recursive: true });
+    // What npm ships of readers/: the schema and each reader.json, not the fixtures.
+    cpSync(join(root, "readers"), join(base, "pkg/readers"), { recursive: true, filter: (from) => statSync(from).isDirectory() ? !from.includes("fixtures") : /reader(\.schema)?\.json$/.test(from) });
     mkdirSync(join(base, "project/docs"), { recursive: true });
     writeFileSync(join(base, "project/docs/deploy.md"), DEPLOY);
     const home = join(base, "home/.genter");

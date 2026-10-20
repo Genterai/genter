@@ -232,6 +232,11 @@ becomes a Source too.
 - Every question reads the sources again. A changed file is answered from its new text, marked *changed since the last
   look*. A deleted file is *gone* and answers nothing. A file marked `Deprecated: replaced by [v2](v2.md)` brings v2
   right after it.
+- Readers in [`readers/`](readers) read what a document says about itself: an ADR's date, status and "Superseded by",
+  a CHANGELOG's dated versions and what they deprecate or remove, a banner at the top, an RFC's status, a decision
+  log's dated headings, Obsidian front matter. They are data, never run, and anyone can add one
+  ([CONTRIBUTING.md](CONTRIBUTING.md)); the phrases that mark a page as replaced are in [`rules/`](rules), English and
+  Russian.
 - Taking a folder in calls no model: 200 files in 0.2 s. Without an embeddings key, nothing leaves your computer.
 
 ```bash
@@ -308,6 +313,7 @@ memory layers publish), run `node bench/convo/run.mjs --answer` with a key. [Res
 | `genter sources` · `genter forget <...>` | list what this project searches; stop searching one here |
 | `genter mcp [folder\|url ...]` | all of it for your agent, over stdio |
 | `genter install [tool ...]` | add Genter to the AI tools on this computer; `--undo` puts their files back |
+| `genter reader new <name>` · `genter reader check` | make a reader for a text format; check readers against their fixtures |
 
 `--semantic` ranks by meaning too (or set `GENTER_SEMANTIC=1`); `--json` prints JSON; `--limit N` sets the number of
 passages. Genter never reads hidden files, `.gitignore`d files, lockfiles, keys, or anything that holds a private key.

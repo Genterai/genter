@@ -1,0 +1,23 @@
+{
+  "$schema": "../reader.schema.json",
+  "dsl": 1,
+  "name": "banners",
+  "owner": "@Genterai",
+  "fallback": true,
+  "matches": {
+    "files": ["**/*.{md,mdx,markdown,txt,rst,adoc}"]
+  },
+  "lines": 40,
+  "fields": {
+    "marks": [
+      { "in": "top", "first": 4, "phrases": true },
+      { "kind": "deprecated", "in": "top", "first": 6, "pattern": "^<(?:div|p|aside|section|span)\\b[^>]{0,120}\\bclass=[\"'][^\"']{0,80}\\bdeprecat" },
+      { "kind": "deprecated", "in": "top", "first": 6, "pattern": "^> {0,3}\\[!(?:warning|caution|important|note)\\] {0,3}\\*{0,2}deprecated\\b" },
+      { "kind": "superseded", "in": "top", "first": 6, "pattern": "^> {0,3}\\[!(?:warning|caution|important|note)\\] {0,3}\\*{0,2}superseded\\b" },
+      { "kind": "deprecated", "in": "top", "first": 6, "pattern": "^(?:!!!|\\?\\?\\?|:::) {0,3}(?:warning|danger|caution|note|info|important|deprecated) {0,3}[\"']?deprecated\\b" },
+      { "kind": "deprecated", "in": "top", "first": 6, "pattern": "^(?:!!!|:::) {0,3}deprecated\\b" },
+      { "kind": "deprecated", "in": "top", "first": 6, "pattern": "^\\.\\. {1,3}deprecated::" },
+      { "kind": "deprecated", "in": "top", "first": 6, "pattern": "^(?:warning|caution|note|important|danger): {0,3}\\*{0,2}deprecated\\b" }
+    ]
+  }
+}

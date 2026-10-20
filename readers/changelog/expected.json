@@ -1,0 +1,102 @@
+{
+  "CHANGELOG.md": {
+    "date": {
+      "value": "2026-10-01",
+      "line": 12
+    },
+    "entries": [
+      {
+        "title": "Unreleased",
+        "line": 6
+      },
+      {
+        "title": "2.0.0",
+        "line": 12,
+        "date": {
+          "value": "2026-10-01",
+          "line": 12
+        },
+        "marks": [
+          {
+            "kind": "removed",
+            "line": 16,
+            "quote": "- The `--legacy-auth` flag; sign in with `acme login`.",
+            "name": "The `--legacy-auth` flag; sign in with `acme login`."
+          },
+          {
+            "kind": "deprecated",
+            "line": 20,
+            "quote": "- `acme sync`: use [acme pull](docs/pull.md) instead. It goes in 3.0.",
+            "name": "`acme sync`: use [acme pull](docs/pull.md) instead. It goes in 3.0.",
+            "by": "docs/pull.md"
+          }
+        ]
+      },
+      {
+        "title": "1.4.0",
+        "line": 26,
+        "date": {
+          "value": "2026-06-15",
+          "line": 26
+        }
+      },
+      {
+        "title": "1.0.0",
+        "line": 36,
+        "date": {
+          "value": "2026-01-10",
+          "line": 36
+        }
+      }
+    ]
+  },
+  "HISTORY.md": {},
+  "packages/cli/CHANGELOG.md": {
+    "date": {
+      "value": "2026-09-02",
+      "line": 3
+    },
+    "entries": [
+      {
+        "title": "0.9.0",
+        "line": 3,
+        "date": {
+          "value": "2026-09-02",
+          "line": 3
+        },
+        "marks": [
+          {
+            "kind": "deprecated",
+            "line": 8,
+            "quote": "* **Deprecated:** the `--csv` option; `--format csv` replaces it",
+            "name": "the `--csv` option; `--format csv` replaces it"
+          }
+        ]
+      },
+      {
+        "title": "0.8.1",
+        "line": 10,
+        "date": {
+          "value": "2026-08-20",
+          "line": 10
+        }
+      },
+      {
+        "title": "0.8.0",
+        "line": 16,
+        "date": {
+          "value": "2026-07-30",
+          "line": 16
+        },
+        "marks": [
+          {
+            "kind": "removed",
+            "line": 18,
+            "quote": "* **Removed:** the `acme beta` commands",
+            "name": "the `acme beta` commands"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -12,8 +12,8 @@ keys), [cloud-own-server] (no token on the person's disk), and the local MCP con
 
 ### Commands
 
-* **[no-packages]** The commands (`ask`, `add`, `remember`, `forget`, `sources`, `mcp`, `demo`, `install`) run with no
-  key and no package beside genter-cli.
+* **[no-packages]** The commands (`ask`, `add`, `remember`, `forget`, `sources`, `mcp`, `demo`, `install`, `reader`)
+  run with no key and no package beside genter-cli.
 * **[help]** No command prints the help, its last line Genter Cloud's MCP address `https://genter.ai/api/mcp`; an
   unknown command, or `ask` with no question, exits 1.
 * **[output-local]** `ask` prints each passage under `[n] place:lines · headings`, what Genter did on stderr;
@@ -21,6 +21,10 @@ keys), [cloud-own-server] (no token on the person's disk), and the local MCP con
 * **[config-private]** The config and the store are readable by their owner only (0600).
 * **[demo]** `genter demo` runs on a temp folder with no key: an answer, an edit nobody tells Genter about, the new
   answer beside the stale one a memory would give, and a replaced doc.
+* **[reader-commands]** `genter reader new <name>` makes `readers/<name>/` in the folder it runs in (a manifest, two
+  fixtures and what they give) that `genter reader check` passes as it is, and never writes over a folder that is
+  there; `genter reader check [folder ...]` lints each reader named (with none, every one in `./readers`, and
+  `./rules`) and checks it against its fixtures (readers/contract-tested), printing each problem and exiting 1 on any.
 
 ### Genter Cloud
 

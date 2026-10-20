@@ -9,7 +9,7 @@ unsupported.
 
 | Path | What |
 | -- | -- |
-| `redlines/<area>.md` | the red lines of each area: local-search, cli, install, security, driftbench |
+| `redlines/<area>.md` | the red lines of each area: local-search, cli, install, security, driftbench, readers, anchor-drift |
 | `briefs/YYYY-MM-DD-<slug>.md` | one brief per change request, written before the code |
 | `retired.txt` | removed ids; an id is never reused |
 | `config.json` | older `[spec:…]` tags still count; tests are `test/**` only (`.github/scripts` tests carry sample tags) |
@@ -33,7 +33,9 @@ A pull request that changes code an area names carries one line:
     Brief: harden/briefs/<file>.md
     Brief: none - <why no behaviour changes>
 
-## Not mapped yet
+## Outside Sources, on purpose
 
-Red lines grow with the changes. Code no area names yet, and the old spec that described it: `src/drift.js`
-(anchor-drift). The first change there writes that area's red lines from its tests.
+The readers (`readers/<name>/`) and the language rules (`rules/<lang>.json`) are data anyone may add: no area names
+them, so their pull requests need no brief. CI is their brief (`.github/workflows/readers.yml`): every manifest is
+linted and every reader checked against its fixtures (readers/contract-tested). The schema and the interpreter they
+run on are the `readers` area.

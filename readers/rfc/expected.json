@@ -1,0 +1,84 @@
+{
+  "keps/sig-billing/1234-usage-meters/kep.yaml": {
+    "date": {
+      "value": "2026-04-07",
+      "line": 7
+    },
+    "status": {
+      "value": "implementable",
+      "line": 6
+    }
+  },
+  "peps/pep-0042.rst": {
+    "date": {
+      "value": "2021-07-05",
+      "line": 6
+    },
+    "status": {
+      "value": "superseded",
+      "line": 4
+    },
+    "marks": [
+      {
+        "kind": "superseded",
+        "line": 7,
+        "quote": "Superseded-By: 57",
+        "name": "57"
+      }
+    ]
+  },
+  "rfcs/0007-config-format.md": {
+    "date": {
+      "value": "2025-11-02",
+      "line": 1
+    },
+    "status": {
+      "value": "replaced",
+      "line": 2
+    },
+    "marks": [
+      {
+        "kind": "superseded",
+        "line": 2,
+        "quote": "- Status: Replaced by [RFC-12](0012-config-format-v2.md)",
+        "name": "RFC-12",
+        "by": "0012-config-format-v2.md"
+      }
+    ]
+  },
+  "rfcs/0009-plugins.md": {
+    "date": {
+      "value": "2026-01-18",
+      "line": 1
+    },
+    "status": {
+      "value": "replaced",
+      "line": 2
+    },
+    "marks": [
+      {
+        "kind": "superseded",
+        "line": 2,
+        "quote": "- Status: Replaced by RFC-14",
+        "name": "RFC-14"
+      }
+    ]
+  },
+  "rfcs/0012-config-format-v2.md": {
+    "date": {
+      "value": "2026-05-20",
+      "line": 1
+    },
+    "status": {
+      "value": "accepted",
+      "line": 2
+    }
+  },
+  "rfcs/README.md": {},
+  "rfcs/text/0003-retries.md": {
+    "date": {
+      "value": "2025-04-01",
+      "line": 2
+    }
+  }
+}
