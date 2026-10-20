@@ -111,14 +111,16 @@ export function readmeGenter(readme) {
   return { t1_fresh: num(cells[4]), t1_stale: num(cells[5]) };
 }
 
-// The weekly run fails when genter answers anything stale after the edits, at any time, or its current share is more
-// than `points` below the README's.
+// The weekly run fails when genter answers anything stale after the edits, at any time, puts a replaced answer first on
+// a page replaced by a newer one (the deprecated kind), or its current share is more than `points` below the README's.
 export function guard(results, readme, points = 5) {
   const problems = [];
   const g = results.rows.find((r) => r.name === "genter");
   const want = readmeGenter(readme);
   const fresh = (100 * g.score.t1.fresh) / g.score.t1.n;
   if (g.score.t1.stale > 0) problems.push(`genter answered ${g.score.t1.stale} stale facts after the edits`);
+  const replaced = g.score.kinds.deprecated?.old_first;
+  if (replaced > 0) problems.push(`genter put the replaced answer first on ${replaced} questions of the deprecated kind`);
   if (fresh < want.t1_fresh - points) problems.push(`genter's current answers after the edits: ${fresh.toFixed(1)}%, the README says ${want.t1_fresh}%`);
   for (const c of results.over_time?.arms.find((a) => a.name === "genter")?.by_delay ?? []) {
     if (c.stale > 0) problems.push(`genter answered ${c.stale} stale facts ${c.minutes} minutes after their edit`);
@@ -131,10 +133,12 @@ export function fullReport(results, { method = [] } = {}) {
   const rows = armsOf(results);
   const kinds = Object.keys(rows[0].score.kinds);
   const out = [`# DriftBench, ${results.at.slice(0, 10)}`, "", `${results.questions} questions, ${results.edits} edits, top ${results.k} passages.`, "", mainTable(results), ""];
+  const oldFirst = (s) => (s.old_first == null ? "" : ` · ${s.old_first} old first`);
   out.push(`| kind (n) | ${rows.map((r) => label(r.name)).join(" | ")} |`, `| -- | ${rows.map(() => "--").join(" | ")} |`);
-  for (const k of kinds) out.push(`| ${k} (${rows[0].score.kinds[k].n}) | ${rows.map((r) => `${r.score.kinds[k].fresh} fresh · ${r.score.kinds[k].stale} stale`).join(" | ")} |`);
-  out.push("", "| arm | after, unchanged facts | model calls to take the docs in | texts embedded | median search |", "| -- | -- | -- | -- | -- |");
-  for (const r of rows) out.push(`| ${label(r.name)} | ${pct(r.score.t1_unchanged.fresh, r.score.t1_unchanged.n)} | ${r.model_calls_ingest ?? 0} | ${r.embedded ?? 0} | ${duration(median(r.ask_ms))} |`);
+  for (const k of kinds) out.push(`| ${k} (${rows[0].score.kinds[k].n}) | ${rows.map((r) => `${r.score.kinds[k].fresh} fresh · ${r.score.kinds[k].stale} stale${oldFirst(r.score.kinds[k])}`).join(" | ")} |`);
+  if (rows.some((r) => r.score.t1.old_first != null)) out.push("", "Old first: questions whose first passage after the edits is the replaced answer, marked or not.");
+  out.push("", "| arm | after, unchanged facts | after, old answer first | model calls to take the docs in | texts embedded | median search |", "| -- | -- | -- | -- | -- | -- |");
+  for (const r of rows) out.push(`| ${label(r.name)} | ${pct(r.score.t1_unchanged.fresh, r.score.t1_unchanged.n)} | ${r.score.t1.old_first == null ? "–" : `${r.score.t1.old_first} of ${r.score.t1.n}`} | ${r.model_calls_ingest ?? 0} | ${r.embedded ?? 0} | ${duration(median(r.ask_ms))} |`);
   const answered = results.rows.filter((r) => r.name.endsWith("→ answer"));
   if (answered.length) {
     out.push("", "Answers by a model from each arm's passages, judged by the same strings:", "", "| arm | before the edits | after: current answer | after: stale answer |", "| -- | -- | -- | -- |");

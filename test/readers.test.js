@@ -303,7 +303,7 @@ describe("the engine reads with the readers", () => {
   const ADR_OLD = "# 3. Run background jobs on Postgres\n\nDate: 2026-03-03\nDeciders: Priya, Omar\nTechnical story: month-end exports\n\n## Status\n\nSuperseded by [11. Run background jobs on Redis](0011-run-jobs-on-redis.md)\n\n## Decision\n\nBackground jobs run on Postgres with SKIP LOCKED.\n";
   const ADR_NEW = "# 11. Run background jobs on Redis\n\nDate: 2026-09-24\n\n## Status\n\nAccepted\n\n## Decision\n\nBackground jobs run on Redis streams.\n";
 
-  it("[rl:local-search/reader-marks] [rl:local-search/follow-replaced] an ADR marked in its Status section, past its first lines, is followed by what replaces it; the same words outside a reader's files mark nothing", async () => {
+  it("[rl:local-search/reader-marks] [rl:local-search/follow-replaced] [rl:local-search/current-first] an ADR marked in its Status section, past its first lines, comes right after what replaces it; the same words outside a reader's files mark nothing", async () => {
     const base = mkdtempSync(join(tmpdir(), "genter-readers-"));
     const dir = join(base, "project");
     for (const [path, text] of Object.entries({ "docs/adr/0003-run-jobs-on-postgres.md": ADR_OLD, "docs/adr/0011-run-jobs-on-redis.md": ADR_NEW, "docs/notes/0003-run-jobs-on-postgres.md": ADR_OLD.replace("Postgres with", "Postgres (a copy) with") })) {
@@ -315,10 +315,10 @@ describe("the engine reads with the readers", () => {
       const out = await g.find("background jobs run on Postgres SKIP LOCKED", { limit: 3 });
       const adr = out.results.find((r) => r.path === join(dir, "docs/adr/0003-run-jobs-on-postgres.md"));
       assert.deepEqual(adr.anchor.superseded, { marker: "superseded", line: 9, reader: "adr", by: join(dir, "docs/adr/0011-run-jobs-on-redis.md") });
-      assert.ok(adr.facts.includes("marked as replaced: docs/adr/0011-run-jobs-on-redis.md"));
-      const next = out.results[out.results.indexOf(adr) + 1];
-      assert.equal(next.path, join(dir, "docs/adr/0011-run-jobs-on-redis.md"));
-      assert.equal(next.replaces, adr.ref);
+      assert.ok(adr.facts.includes('docs/adr/0003-run-jobs-on-postgres.md says at line 9: "Superseded by 11. Run background jobs on Redis"'), adr.facts.join(" | "));
+      const before = out.results[out.results.indexOf(adr) - 1];
+      assert.equal(before.path, join(dir, "docs/adr/0011-run-jobs-on-redis.md"));
+      assert.equal(before.replaces, adr.ref);
       // Not in an ADR folder, the Status section is a paragraph like any other: past the first lines, no mark.
       const copy = out.results.find((r) => r.path === join(dir, "docs/notes/0003-run-jobs-on-postgres.md"));
       assert.equal(copy.anchor.superseded, undefined);
@@ -374,7 +374,7 @@ describe("the engine reads with the readers", () => {
       const out = await g.find(q, { limit: 3 });
       const adr = out.results.find((r) => r.path === join(dir, "docs/adr/0003-run-jobs-on-postgres.md"));
       assert.deepEqual(adr.anchor.superseded, { marker: "superseded", line: 9, reader: "adr", by: join(dir, "docs/adr/0011-run-jobs-on-redis.md") });
-      assert.equal(out.results[out.results.indexOf(adr) + 1].replaces, adr.ref);
+      assert.equal(out.results[out.results.indexOf(adr) - 1].replaces, adr.ref);
       const ru = await g.find("регламент выгрузок конце месяца", { limit: 1 });
       assert.equal(ru.results[0].anchor.superseded?.marker, "устарел");
       // and the store keeps what it found, so the next look starts from it.
@@ -402,7 +402,7 @@ describe("the engine reads with the readers", () => {
       const out = await g.find("sessions cached in Memcached one hour expiry", { limit: 3 });
       const adr = out.results.find((r) => r.path === join(dir, "docs/adr/0005-cache-sessions-in-memcached.md"));
       assert.deepEqual(adr.anchor.superseded, { marker: "deprecated", line: 8, reader: "adr" });
-      assert.ok(adr.facts.includes("marked as deprecated in its own text"), adr.facts.join(" | "));
+      assert.ok(adr.facts.includes('docs/adr/0005-cache-sessions-in-memcached.md says at line 8: "Deprecated"'), adr.facts.join(" | "));
       assert.ok(out.results.every((r) => r.replaces === undefined));
       // Its own link, to a file that is not there, is no replacement either.
       const queued = await g.find("exports wait in a queue until the night run", { limit: 3 });

@@ -25,10 +25,11 @@ function put(dir, path, text) {
 const GIT = "ref: refs/heads/main\n";
 const storeOf = (home, secret = "s") => cipher(`${secret}:default:local`).open(JSON.parse(readFileSync(join(home, "local.json"), "utf8")).blob);
 const NOTICE = "> **Deprecated:** replaced by [Release process v2](release-process-v2.md)";
+const NOTICE_WORDS = "Deprecated: replaced by Release process v2"; // the notice as a mark quotes it: its words, without Markdown's signs
 const RUNBOOK = `${NOTICE}\n\n# Release process\n\n## Friday\n\nDeploys go out on Fridays from the release branch.\n`;
 const V2 = "# Release process v2\n\nDate: 2026-10-03\n\n## Friday\n\nNo deploys on Fridays since October 3: deploy on Thursday.\n";
 const ACME = { "acme/.git/HEAD": GIT, "acme/docs/runbook.md": RUNBOOK, "acme/docs/release-process-v2.md": V2, "acme/docs/oncall.md": "# On-call\n\nPage the on-call engineer in #oncall.\n" };
-// The day a document was written, as its file's date (a fresh clone's dates are another step's).
+// The day a document was written, as its file's date (a project of three files is no fresh clone: its file dates count).
 const dated = (path, iso) => utimesSync(path, new Date(iso), new Date(iso));
 
 const call = async (local, name, args) => (await handle(local, { jsonrpc: "2.0", id: 1, method: "tools/call", params: { name, arguments: args } })).result;
@@ -77,11 +78,13 @@ describe("the MCP contract: two tools", () => {
       assert.equal(report.ok, true, JSON.stringify(report.checks.filter((c) => !c.ok), null, 2));
       assert.ok(report.checks.length >= 12, "every check ran");
       assert.ok(report.checks.some((c) => c.name === "the place a mark names reads by its id"), "a mark's id was read");
-      // The runbook names v2 by its number, on v2's day, quoting its own notice.
+      // v2 comes first, and the runbook after it names v2 by its number, on v2's day, quoting its own notice.
       const found = text((await acme.send({ jsonrpc: "2.0", id: "s", method: "tools/call", params: { name: "search", arguments: { query: "can we deploy on Friday?" } } })).result);
-      const runbook = places(found).find((p) => p.lines[0].includes("docs/runbook.md"));
-      const v2 = places(found).find((p) => p.lines[0].includes("docs/release-process-v2.md"));
-      assert.deepEqual(runbook.marks, [`  ⚠ superseded by [${v2.id}] on 2026-10-03: “${NOTICE}”`]);
+      const got = places(found);
+      const runbook = got.find((p) => p.lines[0].includes("docs/runbook.md"));
+      const v2 = got.find((p) => p.lines[0].includes("docs/release-process-v2.md"));
+      assert.deepEqual(runbook.marks, [`  ⚠ superseded by [${v2.id}] on 2026-10-03: “${NOTICE_WORDS}”`]);
+      assert.equal(got.indexOf(v2) + 1, got.indexOf(runbook));
 
       // Another project's server: the same numbers are no places of its own.
       other = server(box.base, box.at("other"));
@@ -279,10 +282,11 @@ describe("the MCP contract: what search and read say", () => {
           "Read any of them whole with the read tool and their ids, several in one call.",
         ].join("\n"),
       );
-      // The place that replaces another says so; nothing found is a sentence, no place.
+      // The place that replaces another comes first and says so; nothing found is a sentence, no place.
       const found = await g.find("Jenkins Fridays release branch", { limit: 1 });
-      const follow = text(await call(g, "search", { query: "Jenkins Fridays release branch", limit: 1 }));
-      assert.match(follow, new RegExp(`^\\[${found.results[1].id}\\] Release process v2 › Friday\\n {2}docs/release-process-v2\\.md:5-7 · file · updated 2026-10-03 · replaces \\[${found.results[0].id}\\]$`, "m"));
+      const first = text(await call(g, "search", { query: "Jenkins Fridays release branch", limit: 1 }));
+      assert.match(first, new RegExp(`^\\[${found.results[0].id}\\] Release process v2 › Friday\\n {2}docs/release-process-v2\\.md:5-7 · file · updated 2026-10-03 · replaces \\[${found.results[1].id}\\]$`, "m"));
+      assert.ok(first.indexOf(`[${found.results[0].id}] Release process v2`) < first.indexOf(`[${found.results[1].id}] Release process › Friday`));
       const none = text(await call(g, "search", { query: "zebra quokka" }));
       assert.match(none, /^Nothing in this project's 3 places matches "zebra quokka"\. Ask in other words/);
       assert.equal(places(none).length, 0);
@@ -292,25 +296,54 @@ describe("the MCP contract: what search and read say", () => {
     }
   });
 
-  it("[rl:contract/marks] [rl:local-search/no-text-stored] superseded by [id] on its day when the project reads what replaces it, marked as replaced at its top when not; the notice quoted as it reads now, never stored", async () => {
+  it("[rl:contract/marks] [rl:local-search/no-text-stored] [rl:anchor-drift/quote-not-verdict] superseded by [id] on its day when the project reads what replaces it, marked as replaced at its top when not; the notice quoted in its words as it reads now, never stored", async () => {
     const box = folders({ ...ACME, "elsewhere/.git/HEAD": GIT, "elsewhere/new-runbook.md": "# New runbook\n\nDeploy on Wednesdays.\n", "acme/docs/old.md": "# Old API\n\nThis page is deprecated.\n\nThe old API took XML.\n" });
     dated(box.at("acme/docs/release-process-v2.md"), "2026-10-03T12:00:00Z");
     try {
       const g = createLocal({ home: box.home, secret: "s", cwd: box.at("acme") });
       const markOf = async (query, file) => places(text(await call(g, "search", { query, limit: 1 }))).find((p) => p.meta.includes(file))?.marks;
       const v2 = (await g.find("deploy on Thursday")).results.find((r) => r.path.endsWith("release-process-v2.md")).id;
-      assert.deepEqual(await markOf("Fridays release branch", "docs/runbook.md"), [`  ⚠ superseded by [${v2}] on 2026-10-03: “${NOTICE}”`]);
+      assert.deepEqual(await markOf("Fridays release branch", "docs/runbook.md"), [`  ⚠ superseded by [${v2}] on 2026-10-03: “${NOTICE_WORDS}”`]);
       assert.deepEqual(await markOf("old API XML", "docs/old.md"), ["  ⚠ marked as deprecated at its top: “This page is deprecated.”"]);
       // The notice edited: quoted as it reads now. What replaces it is another project's place, which has a number there
       // but is no place of this project: no number, its place instead.
       assert.ok((await createLocal({ home: box.home, secret: "s", cwd: box.at("elsewhere") }).find("Wednesdays")).results[0].id);
       put(box.base, "acme/docs/runbook.md", RUNBOOK.replace(NOTICE, "> Superseded by [the new runbook](../../elsewhere/new-runbook.md)"));
-      assert.deepEqual(await markOf("Fridays release branch", "docs/runbook.md"), [`  ⚠ marked as replaced by ${box.at("elsewhere/new-runbook.md")} at its top: “> Superseded by [the new runbook](../../elsewhere/new-runbook.md)”`]);
+      assert.deepEqual(await markOf("Fridays release branch", "docs/runbook.md"), [`  ⚠ marked as replaced by ${box.at("elsewhere/new-runbook.md")} at its top: “Superseded by the new runbook”`]);
       // read gives the same marks, and no notice is kept in the store.
       const runbook = (await g.find("Fridays release branch")).results.find((r) => r.path.endsWith("runbook.md")).id;
-      assert.match(text(await call(g, "read", { ids: [runbook] })), /^ {2}⚠ marked as replaced by \S+\/elsewhere\/new-runbook\.md at its top: “> Superseded by/m);
+      assert.match(text(await call(g, "read", { ids: [runbook] })), /^ {2}⚠ marked as replaced by \S+\/elsewhere\/new-runbook\.md at its top: “Superseded by the new runbook”$/m);
       const stored = JSON.stringify(storeOf(box.home));
       for (const line of ["Superseded by [the new runbook]", "replaced by [Release process v2]", "This page is deprecated", "release branch"]) assert.ok(!stored.includes(line), line);
+    } finally {
+      box.done();
+    }
+  });
+
+  it("[rl:contract/marks] [rl:contract/search-shape] [rl:local-search/document-dates] a fresh clone: the date a document gives, file dates unknown, and a mark that names no day it does not know", async () => {
+    // Six files written at once: a fresh clone. v2 gives no date of its own; the ADR gives one.
+    const box = folders({
+      ...ACME,
+      "acme/docs/adr/0005-cache-sessions.md": "# 5. Cache sessions in Memcached\n\nDate: 2026-02-01\n\nContext line.\n\n## Status\n\nDeprecated\n\n## Decision\n\nSessions are cached in Memcached for an hour.\n",
+      "acme/docs/adr/0011-run-jobs-on-redis.md": "# 11. Run background jobs on Redis\n\nDate: 2026-09-24\n\n## Status\n\nAccepted\n\n## Decision\n\nBackground jobs run on Redis streams.\n",
+      "acme/docs/freeze.md": "# Freeze\n\nNo deploys during the December freeze.\n",
+    });
+    try {
+      const g = createLocal({ home: box.home, secret: "s", cwd: box.at("acme") });
+      const report = await conformance((req) => handle(g, req, { version: "test" }), { query: "can we deploy on Friday?" });
+      assert.equal(report.ok, true, JSON.stringify(report.checks.filter((c) => !c.ok), null, 2));
+      const found = places(text(await call(g, "search", { query: "Jenkins Fridays release branch", limit: 1 })));
+      const [v2, runbook] = found;
+      assert.match(v2.meta, new RegExp(`^ {2}docs/release-process-v2\\.md:5-7 · file · file dates unknown \\(fresh clone\\) · replaces \\[${runbook.id}\\]$`));
+      // What replaces it has no day known: no "superseded by [id] on <day>", what the runbook says at its top instead.
+      assert.deepEqual(runbook.marks, [`  ⚠ marked as replaced by docs/release-process-v2.md at its top: “${NOTICE_WORDS}”`]);
+      for (const m of runbook.marks) assert.equal(markProblem(m), "");
+      // A reader's mark past the top says the line it is on; a decision's date is its document's.
+      const adr = places(text(await call(g, "search", { query: "sessions cached in Memcached", limit: 1 })))[0];
+      assert.match(adr.meta, /^ {2}docs\/adr\/0005-cache-sessions\.md:\S+ · file · dated 2026-02-01 · file dates unknown \(fresh clone\)$/);
+      assert.deepEqual(adr.marks, ["  ⚠ marked as deprecated at line 9: “Deprecated”"]);
+      const read = text(await call(g, "read", { ids: [adr.id] }));
+      assert.match(read, new RegExp(`^\\[${adr.id}\\] 5\\. Cache sessions in Memcached · read now\\n {2}docs/adr/0005-cache-sessions\\.md · file · dated 2026-02-01 · file dates unknown \\(fresh clone\\)\\n {2}⚠ marked as deprecated at line 9: “Deprecated”\\n\\n# 5\\.`));
     } finally {
       box.done();
     }
