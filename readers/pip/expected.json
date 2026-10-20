@@ -1,0 +1,28 @@
+{
+  "pip/pip-300.md": {},
+  "pip/pip-40.md": {
+    "status": {
+      "value": "replaced",
+      "line": 3
+    },
+    "marks": [
+      {
+        "kind": "superseded",
+        "line": 3,
+        "quote": "* **Status**: Replaced by PIP-52",
+        "name": "PIP-52",
+        "place": "pip-52.md"
+      }
+    ]
+  },
+  "pip/pip-52.md": {
+    "date": {
+      "value": "2025-04-11",
+      "line": 5
+    },
+    "status": {
+      "value": "accepted",
+      "line": 3
+    }
+  }
+}

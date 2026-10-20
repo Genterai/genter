@@ -1,0 +1,580 @@
+{
+  "picked_on": "2026-10-20",
+  "stars_on": "2026-10-20",
+  "repos": [
+    {
+      "repo": "OAI/OpenAPI-Specification",
+      "group": "archives",
+      "stars": 31266,
+      "commit": "4f86429f134f7e48b6351563549b4502fc69de52",
+      "committed": "2026-10-18T18:34:56+01:00"
+    },
+    {
+      "repo": "modelcontextprotocol/modelcontextprotocol",
+      "group": "archives",
+      "stars": 9489,
+      "commit": "80041ab0a139a8f4fb3adbc99f7ae9113ea59671",
+      "committed": "2026-10-20T21:01:55+01:00"
+    },
+    {
+      "repo": "WebAssembly/WASI",
+      "group": "archives",
+      "stars": 5825,
+      "commit": "463701e0f6c575a5d24ae31c2ec1e0ebf09d28e1",
+      "committed": "2026-10-13T13:34:38+00:00"
+    },
+    {
+      "repo": "gpuweb/gpuweb",
+      "group": "archives",
+      "stars": 5511,
+      "commit": "3c1276a4a148a0a3c790112b5a4d37b9f20f0acd",
+      "committed": "2026-10-16T09:45:32-07:00"
+    },
+    {
+      "repo": "WICG/webcomponents",
+      "group": "archives",
+      "stars": 4492,
+      "commit": "21c29a63477a17b789025cf91cfbd9acfcfbcb4f",
+      "committed": "2025-12-09T10:39:35-08:00"
+    },
+    {
+      "repo": "open-telemetry/opentelemetry-specification",
+      "group": "archives",
+      "stars": 4368,
+      "commit": "e30cae5ce80e7bf9a8f051f20018b764d4bac029",
+      "committed": "2026-10-20T18:46:32+00:00"
+    },
+    {
+      "repo": "astrid-runtime/rfcs",
+      "group": "archives",
+      "stars": 4246,
+      "commit": "aacbdac5315b0ebbd28173a0436db9a6677c90ef",
+      "committed": "2026-07-13T04:21:10+04:00"
+    },
+    {
+      "repo": "react-native-community/discussions-and-proposals",
+      "group": "archives",
+      "stars": 1823,
+      "commit": "0d9bc4ec21e4e7ff835469adf03a5aba44a21e71",
+      "committed": "2026-09-17T16:51:19+01:00"
+    },
+    {
+      "repo": "satoshilabs/slips",
+      "group": "archives",
+      "stars": 1695,
+      "commit": "570ed55b7fde158f1116be34fc2faa35dada5912",
+      "committed": "2026-09-01T13:56:49+02:00"
+    },
+    {
+      "repo": "aip-dev/google.aip.dev",
+      "group": "archives",
+      "stars": 1667,
+      "commit": "2ccc61a4e09882bdd63aea1a42dceebc37bf3bd5",
+      "committed": "2026-10-15T22:32:30+00:00"
+    },
+    {
+      "repo": "MicrosoftEdge/MSEdgeExplainers",
+      "group": "archives",
+      "stars": 1450,
+      "commit": "319169747132da553b62a435aef68a06c9aef172",
+      "committed": "2026-10-15T16:24:35-07:00"
+    },
+    {
+      "repo": "ipfs/specs",
+      "group": "archives",
+      "stars": 1243,
+      "commit": "3000be69497e47c399cdb719440d0809f085388b",
+      "committed": "2026-09-17T14:43:22+02:00"
+    },
+    {
+      "repo": "cosmos/ibc",
+      "group": "archives",
+      "stars": 1022,
+      "commit": "b750a2c4ede07c38fb4ca1608fcd08a08d9e94ed",
+      "committed": "2026-10-20T15:18:46+00:00"
+    },
+    {
+      "repo": "ewasm/design",
+      "group": "archives",
+      "stars": 1020,
+      "commit": "8ecee83f9ac58aa5f81b01498bc729789535bc29",
+      "committed": "2020-01-23T17:55:21+00:00"
+    },
+    {
+      "repo": "microsoft/PowerToys",
+      "group": "in-tree",
+      "stars": 139506,
+      "commit": "3d6827a53a579ba9bedcf8d4bbda21348d78cbdb",
+      "committed": "2026-10-21T01:08:56+08:00"
+    },
+    {
+      "repo": "swiftlang/swift",
+      "group": "in-tree",
+      "stars": 70512,
+      "commit": "f2f10454946c63da4164e182ea7f2a9895e430ce",
+      "committed": "2026-10-20T13:23:24-07:00"
+    },
+    {
+      "repo": "remix-run/react-router",
+      "group": "in-tree",
+      "stars": 56611,
+      "commit": "8aebb9e1da774903428d563189506a6f40748dcb",
+      "committed": "2026-10-20T16:58:29+02:00"
+    },
+    {
+      "repo": "pandas-dev/pandas",
+      "group": "in-tree",
+      "stars": 50240,
+      "commit": "0e884f0f4669a9b4125198667e960ff662ecd820",
+      "committed": "2026-10-20T12:04:03-07:00"
+    },
+    {
+      "repo": "milvus-io/milvus",
+      "group": "in-tree",
+      "stars": 46447,
+      "commit": "a880185ca97fe148bc9623494ebda91bb532a622",
+      "committed": "2026-10-21T01:51:51+08:00"
+    },
+    {
+      "repo": "jax-ml/jax",
+      "group": "in-tree",
+      "stars": 36474,
+      "commit": "ed610452b9fee007b49512b5aa2b1dd6357c59cd",
+      "committed": "2026-10-20T13:05:39-07:00"
+    },
+    {
+      "repo": "remix-run/remix",
+      "group": "in-tree",
+      "stars": 33424,
+      "commit": "af3ea2c51bb64aa93b49d0425e74ca9171b9aa6d",
+      "committed": "2026-10-20T14:19:40-05:00"
+    },
+    {
+      "repo": "hasura/graphql-engine",
+      "group": "in-tree",
+      "stars": 32129,
+      "commit": "78e1521da841a76de361190103ba5f8892fdb4b4",
+      "committed": "2026-10-20T20:08:38+00:00"
+    },
+    {
+      "repo": "microsoft/semantic-kernel",
+      "group": "in-tree",
+      "stars": 28679,
+      "commit": "7a92cd4e7c2712370b8d85b687a474b2e858cdcc",
+      "committed": "2026-10-16T10:11:12+00:00"
+    },
+    {
+      "repo": "microsoft/winget-cli",
+      "group": "in-tree",
+      "stars": 26512,
+      "commit": "3d9083c062c1e7a7086e05becb414d4e005e4ab6",
+      "committed": "2026-10-08T16:40:11-07:00"
+    },
+    {
+      "repo": "a2aproject/A2A",
+      "group": "in-tree",
+      "stars": 26226,
+      "commit": "98279d62316361ba8451eaef300f72b72e169185",
+      "committed": "2026-10-20T13:28:30-04:00"
+    },
+    {
+      "repo": "matplotlib/matplotlib",
+      "group": "in-tree",
+      "stars": 23383,
+      "commit": "bad0adf36e8d3a263b3f112ef3be34f6ee8095ca",
+      "committed": "2026-10-20T13:54:36-04:00"
+    },
+    {
+      "repo": "neondatabase/neon",
+      "group": "in-tree",
+      "stars": 23231,
+      "commit": "fa504217c61bbcaf5c512d75830564541f917f8f",
+      "committed": "2026-08-31T08:03:13-03:00"
+    },
+    {
+      "repo": "dotnet/runtime",
+      "group": "in-tree",
+      "stars": 18373,
+      "commit": "299ea1675c9148a82703249ff57cea2017cc30c8",
+      "committed": "2026-10-20T20:36:22+00:00"
+    },
+    {
+      "repo": "aws/aws-cdk",
+      "group": "in-tree",
+      "stars": 12945,
+      "commit": "1576e0ed3674a92fc9c691aa2c69d4fe35fabda8",
+      "committed": "2026-10-20T17:55:43+00:00"
+    },
+    {
+      "repo": "datahub-project/datahub",
+      "group": "in-tree",
+      "stars": 12867,
+      "commit": "f54fb65f03d1661127e461052579ba11d7575fb4",
+      "committed": "2026-10-21T02:10:11+05:30"
+    },
+    {
+      "repo": "openclaw/openclaw",
+      "group": "changelogs",
+      "stars": 392672,
+      "commit": "f91bca9546f5a5cc59a801efe3592d6910a58d80",
+      "committed": "2026-10-20T13:41:26-07:00"
+    },
+    {
+      "repo": "mattpocock/skills",
+      "group": "changelogs",
+      "stars": 298516,
+      "commit": "5beb35b040e3de97e54fa9e386d7e42d15c295c2",
+      "committed": "2026-10-19T16:51:40+01:00"
+    },
+    {
+      "repo": "deepseek-ai/deepseek-harness",
+      "group": "changelogs",
+      "stars": 255712,
+      "commit": "687f282e8625c6b8d11ff58211a90524be2e4317",
+      "committed": "2026-10-17T15:22:43+08:00"
+    },
+    {
+      "repo": "torvalds/linux",
+      "group": "changelogs",
+      "stars": 252883,
+      "commit": "f47d223627f80cb7a1eb14c585fe6cb35de5e984",
+      "committed": "2026-10-19T21:03:21-10:00"
+    },
+    {
+      "repo": "react/react",
+      "group": "changelogs",
+      "stars": 251565,
+      "commit": "ab0d927f53f6e1b5dcfc2c4e9fc438bdb5ffb678",
+      "committed": "2026-10-20T18:46:10+02:00"
+    },
+    {
+      "repo": "vuejs/vue",
+      "group": "changelogs",
+      "stars": 212661,
+      "commit": "9e88707940088cb1f4cd7dd210c9168a50dc347c",
+      "committed": "2024-10-10T09:24:14+02:00"
+    },
+    {
+      "repo": "n8n-io/n8n",
+      "group": "changelogs",
+      "stars": 208144,
+      "commit": "bfbc56fe5bde1061fbef4db3d30cac27806b8c91",
+      "committed": "2026-10-20T18:18:00+00:00"
+    },
+    {
+      "repo": "tensorflow/tensorflow",
+      "group": "changelogs",
+      "stars": 201160,
+      "commit": "6e0220b5941493400d003afc4063e1cbc15fff84",
+      "committed": "2026-10-20T13:21:58-07:00"
+    },
+    {
+      "repo": "yt-dlp/yt-dlp",
+      "group": "changelogs",
+      "stars": 199690,
+      "commit": "897341241f2bfb2439fe0367f4c7c9ccd29a3828",
+      "committed": "2026-10-10T23:15:52+02:00"
+    },
+    {
+      "repo": "microsoft/vscode",
+      "group": "changelogs",
+      "stars": 194149,
+      "commit": "74c426eb91f4a70a94b8e4a3821dc8d5cd1ca16f",
+      "committed": "2026-10-20T20:23:38+00:00"
+    },
+    {
+      "repo": "firecrawl/firecrawl",
+      "group": "changelogs",
+      "stars": 193423,
+      "commit": "76b657088c584963c91b981e36e87ed202b40a68",
+      "committed": "2026-10-20T13:37:11-07:00"
+    },
+    {
+      "repo": "flutter/flutter",
+      "group": "changelogs",
+      "stars": 180310,
+      "commit": "0af64498599b521808672159e460f9db1b30aa84",
+      "committed": "2026-10-20T18:44:08+00:00"
+    },
+    {
+      "repo": "AUTOMATIC1111/stable-diffusion-webui",
+      "group": "changelogs",
+      "stars": 165076,
+      "commit": "82a973c04367123ae98bd9abdf80d9eda9b910e2",
+      "committed": "2024-07-27T15:49:39+03:00"
+    },
+    {
+      "repo": "open-webui/open-webui",
+      "group": "changelogs",
+      "stars": 156285,
+      "commit": "91ea4e3421d1d8069f13d4a463fcb5986d94ea60",
+      "committed": "2026-10-16T06:46:08-05:00"
+    },
+    {
+      "repo": "anthropics/claude-code",
+      "group": "changelogs",
+      "stars": 152638,
+      "commit": "5a2676e1079cd6222a6afe85bb5fc8fab2aaece3",
+      "committed": "2026-10-20T20:02:42+00:00"
+    },
+    {
+      "repo": "langchain-ai/langchain",
+      "group": "changelogs",
+      "stars": 148144,
+      "commit": "e6d83ef6a6e2482cd55691023c51e45d7584a94f",
+      "committed": "2026-10-20T15:51:22+00:00"
+    }
+  ],
+  "skipped": [
+    {
+      "repo": "graphql/graphql-spec",
+      "group": "archives",
+      "why": "no GraphQL RFCs (^rfcs/.+\\.md$)"
+    },
+    {
+      "repo": "godotengine/godot-proposals",
+      "group": "archives",
+      "why": "no Godot improvement proposals (^proposals/.+\\.md$)"
+    },
+    {
+      "repo": "deepset-ai/haystack",
+      "group": "in-tree",
+      "why": "no proposals (^proposals/text/\\d{4}-.+\\.md$)"
+    },
+    {
+      "repo": "codecrafters-io/build-your-own-x",
+      "group": "changelogs",
+      "why": "no changelog that says deprecat"
+    },
+    {
+      "repo": "sindresorhus/awesome",
+      "group": "changelogs",
+      "why": "no changelog that says deprecat"
+    },
+    {
+      "repo": "public-apis/public-apis",
+      "group": "changelogs",
+      "why": "no changelog that says deprecat"
+    },
+    {
+      "repo": "freeCodeCamp/freeCodeCamp",
+      "group": "changelogs",
+      "why": "no changelog that says deprecat"
+    },
+    {
+      "repo": "EbookFoundation/free-programming-books",
+      "group": "changelogs",
+      "why": "no changelog that says deprecat"
+    },
+    {
+      "repo": "donnemartin/system-design-primer",
+      "group": "changelogs",
+      "why": "no changelog that says deprecat"
+    },
+    {
+      "repo": "nilbuild/developer-roadmap",
+      "group": "changelogs",
+      "why": "no changelog that says deprecat"
+    },
+    {
+      "repo": "jwasham/coding-interview-university",
+      "group": "changelogs",
+      "why": "no changelog that says deprecat"
+    },
+    {
+      "repo": "morluto/rea",
+      "group": "changelogs",
+      "why": "no changelog that says deprecat"
+    },
+    {
+      "repo": "vinta/awesome-python",
+      "group": "changelogs",
+      "why": "no changelog that says deprecat"
+    },
+    {
+      "repo": "awesome-selfhosted/awesome-selfhosted",
+      "group": "changelogs",
+      "why": "no changelog that says deprecat"
+    },
+    {
+      "repo": "obra/superpowers",
+      "group": "changelogs",
+      "why": "no changelog that says deprecat"
+    },
+    {
+      "repo": "practical-tutorials/project-based-learning",
+      "group": "changelogs",
+      "why": "no changelog that says deprecat"
+    },
+    {
+      "repo": "affaan-m/ECC",
+      "group": "changelogs",
+      "why": "no changelog that says deprecat"
+    },
+    {
+      "repo": "996icu/996.ICU",
+      "group": "changelogs",
+      "why": "no changelog that says deprecat"
+    },
+    {
+      "repo": "NousResearch/hermes-agent",
+      "group": "changelogs",
+      "why": "no changelog that says deprecat"
+    },
+    {
+      "repo": "trimstray/the-book-of-secret-knowledge",
+      "group": "changelogs",
+      "why": "no changelog that says deprecat"
+    },
+    {
+      "repo": "TheAlgorithms/Python",
+      "group": "changelogs",
+      "why": "no changelog that says deprecat"
+    },
+    {
+      "repo": "multica-ai/andrej-karpathy-skills",
+      "group": "changelogs",
+      "why": "no changelog that says deprecat"
+    },
+    {
+      "repo": "anomalyco/opencode",
+      "group": "changelogs",
+      "why": "no changelog that says deprecat"
+    },
+    {
+      "repo": "ossu/computer-science",
+      "group": "changelogs",
+      "why": "no changelog that says deprecat"
+    },
+    {
+      "repo": "DigitalPlatDev/FreeDomain",
+      "group": "changelogs",
+      "why": "no changelog that says deprecat"
+    },
+    {
+      "repo": "trekhleb/javascript-algorithms",
+      "group": "changelogs",
+      "why": "no changelog that says deprecat"
+    },
+    {
+      "repo": "massgravel/Microsoft-Activation-Scripts",
+      "group": "changelogs",
+      "why": "no changelog that says deprecat"
+    },
+    {
+      "repo": "ultraworkers/claw-code",
+      "group": "changelogs",
+      "why": "no changelog that says deprecat"
+    },
+    {
+      "repo": "microsoft/markitdown",
+      "group": "changelogs",
+      "why": "no changelog that says deprecat"
+    },
+    {
+      "repo": "ohmyzsh/ohmyzsh",
+      "group": "changelogs",
+      "why": "no changelog that says deprecat"
+    },
+    {
+      "repo": "avelino/awesome-go",
+      "group": "changelogs",
+      "why": "no changelog that says deprecat"
+    },
+    {
+      "repo": "Significant-Gravitas/AutoGPT",
+      "group": "changelogs",
+      "why": "no changelog that says deprecat"
+    },
+    {
+      "repo": "jackfrued/Python-100-Days",
+      "group": "changelogs",
+      "why": "no changelog that says deprecat"
+    },
+    {
+      "repo": "CyC2018/CS-Notes",
+      "group": "changelogs",
+      "why": "no changelog that says deprecat"
+    },
+    {
+      "repo": "getify/You-Dont-Know-JS",
+      "group": "changelogs",
+      "why": "no changelog that says deprecat"
+    },
+    {
+      "repo": "ollama/ollama",
+      "group": "changelogs",
+      "why": "no changelog that says deprecat"
+    },
+    {
+      "repo": "521xueweihan/HelloGitHub",
+      "group": "changelogs",
+      "why": "no changelog that says deprecat"
+    },
+    {
+      "repo": "anthropics/skills",
+      "group": "changelogs",
+      "why": "no changelog that says deprecat"
+    },
+    {
+      "repo": "github/gitignore",
+      "group": "changelogs",
+      "why": "no changelog that says deprecat"
+    },
+    {
+      "repo": "twbs/bootstrap",
+      "group": "changelogs",
+      "why": "no changelog that says deprecat"
+    },
+    {
+      "repo": "f/prompts.chat",
+      "group": "changelogs",
+      "why": "no changelog that says deprecat"
+    },
+    {
+      "repo": "DietrichGebert/ponytail",
+      "group": "changelogs",
+      "why": "no changelog that says deprecat"
+    },
+    {
+      "repo": "huggingface/transformers",
+      "group": "changelogs",
+      "why": "no changelog that says deprecat"
+    },
+    {
+      "repo": "jlevy/the-art-of-command-line",
+      "group": "changelogs",
+      "why": "no changelog that says deprecat"
+    },
+    {
+      "repo": "msitarzewski/agency-agents",
+      "group": "changelogs",
+      "why": "no changelog that says deprecat"
+    },
+    {
+      "repo": "Snailclimb/JavaGuide",
+      "group": "changelogs",
+      "why": "no changelog that says deprecat"
+    },
+    {
+      "repo": "langgenius/dify",
+      "group": "changelogs",
+      "why": "no changelog that says deprecat"
+    },
+    {
+      "repo": "langflow-ai/langflow",
+      "group": "changelogs",
+      "why": "no changelog that says deprecat"
+    },
+    {
+      "repo": "clash-verge-rev/clash-verge-rev",
+      "group": "changelogs",
+      "why": "no changelog that says deprecat"
+    },
+    {
+      "repo": "Genymobile/scrcpy",
+      "group": "changelogs",
+      "why": "no changelog that says deprecat"
+    }
+  ]
+}

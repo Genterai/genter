@@ -11,6 +11,7 @@
     "name": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{1,39}$", "description": "The name of the reader's folder in readers/." },
     "owner": { "type": "string", "pattern": "^@[A-Za-z0-9][A-Za-z0-9-]{0,38}$", "description": "The GitHub handle of the person or organization that keeps it." },
     "fallback": { "type": "boolean", "description": "true for a reader of any document of a kind (banners, front matter): format readers are asked first." },
+    "records": { "type": "boolean", "description": "true for a reader of decision records (ADRs, RFCs, PEPs, proposals): every document it reads a date, a status or a mark in, or each of its entries for a decision log, is a decision (the decisions page lists it, bench/repos counts it). Not with fallback." },
     "matches": { "$ref": "#/$defs/matches" },
     "lines": { "type": "integer", "minimum": 1, "maximum": 400, "description": "How many lines of a document it reads, from the first (60 when not given)." },
     "fields": { "$ref": "#/$defs/fields" },
@@ -69,8 +70,16 @@
         "pattern": { "$ref": "#/$defs/pattern" },
         "phrases": { "const": true, "description": "Mark a short line with the phrases of the language rules (rules/<lang>.json) instead of a pattern." },
         "by": { "$ref": "#/$defs/group" },
-        "name": { "$ref": "#/$defs/group" }
+        "name": { "$ref": "#/$defs/group" },
+        "id": { "$ref": "#/$defs/group", "description": "The group that holds the id of what replaces the document (470 in 'Superseded-By: 470'), with `place`: letters, digits and -, at most 32." },
+        "place": { "$ref": "#/$defs/place" }
       }
+    },
+    "place": {
+      "type": "string",
+      "minLength": 4,
+      "maxLength": 120,
+      "description": "Where the document an id names is, from the marked document's folder: a file's name, after folders ('..' first, at most 3); {id} is the id as written, {id:0N} the id as a number N digits wide (zero first), and * in the file's name any characters. 'pep-{id:04}.*' with 470 is pep-0470.*. The engine takes the one file of the project there that it reads, never an address or a hidden or secret-looking file, else none."
     },
     "fields": {
       "type": "object",
@@ -78,7 +87,7 @@
       "properties": {
         "date": { "type": "array", "minItems": 1, "maxItems": 16, "items": { "$ref": "#/$defs/rule" }, "description": "The first rule that finds a date (its group `value`, 1 when not given) gives it." },
         "status": { "type": "array", "minItems": 1, "maxItems": 16, "items": { "$ref": "#/$defs/rule" }, "description": "The first rule that finds a status word gives it." },
-        "marks": { "type": "array", "minItems": 1, "maxItems": 16, "items": { "$ref": "#/$defs/mark" }, "description": "Each line it marks, with the replacing place from the group `by` (else a link beside the match) and its name from `name`." }
+        "marks": { "type": "array", "minItems": 1, "maxItems": 16, "items": { "$ref": "#/$defs/mark" }, "description": "Each line it marks, with the replacing place from the group `by` (else a link beside the match), its name from `name`, and, from the group `id`, the place `place` makes of it." }
       }
     },
     "heading": {

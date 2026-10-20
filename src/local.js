@@ -5,7 +5,7 @@ import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "nod
 import { classifyFailure, contentHash, MARKDOWN_FILE as MARKDOWN, pieces as cut, recipeId, splitMarkdown } from "./anchor.js";
 import { cloneWindow, driftFacts, HEAD_LINES, noticeWords, supersededOf } from "./drift.js";
 import { bm25, prepare, terms, topTerms } from "./lexical.js";
-import { LIMITS as READER_LIMITS, readDocument } from "./readers.js";
+import { findPlace, LIMITS as READER_LIMITS, readDocument } from "./readers.js";
 import { createRemote, MCP_READ, mcpAddress, oneLine, REMOTE } from "./remote.js";
 import { cipher } from "./seal.js";
 import { crawl, forgetPage, readPage, siteUrl } from "./web.js";
@@ -389,8 +389,34 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
     const items = MARKDOWN.test(path) ? [...new Set(splitMarkdown(path, text).map((p) => p.headings.join(" › ")))].slice(0, 40) : [];
     if (hit.read === undefined) hit.read = readDocument(readerPath(path), text);
     if (hit.top === undefined) hit.top = supersededOf({ title, text: text.slice(0, 1500) });
-    const superseded = replacedMark({ title, text: text.slice(0, 1500) }, (link) => (/^https?:/i.test(link) ? link : localLink(path, link)), hit.read, hit.top);
+    const superseded = replacedMark({ title, text: text.slice(0, 1500) }, (link) => (/^https?:/i.test(link) ? link : localLink(path, link)), hit.read, hit.top, (place) => placeLink(path, place));
     return { title: title.slice(0, 120), items, source_at: new Date(st.mtimeMs).toISOString(), superseded: superseded ?? undefined };
+  }
+  // The file a reader's place names (a replacement named by its id: readers.js findPlace), for a file inside the
+  // project: in the folder the place leads to, inside the project and not through a link, the one file there this project
+  // reads (readable, not hidden, not switched off, not narrowed out by a genter.json) that the place names; else null.
+  // Within one pass of readFiles (pass: its skip, each folder's names) a folder is listed once.
+  let pass = null;
+  function placeLink(path, place) {
+    if (!under(path, [root]) || path === root) return null;
+    const at = pass ?? { names: new Map() };
+    const found = findPlace(relative(root, path).split(sep).join("/"), place, (folder) => {
+      if (!at.names.has(folder)) {
+        const dir = join(root, ...folder.split("/").filter(Boolean));
+        let names = [];
+        try {
+          if (under(realOf(dir), [(at.top ??= realOf(root))])) {
+            at.skip ??= scope().skip;
+            names = readdirSync(dir, { withFileTypes: true })
+              .filter((e) => e.isFile() && readable(e.name) && !at.skip(join(dir, e.name)))
+              .map((e) => e.name);
+          }
+        } catch {}
+        at.names.set(folder, names);
+      }
+      return at.names.get(folder);
+    });
+    return found ? join(root, ...found.split("/")) : null;
   }
   // A file's path as readers match it: from the project's root when it is inside it, else as it is; "/" between folders.
   function readerPath(path) {
@@ -528,10 +554,15 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
     const s = state;
     const { files, complete } = filesOf(source, skip);
     const looks = await pool(files, LIMITS.readers, look);
+    pass = { skip, names: new Map() };
     const out = [];
-    for (const [i, path] of files.entries()) {
-      out.push(settle(path, source.id, looks[i]));
-      if (due()) await turn();
+    try {
+      for (const [i, path] of files.entries()) {
+        out.push(settle(path, source.id, looks[i]));
+        if (due()) await turn();
+      }
+    } finally {
+      pass = null;
     }
     const listed = new Set(files);
     // A file of this source that a whole listing no longer has is gone (deleted, or ignored now); after a cut-off
@@ -1406,9 +1437,17 @@ const documentOf = (read) => read && { readers: read.readers, ...(read.date && {
 // relative link beside it is resolved; a place that is not there is no replacement. Only a mark at the top with no
 // place beside it takes the first link of the top lines (as before readers); a reader's mark that names no place that
 // is there has none.
-function replacedMark(doc, resolveLink, read, top = supersededOf(doc)) {
-  const found = read?.marks?.find((m) => m.by) ?? read?.marks?.[0];
-  const named = found?.by && (/^https?:/i.test(found.by) ? found.by : resolveLink(found.by));
+function replacedMark(doc, resolveLink, read, top = supersededOf(doc), resolvePlace = () => null) {
+  const marks = read?.marks ?? [];
+  const web = (m) => /^https?:/i.test(m.by ?? "");
+  // The first mark whose replacement is there (a link beside it, or the place its id names), else the first that names
+  // one by an address, else the first.
+  let named = null;
+  let found = marks.find((m) => (named = (m.by && !web(m) && resolveLink(m.by)) || (m.place && resolvePlace(m.place)) || null));
+  if (!found) {
+    found = marks.find((m) => m.by) ?? marks[0];
+    named = found && web(found) ? found.by : null;
+  }
   if (found && (named || !top)) return { marker: found.marker ?? found.kind, line: found.line, reader: found.reader, ...(named && { by: named }) };
   if (!top || top.by) return top;
   const head = String(doc.text).split("\n").map((l) => l.trim()).filter(Boolean).slice(0, 5).join("\n");
@@ -1611,12 +1650,19 @@ const turn = () =>
 
 // What the readers read in each of a project's files (readers.js), for the decisions page: the files they read
 // something in, then the files those marks name that they read nothing in (read: null), each { path (rel(file)),
-// title, read }. A mark's link to another of these files is resolved, as search resolves it, to that file's path (to);
-// a link to a file that is not one of them (not there, switched off, left out) resolves to nothing. Each mark's quote,
-// and each status's, is its whole line as written, trimmed (the reader's quote stops at its notice length).
+// title, read }. A mark's link to another of these files, or the file its id names (a reader's place, readers.js
+// findPlace, among these files), is resolved, as search resolves it, to that file's path (to); a link to a file that is
+// not one of them (not there, switched off, left out) resolves to nothing. Each mark's quote, and each status's, is its
+// whole line as written, trimmed (the reader's quote stops at its notice length).
 function documentsOf(files, rel) {
   const pathOf = new Map(files.map((file) => [file, rel(file)]));
   const fileOf = new Map(files.map((file) => [rel(file), file]));
+  const inFolder = new Map();
+  for (const p of fileOf.keys()) {
+    const at = p.includes("/") ? p.slice(0, p.lastIndexOf("/")) : "";
+    if (!inFolder.has(at)) inFolder.set(at, []);
+    inFolder.get(at).push(p.slice(p.lastIndexOf("/") + 1));
+  }
   const textAt = (file) => {
     try {
       return statSync(file).size <= LIMITS.fileBytes ? readText(file) : null;
@@ -1635,9 +1681,12 @@ function documentsOf(files, rel) {
     for (const st of [read.status, ...(read.entries ?? []).map((e) => e.status)]) if (st && lineAt(st.line)) st.quote = lineAt(st.line);
     for (const m of marksOf(read)) {
       m.quote = lineAt(m.line) || m.quote;
-      if (!m.by || /^https?:/i.test(m.by)) continue;
-      const to = localLink(file, m.by);
+      const to = m.by && !/^https?:/i.test(m.by) ? localLink(file, m.by) : null;
       if (to && to !== file && pathOf.has(to)) m.to = pathOf.get(to);
+      else if (m.place) {
+        const at = findPlace(pathOf.get(file), m.place, (folder) => inFolder.get(folder) ?? []);
+        if (at && fileOf.has(at)) m.to = at;
+      }
     }
     out.set(pathOf.get(file), { path: pathOf.get(file), title: titleOf(text, file), read });
   }

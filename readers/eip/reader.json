@@ -1,0 +1,25 @@
+{
+  "$schema": "../reader.schema.json",
+  "dsl": 1,
+  "name": "eip",
+  "owner": "@Genterai",
+  "records": true,
+  "matches": {
+    "files": ["**/EIPS/eip-*.md", "**/ERCS/erc-*.md"]
+  },
+  "lines": 40,
+  "fields": {
+    "date": [
+      { "in": "front-matter", "pattern": "^created: {0,3}[\"']?(\\d{4}-\\d{2}-\\d{2})" }
+    ],
+    "status": [
+      { "in": "front-matter", "pattern": "^status: {0,3}[\"']?([a-z]{3,20})" }
+    ],
+    "marks": [
+      { "kind": "superseded", "in": "front-matter", "pattern": "^superseded-by: {0,3}[\"']?(\\d{1,6})\\b", "name": 1, "id": 1, "place": "*-{id}.md" },
+      { "kind": "superseded", "in": "front-matter", "pattern": "^withdrawal-reason: .{0,120}\\b(?:superseded|replaced) by \\[?(eip-(\\d{1,6}))\\b", "name": 1, "id": 2, "place": "eip-{id}.md" },
+      { "kind": "superseded", "in": "front-matter", "pattern": "^withdrawal-reason: .{0,120}\\b(?:superseded|replaced) by \\[?(erc-(\\d{1,6}))\\b", "name": 1, "id": 2, "place": "erc-{id}.md" },
+      { "kind": "moved", "in": "front-matter", "pattern": "^status: {0,3}[\"']?moved\\b" }
+    ]
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "$schema": "../reader.schema.json",
+  "dsl": 1,
+  "name": "proposals",
+  "owner": "@Genterai",
+  "records": true,
+  "matches": {
+    "files": ["**/proposals/**/*.md", "**/proposals-*/*.md", "**/proposal/**/*.md", "**/design/**/*.md", "**/designs/**/*.md", "**/design-docs/**/*.md", "**/design-proposals/**/*.md", "**/enhancements/**/*.md", "**/lids/*.md", "**/doc/specs/**/*.md", "**/accepted/**/*.md"]
+  },
+  "lines": 60,
+  "fields": {
+    "date": [
+      { "in": "front-matter", "pattern": "^(?:creation-date|created|created on|created-on|date|start-date|last-updated|last updated): {0,3}[\"']?(\\d{4}-\\d{1,2}-\\d{1,2})" },
+      { "in": "top", "first": 30, "pattern": "^[-*:]? {0,3}[*_]{0,2}(?:last updated|last-updated|updated|date|created|created on|creation date|creation-date|start date)[*_]{0,2}:[*_]{0,2} {0,3}(\\d{4}-\\d{1,2}-\\d{1,2}|[a-z]{3,9}\\.? \\d{1,2},? \\d{4}|\\d{1,2} [a-z]{3,9},? \\d{4})" },
+      { "in": "top", "first": 30, "pattern": "^\\| {0,3}[*_]{0,2}(?:updated|last updated|date|created)[*_]{0,2} {0,20}\\| {0,3}(\\d{4}-\\d{2}-\\d{2})" }
+    ],
+    "status": [
+      { "in": "front-matter", "pattern": "^(?:status|state): {0,3}[\"']?([a-z]{3,20})" },
+      { "in": "top", "first": 30, "pattern": "^[-*:]? {0,3}[*_]{0,2}status[*_]{0,2}:[*_]{0,2} {0,3}[*_\\[\"']{0,2}([a-z]{3,20})" },
+      { "in": "top", "first": 30, "pattern": "^\\| {0,3}[*_]{0,2}status[*_]{0,2} {0,20}\\| {0,3}[*_\\[]{0,2}([a-z]{3,20})" }
+    ],
+    "marks": [
+      { "kind": "superseded", "in": "top", "first": 30, "pattern": "^[-*]? {0,3}[*_]{0,2}(?:status[*_]{0,2}:[*_]{0,2} {0,3}[*_]{0,2}(?:superseded|replaced)|superseded|replaced) by:?[*_]{0,2} {0,3}\\[(se-(\\d{4}))\\]\\(([^)\\s]{1,200})\\)", "name": 1, "id": 2, "by": 3, "place": "{id:04}-*.md" },
+      { "kind": "superseded", "in": "top", "first": 30, "pattern": "^[-*]? {0,3}[*_]{0,2}(?:status[*_]{0,2}:[*_]{0,2} {0,3}[*_]{0,2}(?:superseded|replaced)|superseded|replaced) by:?[*_]{0,2} {0,3}(se-(\\d{4}))\\b", "name": 1, "id": 2, "place": "{id:04}-*.md" },
+      { "kind": "superseded", "in": "top", "first": 30, "pattern": "^[-*]? {0,3}[*_]{0,2}(?:status[*_]{0,2}:[*_]{0,2} {0,3}[*_]{0,2}(?:superseded|replaced)|superseded|replaced) by:?[*_]{0,2} {0,3}\\[(keep-(\\d{4}))\\]\\(([^)\\s]{1,200})\\)", "name": 1, "id": 2, "by": 3, "place": "KEEP-{id:04}-*.md" },
+      { "kind": "superseded", "in": "top", "first": 30, "pattern": "^[-*]? {0,3}[*_]{0,2}(?:status[*_]{0,2}:[*_]{0,2} {0,3}[*_]{0,2}(?:superseded|replaced)|superseded|replaced) by:?[*_]{0,2} {0,3}(keep-(\\d{4}))\\b", "name": 1, "id": 2, "place": "KEEP-{id:04}-*.md" },
+      { "kind": "superseded", "in": "top", "first": 30, "pattern": "^[-*]? {0,3}[*_]{0,2}(?:status[*_]{0,2}:[*_]{0,2} {0,3}[*_]{0,2}(?:superseded|replaced|obsoleted)|superseded|replaced) by:?[*_]{0,2} {0,3}\\[([^\\]]{1,120})\\]\\(([^)\\s]{1,200})\\)", "name": 1, "by": 2 },
+      { "kind": "superseded", "in": "top", "first": 30, "pattern": "^[-*]? {0,3}[*_]{0,2}status[*_]{0,2}:[*_]{0,2} {0,3}[*_]{0,2}(?:superseded|replaced|obsoleted) by:? {0,3}([^\\[\\s*_][^\\[*]{0,119})", "name": 1 },
+      { "kind": "superseded", "in": "front-matter", "pattern": "^(?:superseded-by|superseded_by|replaced-by|replaced_by): {0,3}[\"']?\\[([^\\]]{1,120})\\]\\(([^)\\s]{1,200})\\)", "name": 1, "by": 2 },
+      { "kind": "deprecated", "in": "front-matter", "pattern": "^(?:status|state): {0,3}[\"']?deprecated\\b" },
+      { "kind": "deprecated", "in": "top", "first": 30, "pattern": "^[-*:]? {0,3}[*_]{0,2}status[*_]{0,2}:[*_]{0,2} {0,3}[*_]{0,2}deprecated\\b" },
+      { "kind": "obsolete", "in": "top", "first": 30, "pattern": "^[-*:]? {0,3}[*_]{0,2}status[*_]{0,2}:[*_]{0,2} {0,3}[*_]{0,2}obsolete\\b" }
+    ]
+  }
+}

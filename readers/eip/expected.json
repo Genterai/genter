@@ -1,0 +1,73 @@
+{
+  "EIPS/eip-9001.md": {
+    "date": {
+      "value": "2024-03-08",
+      "line": 9
+    },
+    "status": {
+      "value": "withdrawn",
+      "line": 6
+    },
+    "marks": [
+      {
+        "kind": "superseded",
+        "line": 10,
+        "quote": "withdrawal-reason: Superseded by EIP-9012, which refunds per transaction.",
+        "name": "EIP-9012",
+        "place": "eip-9012.md"
+      }
+    ]
+  },
+  "EIPS/eip-9012.md": {
+    "date": {
+      "value": "2025-01-20",
+      "line": 9
+    },
+    "status": {
+      "value": "final",
+      "line": 6
+    }
+  },
+  "EIPS/eip-9020.md": {
+    "date": {
+      "value": "2023-07-14",
+      "line": 7
+    },
+    "status": {
+      "value": "final",
+      "line": 4
+    },
+    "marks": [
+      {
+        "kind": "superseded",
+        "line": 8,
+        "quote": "superseded-by: 9031",
+        "name": "9031",
+        "place": "*-9031.md"
+      }
+    ]
+  },
+  "EIPS/eip-9031.md": {
+    "status": {
+      "value": "moved",
+      "line": 4
+    },
+    "marks": [
+      {
+        "kind": "moved",
+        "line": 4,
+        "quote": "status: Moved"
+      }
+    ]
+  },
+  "ERCS/erc-9031.md": {
+    "date": {
+      "value": "2025-11-02",
+      "line": 7
+    },
+    "status": {
+      "value": "review",
+      "line": 4
+    }
+  }
+}

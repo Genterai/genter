@@ -1,0 +1,10 @@
+:showtitle:
+:numbered:
+:state: abandoned
+:discussion: https://example.org/acme/rfd/pull/12
+:authors: Omar <omar@example.com>
+
+= RFD 12 Firmware over the network
+{authors}
+
+Firmware is fetched from the rack's update service at boot.
