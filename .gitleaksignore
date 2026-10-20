@@ -1,0 +1,3 @@
+# Findings of gitleaks (.github/workflows/secrets.yml) that are not keys, one fingerprint per line, each with its reason.
+# A Jira page cursor ("nextPageToken") in a fictional catalogue fixture.
+6945ef8821ca9afdd96a5766558fba0180f1655f:test/fixtures/catalogues.json:generic-api-key:895
