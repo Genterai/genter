@@ -1,6 +1,7 @@
 {
-  "about": "The questions of the old-answer test (step 1.7 of Genter's open-source plan): one per pair of a document that says of itself that it is replaced and the document that replaces it, in the archives bench/repos picked, asked so that the current answer lives in the replacing document. DriftBench's deprecated kind is read from bench/drift/questions.json by run.mjs. Each question here was written from both documents at the commit below and waits for a person's review: \"reviewed\" says who checked it.",
+  "about": "The questions of the old-answer test (step 1.7 of Genter's open-source plan): one per pair of a document that says of itself that it is replaced and the document that replaces it, in the archives bench/repos picked, asked so that the current answer lives in the replacing document. DriftBench's deprecated kind is read from bench/drift/questions.json by run.mjs. Each question here was written from both documents at the commit below and waits for a person's review: \"reviewed\" says who checked it. Where the replacing document is itself replaced, \"later\" names the documents that chain of marks leads to (\"current_rule\").",
   "reviewed": "pending owner",
+  "current_rule": "A question's current answer is its written current document or any later document reached from it by the archive's own explicit replacement marks, the same kind of mark its pair quotes (a PEP's \"Superseded-By: 345\"); the old answer stays the replaced document alone. Those later documents are listed by hand from the archive, in order, under \"later\", each with the line of the document before it that names it, quoted; Genter's readers do not compute them. The rule was decided on 2026-10-20 by the lead of Genter's open-source plan, under the product's principle \"current over history\", for every question alike. It was set after a run (results/2026-10-20-by-id.json) showed one question affected, peps/0241.",
   "sources": [
     {
       "repo": "python/peps",
@@ -25,7 +26,7 @@
       "question": "How long must a deprecated Python feature keep warning before it can be removed?",
       "replaced": "peps/pep-0005.rst",
       "current": "peps/pep-0387.rst",
-      "pair": "peps/pep-0005.rst says \"Superseded-By: 387\" in its header (the rfc reader's mark names PEP 387 by number, not by place)",
+      "pair": "peps/pep-0005.rst says \"Superseded-By: 387\" in its header (a number: the pep reader makes it peps/pep-0387.*, which Genter finds in the archive)",
       "current_says": "Wait for the warning to appear in at least two minor Python releases.",
       "reviewed": "pending owner"
     },
@@ -35,7 +36,7 @@
       "question": "What steps does the release manager follow to make a Python bugfix release?",
       "replaced": "peps/pep-0102.rst",
       "current": "peps/pep-0101.rst",
-      "pair": "peps/pep-0102.rst says \"Superseded-By: 101\" in its header (the rfc reader's mark names PEP 101 by number, not by place)",
+      "pair": "peps/pep-0102.rst says \"Superseded-By: 101\" in its header (a number: the pep reader makes it peps/pep-0101.*, which Genter finds in the archive)",
       "current_says": "The release manager's checklist for every release.",
       "reviewed": "pending owner"
     },
@@ -45,7 +46,7 @@
       "question": "How do I substitute $name placeholders in a string with values from a mapping?",
       "replaced": "peps/pep-0215.rst",
       "current": "peps/pep-0292.rst",
-      "pair": "peps/pep-0215.rst says \"Superseded-By: 292\" in its header (the rfc reader's mark names PEP 292 by number, not by place)",
+      "pair": "peps/pep-0215.rst says \"Superseded-By: 292\" in its header (a number: the pep reader makes it peps/pep-0292.*, which Genter finds in the archive)",
       "current_says": "string.Template with $-substitution.",
       "reviewed": "pending owner"
     },
@@ -55,7 +56,7 @@
       "question": "Which markup should be used to write structured Python docstrings?",
       "replaced": "peps/pep-0216.rst",
       "current": "peps/pep-0287.rst",
-      "pair": "peps/pep-0216.rst says \"Superseded-By: 287\" in its header (the rfc reader's mark names PEP 287 by number, not by place)",
+      "pair": "peps/pep-0216.rst says \"Superseded-By: 287\" in its header (a number: the pep reader makes it peps/pep-0287.*, which Genter finds in the archive)",
       "current_says": "reStructuredText.",
       "reviewed": "pending owner"
     },
@@ -65,9 +66,22 @@
       "question": "Which metadata fields say what a package requires, provides and obsoletes?",
       "replaced": "peps/pep-0241.rst",
       "current": "peps/pep-0314.rst",
-      "pair": "peps/pep-0241.rst says \"Superseded-By: 314\" in its header (the rfc reader's mark names PEP 314 by number, not by place)",
+      "pair": "peps/pep-0241.rst says \"Superseded-By: 314\" in its header (a number: the pep reader makes it peps/pep-0314.*, which Genter finds in the archive)",
+      "later": [
+        {
+          "place": "peps/pep-0345.rst",
+          "in": "peps/pep-0314.rst",
+          "mark": "Superseded-By: 345"
+        },
+        {
+          "place": "peps/pep-0566.rst",
+          "in": "peps/pep-0345.rst",
+          "mark": "Superseded-By: 566"
+        }
+      ],
       "current_says": "Requires, Provides and Obsoletes, added in metadata 1.1.",
-      "reviewed": "pending owner"
+      "reviewed": "pending owner",
+      "note": "PEP 314, the current answer written before any run, is itself \"Superseded-By: 345\", and PEP 345 \"Superseded-By: 566\" (PEP 345 renamed the fields the question asks about): by the current rule PEP 345 and PEP 566 count as current too. As written, with PEP 314 alone, Genter does worse than plain ranking here; that run is why the rule was set."
     },
     {
       "id": "peps/0248",
@@ -75,7 +89,7 @@
       "question": "What does the Python database API require a driver module to define at module level?",
       "replaced": "peps/pep-0248.rst",
       "current": "peps/pep-0249.rst",
-      "pair": "peps/pep-0248.rst says \"Superseded-By: 249\" in its header (the rfc reader's mark names PEP 249 by number, not by place)",
+      "pair": "peps/pep-0248.rst says \"Superseded-By: 249\" in its header (a number: the pep reader makes it peps/pep-0249.*, which Genter finds in the archive)",
       "current_says": "apilevel, threadsafety and paramstyle (DB-API 2.0).",
       "reviewed": "pending owner"
     },
@@ -85,7 +99,7 @@
       "question": "Which backward compatibility rules apply when changing a standard library module?",
       "replaced": "peps/pep-0291.rst",
       "current": "peps/pep-0387.rst",
-      "pair": "peps/pep-0291.rst says \"Superseded-By: 387\" in its header (the rfc reader's mark names PEP 387 by number, not by place)",
+      "pair": "peps/pep-0291.rst says \"Superseded-By: 387\" in its header (a number: the pep reader makes it peps/pep-0387.*, which Genter finds in the archive)",
       "current_says": "The general backwards compatibility policy.",
       "reviewed": "pending owner"
     },
@@ -95,7 +109,14 @@
       "question": "How does a package's metadata say which Python versions it supports?",
       "replaced": "peps/pep-0314.rst",
       "current": "peps/pep-0345.rst",
-      "pair": "peps/pep-0314.rst says \"Superseded-By: 345\" in its header (the rfc reader's mark names PEP 345 by number, not by place)",
+      "pair": "peps/pep-0314.rst says \"Superseded-By: 345\" in its header (a number: the pep reader makes it peps/pep-0345.*, which Genter finds in the archive)",
+      "later": [
+        {
+          "place": "peps/pep-0566.rst",
+          "in": "peps/pep-0345.rst",
+          "mark": "Superseded-By: 566"
+        }
+      ],
       "current_says": "Requires-Python (metadata 1.2).",
       "reviewed": "pending owner"
     },
@@ -105,7 +126,7 @@
       "question": "How should a WSGI application handle bytes and strings for the response body on Python 3?",
       "replaced": "peps/pep-0333.rst",
       "current": "peps/pep-3333.rst",
-      "pair": "peps/pep-0333.rst says \"Superseded-By: 3333\" in its header (the rfc reader's mark names PEP 3333 by number, not by place)",
+      "pair": "peps/pep-0333.rst says \"Superseded-By: 3333\" in its header (a number: the pep reader makes it peps/pep-3333.*, which Genter finds in the archive)",
       "current_says": "WSGI 1.0.1: bytestrings for bodies, native strings for headers.",
       "reviewed": "pending owner"
     },
@@ -115,7 +136,7 @@
       "question": "How does package metadata declare the markup format of the long description?",
       "replaced": "peps/pep-0345.rst",
       "current": "peps/pep-0566.rst",
-      "pair": "peps/pep-0345.rst says \"Superseded-By: 566\" in its header (the rfc reader's mark names PEP 566 by number, not by place)",
+      "pair": "peps/pep-0345.rst says \"Superseded-By: 566\" in its header (a number: the pep reader makes it peps/pep-0566.*, which Genter finds in the archive)",
       "current_says": "Description-Content-Type (metadata 2.1).",
       "reviewed": "pending owner"
     },
@@ -125,7 +146,7 @@
       "question": "How do I define an enumeration type with the standard library?",
       "replaced": "peps/pep-0354.rst",
       "current": "peps/pep-0435.rst",
-      "pair": "peps/pep-0354.rst says \"Superseded-By: 435\" in its header (the rfc reader's mark names PEP 435 by number, not by place)",
+      "pair": "peps/pep-0354.rst says \"Superseded-By: 435\" in its header (a number: the pep reader makes it peps/pep-0435.*, which Genter finds in the archive)",
       "current_says": "The enum module (Enum, IntEnum).",
       "reviewed": "pending owner"
     },
@@ -135,7 +156,7 @@
       "question": "How are pre-release and post-release versions of a Python package numbered and ordered?",
       "replaced": "peps/pep-0386.rst",
       "current": "peps/pep-0440.rst",
-      "pair": "peps/pep-0386.rst says \"Superseded-By: 440\" in its header (the rfc reader's mark names PEP 440 by number, not by place)",
+      "pair": "peps/pep-0386.rst says \"Superseded-By: 440\" in its header (a number: the pep reader makes it peps/pep-0440.*, which Genter finds in the archive)",
       "current_says": "The version scheme of PEP 440.",
       "reviewed": "pending owner"
     },
@@ -145,7 +166,7 @@
       "question": "How does raise ... from None suppress the context of a chained exception, and where is that recorded?",
       "replaced": "peps/pep-0409.rst",
       "current": "peps/pep-0415.rst",
-      "pair": "peps/pep-0409.rst says \"Superseded-By: 415\" in its header (the rfc reader's mark names PEP 415 by number, not by place)",
+      "pair": "peps/pep-0409.rst says \"Superseded-By: 415\" in its header (a number: the pep reader makes it peps/pep-0415.*, which Genter finds in the archive)",
       "current_says": "The __suppress_context__ attribute.",
       "reviewed": "pending owner"
     },
@@ -155,7 +176,7 @@
       "question": "Which version of the core metadata format should packaging tools write, and can it be expressed as JSON?",
       "replaced": "peps/pep-0426.rst",
       "current": "peps/pep-0566.rst",
-      "pair": "peps/pep-0426.rst says \"Superseded-By: 566\" in its header (the rfc reader's mark names PEP 566 by number, not by place)",
+      "pair": "peps/pep-0426.rst says \"Superseded-By: 566\" in its header (a number: the pep reader makes it peps/pep-0566.*, which Genter finds in the archive)",
       "current_says": "Metadata 2.1, with a JSON-compatible form.",
       "reviewed": "pending owner"
     },
@@ -165,7 +186,7 @@
       "question": "How can I get time zone information from the IANA database in the standard library?",
       "replaced": "peps/pep-0431.rst",
       "current": "peps/pep-0615.rst",
-      "pair": "peps/pep-0431.rst says \"Superseded-By: 615\" in its header (the rfc reader's mark names PEP 615 by number, not by place)",
+      "pair": "peps/pep-0431.rst says \"Superseded-By: 615\" in its header (a number: the pep reader makes it peps/pep-0615.*, which Genter finds in the archive)",
       "current_says": "The zoneinfo module.",
       "reviewed": "pending owner"
     },
@@ -175,7 +196,7 @@
       "question": "Are file descriptors that Python opens inherited by child processes?",
       "replaced": "peps/pep-0433.rst",
       "current": "peps/pep-0446.rst",
-      "pair": "peps/pep-0433.rst says \"Superseded-By: 446\" in its header (the rfc reader's mark names PEP 446 by number, not by place)",
+      "pair": "peps/pep-0433.rst says \"Superseded-By: 446\" in its header (a number: the pep reader makes it peps/pep-0446.*, which Genter finds in the archive)",
       "current_says": "New file descriptors are non-inheritable.",
       "reviewed": "pending owner"
     },
@@ -185,7 +206,7 @@
       "question": "Can a project on PyPI host its release files on an external site?",
       "replaced": "peps/pep-0438.rst",
       "current": "peps/pep-0470.rst",
-      "pair": "peps/pep-0438.rst says \"Superseded-By: 470\" in its header (the rfc reader's mark names PEP 470 by number, not by place)",
+      "pair": "peps/pep-0438.rst says \"Superseded-By: 470\" in its header (a number: the pep reader makes it peps/pep-0470.*, which Genter finds in the archive)",
       "current_says": "External hosting support is removed.",
       "reviewed": "pending owner"
     },
@@ -195,7 +216,7 @@
       "question": "How can a string literal's interpolations be handed to my own function instead of being formatted right away?",
       "replaced": "peps/pep-0501.rst",
       "current": "peps/pep-0750.rst",
-      "pair": "peps/pep-0501.rst says \"Superseded-By: 750\" in its header (the rfc reader's mark names PEP 750 by number, not by place)",
+      "pair": "peps/pep-0501.rst says \"Superseded-By: 750\" in its header (a number: the pep reader makes it peps/pep-0750.*, which Genter finds in the archive)",
       "current_says": "Template strings (t-strings).",
       "reviewed": "pending owner"
     },
@@ -205,7 +226,7 @@
       "question": "Can code rely on the private version tag that dictionaries carry?",
       "replaced": "peps/pep-0509.rst",
       "current": "peps/pep-0699.rst",
-      "pair": "peps/pep-0509.rst says \"Superseded-By: 699\" in its header (the rfc reader's mark names PEP 699 by number, not by place)",
+      "pair": "peps/pep-0509.rst says \"Superseded-By: 699\" in its header (a number: the pep reader makes it peps/pep-0699.*, which Genter finds in the archive)",
       "current_says": "The ma_version_tag field is removed.",
       "reviewed": "pending owner"
     },
@@ -215,7 +236,7 @@
       "question": "Which platform tag should a portable Linux wheel carry?",
       "replaced": "peps/pep-0513.rst",
       "current": "peps/pep-0600.rst",
-      "pair": "peps/pep-0513.rst says \"Superseded-By: 600\" in its header (the rfc reader's mark names PEP 600 by number, not by place)",
+      "pair": "peps/pep-0513.rst says \"Superseded-By: 600\" in its header (a number: the pep reader makes it peps/pep-0600.*, which Genter finds in the archive)",
       "current_says": "manylinux_x_y tags (perennial manylinux).",
       "reviewed": "pending owner"
     },
@@ -225,7 +246,7 @@
       "question": "How is a TLS client configured with the unified TLS API for Python?",
       "replaced": "peps/pep-0543.rst",
       "current": "peps/pep-0748.rst",
-      "pair": "peps/pep-0543.rst says \"Superseded-By: 748\" in its header (the rfc reader's mark names PEP 748 by number, not by place)",
+      "pair": "peps/pep-0543.rst says \"Superseded-By: 748\" in its header (a number: the pep reader makes it peps/pep-0748.*, which Genter finds in the archive)",
       "current_says": "TLSClientConfiguration.",
       "reviewed": "pending owner"
     },
@@ -235,7 +256,7 @@
       "question": "How do I create another interpreter and run code in it from the standard library?",
       "replaced": "peps/pep-0554.rst",
       "current": "peps/pep-0734.rst",
-      "pair": "peps/pep-0554.rst says \"Superseded-By: 734\" in its header (the rfc reader's mark names PEP 734 by number, not by place)",
+      "pair": "peps/pep-0554.rst says \"Superseded-By: 734\" in its header (a number: the pep reader makes it peps/pep-0734.*, which Genter finds in the archive)",
       "current_says": "concurrent.interpreters.",
       "reviewed": "pending owner"
     },
@@ -248,7 +269,7 @@
         "peps/pep-0649.rst",
         "peps/pep-0749.rst"
       ],
-      "pair": "peps/pep-0563.rst says \"Superseded-By: 649, 749\" in its header (the rfc reader's mark names PEP 649 by number, not by place)",
+      "pair": "peps/pep-0563.rst says \"Superseded-By: 649, 749\" in its header (a number: the pep reader makes it peps/pep-0649.*, which Genter finds in the archive)",
       "current_says": "Deferred evaluation through __annotate__ (PEP 649; PEP 749 implements it).",
       "reviewed": "pending owner"
     },
@@ -258,7 +279,7 @@
       "question": "What does the manylinux2010 platform tag mean today?",
       "replaced": "peps/pep-0571.rst",
       "current": "peps/pep-0600.rst",
-      "pair": "peps/pep-0571.rst says \"Superseded-By: 600\" in its header (the rfc reader's mark names PEP 600 by number, not by place)",
+      "pair": "peps/pep-0571.rst says \"Superseded-By: 600\" in its header (a number: the pep reader makes it peps/pep-0600.*, which Genter finds in the archive)",
       "current_says": "An alias of manylinux_2_12.",
       "reviewed": "pending owner"
     },
@@ -268,7 +289,7 @@
       "question": "Which glibc version does the manylinux2014 platform tag stand for?",
       "replaced": "peps/pep-0599.rst",
       "current": "peps/pep-0600.rst",
-      "pair": "peps/pep-0599.rst says \"Superseded-By: 600\" in its header (the rfc reader's mark names PEP 600 by number, not by place)",
+      "pair": "peps/pep-0599.rst says \"Superseded-By: 600\" in its header (a number: the pep reader makes it peps/pep-0600.*, which Genter finds in the archive)",
       "current_says": "An alias of manylinux_2_17 (glibc 2.17).",
       "reviewed": "pending owner"
     },
@@ -278,7 +299,7 @@
       "question": "Is a return statement that leaves a finally block allowed?",
       "replaced": "peps/pep-0601.rst",
       "current": "peps/pep-0765.rst",
-      "pair": "peps/pep-0601.rst says \"Superseded-By: 765\" in its header (the rfc reader's mark names PEP 765 by number, not by place)",
+      "pair": "peps/pep-0601.rst says \"Superseded-By: 765\" in its header (a number: the pep reader makes it peps/pep-0765.*, which Genter finds in the archive)",
       "current_says": "A SyntaxWarning for return, break or continue that exits a finally block.",
       "reviewed": "pending owner"
     },
@@ -288,7 +309,7 @@
       "question": "What is the syntax and behaviour of the match statement?",
       "replaced": "peps/pep-0622.rst",
       "current": "peps/pep-0634.rst",
-      "pair": "peps/pep-0622.rst says \"Superseded-By: 634\" in its header (the rfc reader's mark names PEP 634 by number, not by place)",
+      "pair": "peps/pep-0622.rst says \"Superseded-By: 634\" in its header (a number: the pep reader makes it peps/pep-0634.*, which Genter finds in the archive)",
       "current_says": "The specification of structural pattern matching.",
       "reviewed": "pending owner"
     },
@@ -298,7 +319,7 @@
       "question": "How do I list my project's dependencies in pyproject.toml?",
       "replaced": "peps/pep-0631.rst",
       "current": "peps/pep-0621.rst",
-      "pair": "peps/pep-0631.rst says \"Superseded-By: 621\" in its header (the rfc reader's mark names PEP 621 by number, not by place)",
+      "pair": "peps/pep-0631.rst says \"Superseded-By: 621\" in its header (a number: the pep reader makes it peps/pep-0621.*, which Genter finds in the archive)",
       "current_says": "The dependencies array of the [project] table.",
       "reviewed": "pending owner"
     },
@@ -308,7 +329,7 @@
       "question": "What file format records Python dependencies for reproducible installs?",
       "replaced": "peps/pep-0665.rst",
       "current": "peps/pep-0751.rst",
-      "pair": "peps/pep-0665.rst says \"Superseded-By: 751\" in its header (the rfc reader's mark names PEP 751 by number, not by place)",
+      "pair": "peps/pep-0665.rst says \"Superseded-By: 751\" in its header (a number: the pep reader makes it peps/pep-0751.*, which Genter finds in the archive)",
       "current_says": "pylock.toml.",
       "reviewed": "pending owner"
     },
@@ -318,7 +339,7 @@
       "question": "How does a single-file script declare the dependencies it needs, inside the script?",
       "replaced": "peps/pep-0722.rst",
       "current": "peps/pep-0723.rst",
-      "pair": "peps/pep-0722.rst says \"Superseded-By: 723\" in its header (the rfc reader's mark names PEP 723 by number, not by place)",
+      "pair": "peps/pep-0722.rst says \"Superseded-By: 723\" in its header (a number: the pep reader makes it peps/pep-0723.*, which Genter finds in the archive)",
       "current_says": "Inline script metadata in a # /// script block.",
       "reviewed": "pending owner"
     },
@@ -328,7 +349,7 @@
       "question": "Which standard library module provides an event loop for asynchronous IO?",
       "replaced": "peps/pep-3153.rst",
       "current": "peps/pep-3156.rst",
-      "pair": "peps/pep-3153.rst says \"Superseded-By: 3156\" in its header (the rfc reader's mark names PEP 3156 by number, not by place)",
+      "pair": "peps/pep-3153.rst says \"Superseded-By: 3156\" in its header (a number: the pep reader makes it peps/pep-3156.*, which Genter finds in the archive)",
       "current_says": "asyncio.",
       "reviewed": "pending owner"
     },

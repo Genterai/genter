@@ -19,8 +19,15 @@
 /readers/banners/               @dangenter
 /readers/changelog/             @dangenter
 /readers/decisions/             @dangenter
+/readers/eip/                   @dangenter
+/readers/kep/                   @dangenter
+/readers/nep/                   @dangenter
 /readers/obsidian/              @dangenter
+/readers/pep/                   @dangenter
+/readers/pip/                   @dangenter
+/readers/proposals/             @dangenter
 /readers/rfc/                   @dangenter
+/readers/rfd/                   @dangenter
 /rules/en.json                  @dangenter
 /rules/ru.json                  @dangenter
 

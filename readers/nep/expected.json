@@ -1,0 +1,32 @@
+{
+  "doc/neps/index.rst": null,
+  "doc/neps/nep-0012-sorting-in-place.rst": {
+    "date": {
+      "value": "2023-04-02",
+      "line": 10
+    },
+    "status": {
+      "value": "superseded",
+      "line": 8
+    },
+    "marks": [
+      {
+        "kind": "superseded",
+        "line": 11,
+        "quote": ":Replaced-By: :ref:`NEP31`",
+        "name": "NEP31",
+        "place": "nep-0031-*.rst"
+      }
+    ]
+  },
+  "doc/neps/nep-0031-stable-sorting.rst": {
+    "date": {
+      "value": "2025-10-20",
+      "line": 10
+    },
+    "status": {
+      "value": "final",
+      "line": 8
+    }
+  }
+}

@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { KINDS } from "./readers.js";
+import { KINDS, loadReaders } from "./readers.js";
 
 // The decisions page (`genter decisions`): which decisions of a project hold now and which their own text says were
 // replaced, from what documents say about themselves as the readers read them (readers.js): an ADR's or an RFC's status
@@ -8,10 +8,11 @@ import { KINDS } from "./readers.js";
 // one HTML file out, every text escaped, no script, nothing loaded, so it opens offline and runs nothing a document
 // holds.
 
-// The readers whose every document, or every entry, is a decision record: an ADR, an RFC (a PEP, a KEP), a heading of a
-// decision log. Any reader's mark that a document is replaced (a banner at its top, its front matter) makes that
-// document a row too. A CHANGELOG's versions are releases, and what they deprecate is a feature, not a decision.
-export const DECISION_READERS = ["adr", "decisions", "rfc"];
+// The readers whose every document, or every entry, is a decision record, as their manifests say (`records: true`): an
+// ADR, an RFC, a PEP, a KEP, a proposal, a heading of a decision log. Any reader's mark that a document is replaced (a
+// banner at its top, its front matter) makes that document a row too. A CHANGELOG's versions are releases, and what
+// they deprecate is a feature, not a decision.
+export const decisionReaders = (readers = loadReaders().readers) => readers.filter((r) => r.records).map((r) => r.name);
 
 // The rows of a project's page from its documents, [{ path, title: { text, line? }, read }] as createLocal's
 // documents() gives them (read: what readDocument read there, each mark's link resolved to the file it names as `to`;
@@ -21,7 +22,8 @@ export const DECISION_READERS = ["adr", "decisions", "rfc"];
 // (REPLACED_STATUSES) when no line names what replaces it, quoted as written when documents() gave that line, else as
 // the status; by: the file of the project that replaces it, else the name or the link its notice gives.
 // Current rows first, then replaced ones, each newest first, undated last.
-export function decisionsOf(documents) {
+export function decisionsOf(documents, { readers } = {}) {
+  const DECISION_READERS = decisionReaders(readers);
   const rows = [];
   const rowed = new Set();
   for (const d of documents) {

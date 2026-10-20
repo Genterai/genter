@@ -9,9 +9,11 @@ import { fileURLToPath } from "node:url";
 // same text always gives the same output. Its patterns are a small language of their own (pattern(), below), matched
 // here by a machine that keeps every way at once instead of backtracking, so a pattern's time is linear in the line
 // whatever it says. The phrases that mark a document as replaced are data too (rules/<lang>.json), each with the lines
-// it must mark and the lines it must not.
+// it must mark and the lines it must not. A mark that names what replaces it by an id ("Superseded-By: 470") turns it
+// into a place beside the document by the manifest's template ("pep-{id:04}.*"); which file that is, the engine finds
+// in the project's own folder (findPlace): a reader never looks at a file but the one it is given.
 
-export const LIMITS = { lines: 400, lineChars: 400, noticeChars: 200, patternChars: 300, repeat: 200, states: 2000, groups: 6, classItems: 64, marks: 20, entries: 200, globChars: 120, globWildcards: 6, work: 1_000_000 };
+export const LIMITS = { lines: 400, lineChars: 400, noticeChars: 200, patternChars: 300, repeat: 200, states: 2000, groups: 6, classItems: 64, marks: 20, entries: 200, globChars: 120, globWildcards: 6, work: 1_000_000, idChars: 32, placeChars: 120, placeUp: 3 };
 export const KINDS = ["superseded", "deprecated", "obsolete", "archived", "moved", "removed", "unmaintained"];
 // The package's folder, from this file's own path: a URL made of a relative path and import.meta.url is, to a bundler,
 // a file to bring in that is not there, and an app that imports genter-cli/local (which imports this file) is bundled.
@@ -398,6 +400,76 @@ function globLint(g) {
   const hit = SECRET_SAMPLES.find(test);
   return hit ? `the glob reaches a secret-looking file (${hit}); name the format's files` : null;
 }
+
+// ---- places named by an id ----
+// A mark's `place`: where the document an id names is, from the marked document's folder, as a template: folders (".."
+// first, at most LIMITS.placeUp of them), then a file's name; `{id}` is the id as written, `{id:0N}` the id as a number
+// N digits wide (zero first), and `*` in the file's name any characters. "pep-{id:04}.*" with the id 470 is
+// "pep-0470.*"; "../ERCS/erc-{id}.md" a file in a folder beside the document's. An id is letters, digits and "-", at
+// most LIMITS.idChars, so neither it nor the template reaches outside the project, an address or a hidden name.
+const PLACE_ID = /\{id(?::0([1-9]))?\}/g;
+const ID = new RegExp(`^[A-Za-z0-9][A-Za-z0-9-]{0,${LIMITS.idChars - 1}}$`);
+function placeLint(t) {
+  if (typeof t !== "string" || !t || t.length > LIMITS.placeChars) return `a place of 1 to ${LIMITS.placeChars} characters`;
+  if ((t.match(PLACE_ID) ?? []).length !== 1) return "a place holds {id} or {id:0N} (N from 1 to 9) once";
+  if (/[{}]/.test(t.replace(PLACE_ID, ""))) return "a place has no { or } but its {id}";
+  const shape = placeShape(t.replace(PLACE_ID, "0"));
+  if (shape) return shape;
+  const name = t.split("/").at(-1).replace(PLACE_ID, "*");
+  const hit = SECRET_SAMPLES.map((s) => s.split("/").at(-1)).find(glob(name));
+  return hit ? `the place reaches a secret-looking file (${hit})` : null;
+}
+// What is wrong with the shape of a place (a template with its id put in), or null.
+function placeShape(p) {
+  if (typeof p !== "string" || !p || p.length > LIMITS.placeChars + LIMITS.idChars) return `a place of 1 to ${LIMITS.placeChars + LIMITS.idChars} characters`;
+  if (/^[/~]|\\|:|\/\/|[{}[\]?]/.test(p) || [...p].some((c) => c.charCodeAt(0) < 32)) return "a place is a path from the document's folder (no /, ~, \\, :, [ ], or ? )";
+  const segs = p.split("/");
+  const up = segs.findIndex((s) => s !== "..");
+  if (up < 0 || up > LIMITS.placeUp || segs.slice(up).includes("..")) return `a place climbs (..) only at its start, at most ${LIMITS.placeUp} folders, then names a file`;
+  if (segs.slice(up).some((s) => s === "" || s.startsWith("."))) return "a place has no empty or hidden folder or name";
+  if (segs.slice(up, -1).some((s) => s.includes("*"))) return "a * only in the file's name";
+  if ((segs.at(-1).match(/\*/g) ?? []).length > 2) return "at most two * in a place";
+  return null;
+}
+// The place a mark names: the template with its id put in, or null for an id that is not one (or not a number, for
+// {id:0N}).
+function fillPlace(template, id) {
+  const raw = String(id ?? "").trim();
+  if (!ID.test(raw)) return null;
+  let ok = true;
+  const out = template.replace(PLACE_ID, (_, width) => {
+    if (!width) return raw;
+    if (!/^\d{1,9}$/.test(raw)) ok = false;
+    return String(Number(raw)).padStart(Number(width), "0");
+  });
+  return ok ? out : null;
+}
+
+// The file a mark's place names, from the marked document's path `from` (from the project's root, "/" between
+// folders): in the folder the place leads to (null when it climbs above the root), the one name that its file name
+// matches, without case, other than the document itself; null when none or more than one does, or when it is hidden or
+// secret-looking. list(folder) gives the names of the files the engine reads in a folder of the project ("" is the
+// root), and nothing else is looked at.
+export function findPlace(from, place, list) {
+  if (placeShape(place) !== null) return null;
+  const folder = String(from).split("/").filter(Boolean).slice(0, -1);
+  const segs = place.split("/");
+  const name = segs.pop();
+  for (const s of segs) {
+    if (s !== "..") folder.push(s);
+    else if (!folder.length) return null;
+    else folder.pop();
+  }
+  const at = folder.join("/");
+  const self = String(from).split("/").filter(Boolean).join("/");
+  const test = new RegExp(`^${name.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, "[^/]*")}$`, "i");
+  let names = [];
+  try {
+    names = list(at) ?? [];
+  } catch {}
+  const hits = [...new Set(names)].filter((n) => typeof n === "string" && test.test(n) && !secretLooking(n)).map((n) => (at ? `${at}/${n}` : n)).filter((p) => p !== self);
+  return hits.length === 1 ? hits[0] : null;
+}
 function expand(g) {
   const m = /\{([^{}]*)\}/.exec(g);
   if (!m) return [g];
@@ -509,6 +581,7 @@ export function lintReader(m, { folder } = {}) {
   if (out.length) return out;
   if (folder !== undefined && m.name !== folder) out.push(`name: "${m.name}" is not the name of its folder, "${folder}"`);
   if (!(m.fields?.date || m.fields?.status || m.fields?.marks) && !m.entries) out.push("fields: a reader reads a date, a status, marks or entries");
+  if (m.records && m.fallback) out.push("records: not with fallback (a reader of any document of a kind reads no decision records)");
   for (const [k, g] of m.matches.files.entries()) {
     const why = globLint(g);
     if (why) out.push(`matches.files[${k}]: ${why}`);
@@ -531,12 +604,17 @@ export function lintReader(m, { folder } = {}) {
     if (r.section) check(`${path}.section`, r.section);
     if (!mark) check(`${path}.pattern`, r.pattern, { value: r.value ?? 1 });
     else if (r.phrases) {
-      for (const k of ["pattern", "kind", "by", "name"]) if (r[k] !== undefined) out.push(`${path}.${k}: not with phrases (the language rules give it)`);
+      for (const k of ["pattern", "kind", "by", "name", "id", "place"]) if (r[k] !== undefined) out.push(`${path}.${k}: not with phrases (the language rules give it)`);
     }
     else if (!r.pattern) out.push(`${path}: a mark has a pattern, or phrases: true`);
     else {
       if (!r.kind) out.push(`${path}.kind: missing`);
-      check(`${path}.pattern`, r.pattern, { by: r.by, name: r.name });
+      if ((r.id === undefined) !== (r.place === undefined)) out.push(`${path}.${r.id === undefined ? "id" : "place"}: an id and its place go together`);
+      if (r.place !== undefined) {
+        const why = placeLint(r.place);
+        if (why) out.push(`${path}.place: ${why}`);
+      }
+      check(`${path}.pattern`, r.pattern, { by: r.by, name: r.name, id: r.id });
     }
   };
   const rules = (fields, at, inEntry) => {
@@ -583,6 +661,7 @@ export function compileReader(m) {
     name: m.name,
     owner: m.owner,
     fallback: m.fallback === true,
+    records: m.records === true,
     lines: m.lines ?? 60,
     files: m.matches.files.map(glob),
     headings: (m.matches.headings ?? []).map(pattern),
@@ -793,6 +872,7 @@ function marksIn(rules, v, scope, doc) {
       let m;
       let link;
       let what;
+      let place;
       if (r.phrases) {
         if (text.length > LIMITS.noticeChars) continue;
         const p = phrases().find((x) => x.find(text) >= 0);
@@ -805,10 +885,11 @@ function marksIn(rules, v, scope, doc) {
         const by = r.by ? m.group(r.by) : undefined;
         link = by ? { target: by } : linkIn(text.slice(m.index));
         what = { kind: r.kind };
+        place = r.id ? fillPlace(r.place, m.group(r.id)) : null;
       }
-      const name = clean((r.name && m?.group(r.name)) || link?.text);
+      const name = clean((r.name && m?.group(r.name)) || link?.text || (place && m.group(r.id)));
       const by = link?.target && clean(link.target);
-      found.set(k, { ...what, line: k + 1, quote: text.slice(0, LIMITS.noticeChars), ...(name && { name }), ...(by && { by }) });
+      found.set(k, { ...what, line: k + 1, quote: text.slice(0, LIMITS.noticeChars), ...(name && { name }), ...(by && { by }), ...(place && { place }) });
     }
   }
   return [...found.values()].sort((a, b) => a.line - b.line);
