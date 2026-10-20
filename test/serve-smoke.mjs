@@ -5,7 +5,8 @@
 //   node test/serve-smoke.mjs check <http://host:port> <tokens file> [repos folder]
 //
 // check: /health with no token, 401 with none and with a wrong one, genter-cli/conformance over HTTP with a token,
-// search and read, nothing a client can add or keep, /health while 20 searches run, and the served folder unchanged.
+// search and read, nothing a client can add or keep, /health while 20 searches run (twice), and the served folder
+// unchanged.
 import { randomBytes } from "node:crypto";
 import { mkdirSync, readdirSync, readFileSync, statSync, utimesSync, writeFileSync } from "node:fs";
 import { join, relative } from "node:path";
@@ -132,27 +133,50 @@ export async function check(base, { token, repos } = {}) {
     add(`${name}: no such tool here (-32602)`, res.body?.error?.code === -32602, JSON.stringify(res.body));
   }
 
-  // 20 searches at once, then /health: it answers while they run, one at a time, and every search answers.
-  const started = Date.now();
-  let lastSearch = 0;
+  // 20 searches at once, then /health: every search answers, and /health answers while they run without waiting for
+  // them. Twice: the second time the 20 go over the connections the first opened, so they reach the server together and
+  // all wait their turn there, which is when a server that holds its event loop through the searches answers /health
+  // only after them. What it is measured by is how many searches it waited behind, not milliseconds: a busy machine
+  // slows the searches and /health alike.
+  const rounds = [await burst(base, token), await burst(base, token)];
+  const failed = rounds.flatMap((r) => r.failed);
+  add("20 searches at once all answer, twice", !failed.length, JSON.stringify(failed.map((r) => [r.status, r.body]).slice(0, 2)));
+  const said = rounds.map((r) => `in ${r.answeredIn} ms, behind ${r.behind} of the ${r.waiting} still running`).join("; ");
+  add(`/health answers while 20 searches run, waiting for none of them (${said})`, rounds.every((r) => r.healthy === 200 && r.waiting > 0 && r.behind < r.waiting / 2), rounds.map((r) => `health ${r.healthy} asked at +${r.askedAt} ms, answered at +${r.healthAt} ms; searches answered by then ${r.answeredBefore}, the last at +${r.lastSearch} ms`).join("; "));
+
+  if (repos) add("the served folders are unchanged", listing(repos) === before, "a file was written, changed or removed under the served folder");
+  return checks;
+}
+
+// 20 searches sent at once, then /health 20 ms later: { healthy, answeredIn, askedAt, healthAt, lastSearch (ms from the
+// start), waiting (searches not answered when /health was asked), behind (of those, the ones answered before it),
+// answeredBefore, failed (the searches that did not answer) }.
+async function burst(base, token) {
+  const started = performance.now();
+  const ms = (t) => Math.round(t - started);
+  const answered = [];
   const searches = Array.from({ length: 20 }, (_, i) =>
     post(base, { jsonrpc: "2.0", id: 100 + i, method: "tools/call", params: { name: "search", arguments: { query: `${["billing", "rollback", "worker", "cache"][i % 4]} step ${i}` } } }, { token }).then((r) => {
-      lastSearch = Date.now();
+      answered.push(performance.now());
       return r;
     }),
   );
   await new Promise((r) => setTimeout(r, 20));
-  const asked = Date.now();
+  const asked = performance.now();
   const healthy = await fetch(`${base}/health`).then((r) => r.status);
-  const answeredIn = Date.now() - asked;
-  const healthAt = Date.now();
+  const healthAt = performance.now();
   const all = await Promise.all(searches);
-  const failed = all.filter((r) => r.status !== 200 || r.body?.result?.isError || !/^\[\d+\] /m.test(textOf(r)));
-  add("20 searches at once all answer", !failed.length, JSON.stringify(failed.map((r) => [r.status, r.body]).slice(0, 2)));
-  add(`/health answers while 20 searches run (in ${answeredIn} ms; the searches took ${lastSearch - started} ms)`, healthy === 200 && healthAt < lastSearch && answeredIn < 1000, `health ${healthy} after ${answeredIn} ms, at +${healthAt - started} ms; last search at +${lastSearch - started} ms`);
-
-  if (repos) add("the served folders are unchanged", listing(repos) === before, "a file was written, changed or removed under the served folder");
-  return checks;
+  return {
+    healthy,
+    answeredIn: Math.round(healthAt - asked),
+    askedAt: ms(asked),
+    healthAt: ms(healthAt),
+    lastSearch: ms(Math.max(...answered)),
+    waiting: answered.filter((t) => t > asked).length,
+    behind: answered.filter((t) => t > asked && t < healthAt).length,
+    answeredBefore: answered.filter((t) => t < healthAt).length,
+    failed: all.filter((r) => r.status !== 200 || r.body?.result?.isError || !/^\[\d+\] /m.test(textOf(r))),
+  };
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

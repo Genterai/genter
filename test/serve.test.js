@@ -531,6 +531,22 @@ describe("genter serve: the local engine for a small team over HTTP", () => {
     }
   });
 
+  it("[rl:serve/async-reads] searches over files already read give the event loop its turns: a timer due at once fires before 20 of them, one after the other, end", { timeout: 60_000 }, async () => {
+    const b = box();
+    setup(b.base);
+    const g = createLocal({ home: b.at("data"), secret: hex(), cwd: b.base, notes: false, only: true });
+    await g.add(b.at("repos"));
+    await g.find(QUERY); // every file is read now: no search below waits for a read
+    let fired = null;
+    setTimeout(() => {
+      fired = performance.now();
+    }, 0);
+    for (let i = 0; i < 20; i++) assert.ok((await g.find(`${["billing", "rollback", "worker", "cache"][i % 4]} step ${i}`)).results.length);
+    const ended = performance.now();
+    assert.ok(fired !== null && fired < ended, "the timer fired while the searches ran, not after them");
+    b.done();
+  });
+
   it("[rl:security/public-only] genter serve refuses a website at a private address, saying so, and does not start", { timeout: 30_000 }, async () => {
     const b = box();
     for (const url of ["http://169.254.169.254/latest/meta-data/", "http://10.0.0.1/wiki/"]) {

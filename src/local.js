@@ -30,9 +30,10 @@ import { crawl, forgetPage, readPage, siteUrl } from "./web.js";
 // read again at every question like a page; one that fails, or whose sign-in expired, is named in the answer.
 // A file's text is read off the main thread, a few at a time: one over fileBytes is not read, and one whose read takes
 // longer than readMs is left out of that search and named in its answer, so one huge or slow file holds up nothing
-// else (genter serve answers its health check meanwhile).
+// else (genter serve answers its health check meanwhile). A search over files already read awaits nothing that waits,
+// so it gives the event loop a turn every turnMs of its own work (turn), and the health check is not held either.
 
-export const LIMITS = { files: 5000, fileBytes: 1_000_000, readMs: 2000, readers: 8, passageChars: 1400, perPlace: 2, webCandidates: 8, chunkChars: 1500, dims: 256, readIds: 10, readChars: 20_000 };
+export const LIMITS = { files: 5000, fileBytes: 1_000_000, readMs: 2000, readers: 8, turnMs: 10, passageChars: 1400, perPlace: 2, webCandidates: 8, chunkChars: 1500, dims: 256, readIds: 10, readChars: 20_000 };
 export const FILE_READ = "FILE_READ";
 export const PAGE_READ = "WEBSITE_READ_PAGE";
 export { MCP_READ };
@@ -341,7 +342,7 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
     return settle(path, sourceId, await look(path));
   }
   // What a look found, kept as the file's Anchor: the store changes here only, with nothing awaited, so places are
-  // numbered in the order they are listed.
+  // numbered in the order they are listed (readFiles settles them in that order, a turn of the event loop between two).
   function settle(path, sourceId, { st, hit, late }) {
     const s = state;
     const id = anchorId(FILE_READ, { path });
@@ -527,7 +528,11 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
     const s = state;
     const { files, complete } = filesOf(source, skip);
     const looks = await pool(files, LIMITS.readers, look);
-    const out = files.map((path, i) => settle(path, source.id, looks[i]));
+    const out = [];
+    for (const [i, path] of files.entries()) {
+      out.push(settle(path, source.id, looks[i]));
+      if (due()) await turn();
+    }
     const listed = new Set(files);
     // A file of this source that a whole listing no longer has is gone (deleted, or ignored now); after a cut-off
     // listing it is read on its own. One this project leaves out is neither read nor gone. A file another source read
@@ -985,7 +990,11 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
       const failed = [];
       const servers = Object.values(state.sources).filter((src) => src.kind === "mcp" && ours(src) && !sc.offUrl(src.url));
       await Promise.all(servers.map((src) => searchServer(src, q, reads, changes, failed)));
-      const sections = reads.flatMap((r) => sectionsOf(r.record, r.text).map((x) => ({ ...x, record: r.record })));
+      const sections = [];
+      for (const r of reads) {
+        for (const x of sectionsOf(r.record, r.text)) sections.push({ ...x, record: r.record });
+        if (due()) await turn();
+      }
       const lexical = bm25(q, sections.map((x) => x.doc));
       let scores = lexical;
       let semantic = false;
@@ -1578,11 +1587,25 @@ async function pool(items, n, fn) {
       while (i < items.length) {
         const k = i++;
         out[k] = await fn(items[k]);
+        if (due()) await turn();
       }
     }),
   );
   return out;
 }
+
+// A turn of the event loop once this process has worked LIMITS.turnMs since the last one. A look at a file already
+// read resolves at once, and promises that resolve at once never let the event loop go: without these turns a search
+// over files already read, and every search queued behind it, would hold genter serve's /health from start to end.
+let turned = 0;
+const due = () => performance.now() - turned >= LIMITS.turnMs;
+const turn = () =>
+  new Promise((done) =>
+    setImmediate(() => {
+      turned = performance.now();
+      done();
+    }),
+  );
 
 // ---- the decisions page ----
 
