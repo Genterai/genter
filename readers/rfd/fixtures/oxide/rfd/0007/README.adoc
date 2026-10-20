@@ -1,0 +1,12 @@
+:showtitle:
+:toc: left
+:numbered:
+:icons: font
+:state: published
+:discussion: https://example.org/acme/rfd/pull/7
+:authors: Dana <dana@example.com>
+
+= RFD 7 Firmware updates in two stages
+{authors}
+
+Firmware is written to the spare slot first, then the board restarts into it.

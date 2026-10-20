@@ -1,29 +1,36 @@
-// The 50-repository gate (step 1.10 of Genter's open-source plan): the readers (src/readers.js and the six in readers/)
-// over 50 public repositories that keep decision records or deprecation notices, each at a pinned commit, and per
+// The 50-repository gate (step 1.10 of Genter's open-source plan): the readers (src/readers.js and readers/) over two
+// samples of 50 public repositories that keep decision records or deprecation notices, each at a pinned commit, and per
 // repository how many decision records they find, how many documents say of themselves that they are replaced, and how
 // many documents carry a date of their own. The gate passes when the median repository has 5 or more decision records
-// and 15 of the 50 have an explicit replaced mark.
+// and 15 of the 50 have an explicit replaced mark, and it is judged on the held-out sample: the first 50 (repos.json)
+// are the ones the readers were widened looking at; the held-out 50 (heldout.json) were picked by the same rule from
+// other repositories and committed before the readers ran on them.
 //   node bench/repos/run.mjs --pick     checks candidates.json at each repository's HEAD and writes repos.json: the
 //                                       first `take` of each group that pass its check, with the commit they were at
-//   node bench/repos/run.mjs            the readers over repos.json's commits: results/<date>.json and RESULTS.md
+//   ... --pick --heldout                the same from candidates.json's held-out lists, none of repos.json's: heldout.json
+//   node bench/repos/run.mjs            the readers over both samples' commits: results/<date>.json and RESULTS.md
 //   --cache <dir>                       where the checkouts are kept (default: <tmp>/genter-bench-repos)
+//   --out <results.json>                where the run's numbers go (default: results/<date>.json)
+//   --before <results.json>             an earlier run of the first 50, shown beside this one (its readers, its counts)
 //   --from <results.json>               writes RESULTS.md again from a run's numbers (no network)
 // A checkout is shallow and holds only the files a reader can take (sparse: text documents, kep.yaml, changelogs), from
 // https://github.com/<owner>/<name>; nothing in it is ever run (git's symlinks off; the readers read text).
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { LIMITS, listFolder, readable } from "../../src/local.js";
-import { loadReaders, readDocument } from "../../src/readers.js";
+import { findPlace, loadReaders, readDocument } from "../../src/readers.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const version = JSON.parse(readFileSync(join(here, "..", "..", "package.json"), "utf8")).version;
 export const GATE = { records: 5, marked: 15 }; // the median repository's decision records; repositories with a replaced mark
-// The readers that read a decision record: an ADR, an RFC, PEP or KEP (their files), and each entry of a decision log.
-const RECORD_READERS = new Set(["adr", "rfc"]);
-const LOG_READERS = new Set(["decisions"]);
+// The readers that read a decision record, as their manifests say (records: true): a document one of them reads a date,
+// a status or a mark in (an ADR, an RFC, a PEP, a proposal), and each entry of one that reads entries (a decision log).
+export function recordReaders(readers = loadReaders().readers) {
+  return { docs: new Set(readers.filter((r) => r.records && !r.entries).map((r) => r.name)), logs: new Set(readers.filter((r) => r.records && r.entries).map((r) => r.name)) };
+}
 // The kinds of mark a reader gives a document; superseded and moved name a replacement or a new place.
 const KINDS = ["superseded", "moved", "deprecated", "obsolete", "archived", "removed", "unmaintained"];
 const REPLACED = new Set(["superseded", "moved"]);
@@ -83,9 +90,20 @@ function readOr(path) {
   }
 }
 
-// A mark's place, as the engine resolves it (local.js localLink): a relative link to a file that is there, from the
-// marked document's folder and inside the repository; null for an address or a place that is not there.
-function placeOf(dir, rel, by) {
+// A mark's place, as the engine resolves it: a relative link to a file that is there, from the marked document's folder
+// and inside the repository (local.js localLink), else the file its id names (readers.js findPlace, over the files the
+// engine reads in that folder); null for an address or a place that is not there.
+function placeOf(dir, rel, m) {
+  return linkOf(dir, rel, m.by) ?? (m.place ? findPlace(rel, m.place, (folder) => namesIn(join(dir, ...folder.split("/").filter(Boolean)))) : null);
+}
+function namesIn(folder) {
+  try {
+    return readdirSync(folder, { withFileTypes: true }).filter((e) => e.isFile() && readable(e.name)).map((e) => e.name);
+  } catch {
+    return [];
+  }
+}
+function linkOf(dir, rel, by) {
   if (!by || /^[a-z][a-z0-9+.-]*:/i.test(by)) return null;
   let clean = by.replace(/[#?].*$/, "");
   try {
@@ -106,6 +124,7 @@ function placeOf(dir, rel, by) {
 // mark, every mark read (its document, kind, reader, line and quote), and the pairs of a replaced document and the
 // document its mark names as what replaces it.
 export function countFolder(dir, { readers = loadReaders().readers } = {}) {
+  const { docs: RECORD_READERS, logs: LOG_READERS } = recordReaders(readers);
   const { files, complete } = listFolder(dir);
   const out = { files: files.length, complete, records: 0, dated: 0, marked: 0, superseded: 0, named: 0, placed: 0, changelog_deprecations: 0, by_reader: {}, by_kind: {}, marks: [], pairs: [] };
   for (const path of files) {
@@ -126,7 +145,7 @@ export function countFolder(dir, { readers = loadReaders().readers } = {}) {
     for (const k of new Set(marks.map((m) => m.kind))) out.by_kind[k] = (out.by_kind[k] ?? 0) + 1;
     for (const m of marks) out.marks.push({ doc: rel, kind: m.kind, reader: m.reader, line: m.line, quote: m.quote });
     if (marks.some((m) => m.by || m.name)) out.named++;
-    const placed = marks.map((m) => ({ m, place: placeOf(dir, rel, m.by) })).find((x) => x.place && x.place !== rel);
+    const placed = marks.map((m) => ({ m, place: placeOf(dir, rel, m) })).find((x) => x.place && x.place !== rel);
     if (placed) {
       out.placed++;
       out.pairs.push({ replaced: rel, by: placed.place, kind: placed.m.kind, reader: placed.m.reader, line: placed.m.line, quote: placed.m.quote });
@@ -162,6 +181,7 @@ export function verdict(rows) {
     ran: ran.length,
     median_records: records,
     median_present: present,
+    with_records: ran.filter((r) => r.records >= GATE.records).length,
     with_marks: marked,
     with_kind: Object.fromEntries(KINDS.map((k) => [k, ran.filter((r) => withKind(r, new Set([k]))).length])),
     with_replaced: ran.filter((r) => withKind(r, REPLACED)).length,
@@ -169,85 +189,199 @@ export function verdict(rows) {
     passes: ran.length === rows.length && records >= GATE.records && marked >= GATE.marked,
     records_ok: records >= GATE.records,
     marks_ok: marked >= GATE.marked,
-    by_group: Object.fromEntries(Object.entries(groups).map(([g, rs]) => [g, { repos: rs.length, median_records: median(rs.map((r) => r.records)), median_present: median(rs.map((r) => r.present ?? 0)), with_marks: rs.filter((r) => r.marked > 0).length, with_placed_marks: rs.filter((r) => r.placed > 0).length }])),
+    by_group: Object.fromEntries(Object.entries(groups).map(([g, rs]) => [g, { repos: rs.length, median_records: median(rs.map((r) => r.records)), median_present: median(rs.map((r) => r.present ?? 0)), with_records: rs.filter((r) => r.records >= GATE.records).length, with_marks: rs.filter((r) => r.marked > 0).length, with_placed_marks: rs.filter((r) => r.placed > 0).length }])),
     picks,
   };
 }
 
 const n = (x) => (x == null ? "–" : String(x));
+const SAMPLES = { heldout: { title: "the held-out 50", list: "heldout.json" }, first: { title: "the first 50", list: "repos.json" } };
 
 // The marked documents of a picked archive that only a fallback reader marked (a status line or a banner, no record's
 // own status field), each with its first mark quoted: Genter applies a mark to its whole document, so a line that
 // supersedes a part of one marks all of it.
-function picksRead(results) {
+function picksRead(sample, records) {
   const out = [];
-  for (const repo of results.verdict.picks) {
-    const r = results.repos.find((x) => x.repo === repo);
+  for (const repo of sample.verdict.picks) {
+    const r = sample.repos.find((x) => x.repo === repo);
     const byDoc = new Map();
     for (const m of r?.marks ?? []) byDoc.set(m.doc, [...(byDoc.get(m.doc) ?? []), m]);
-    const loose = [...byDoc.values()].filter((ms) => !ms.some((m) => RECORD_READERS.has(m.reader) || LOG_READERS.has(m.reader))).map((ms) => ms[0]);
+    const loose = [...byDoc.values()].filter((ms) => !ms.some((m) => records.has(m.reader))).map((ms) => ms[0]);
     if (!loose.length) continue;
-    out.push(`* **${repo}**: ${loose.length} of its ${byDoc.size} marked documents were marked by a fallback reader alone, not by a record's own status: ${loose.map((m) => `[${m.doc}](https://github.com/${repo}/blob/${r.commit}/${m.doc}#L${m.line}) (${m.reader}, ${m.kind}) "${m.quote}"`).join("; ")}. Genter applies each mark to its whole document, so a line that supersedes only a part of one marks all of it; a launch page built on these marks waits for the owner's review of each.`);
+    out.push(`* **${repo}**: ${loose.length} of its ${byDoc.size} marked documents were marked by a fallback reader alone, not by a record's own status: ${loose.slice(0, 6).map((m) => `[${m.doc}](https://github.com/${repo}/blob/${r.commit}/${m.doc}#L${m.line}) (${m.reader}, ${m.kind}) "${m.quote}"`).join("; ")}${loose.length > 6 ? `; and ${loose.length - 6} more (results file)` : ""}. Genter applies each mark to its whole document, so a line that supersedes only a part of one marks all of it; a launch page built on these marks waits for the owner's review of each.`);
   }
   return out.length ? [...out, ""] : [];
 }
-export function resultsMd(results) {
-  const v = results.verdict;
-  const groups = Object.fromEntries(results.groups.map((g) => [g.id, g]));
-  const lines = [
-    `# 50 repositories: what the readers find`,
-    "",
-    `Written by \`node bench/repos/run.mjs\` on ${results.date} with genter-cli ${results.version} and the readers ${results.readers.join(", ")}. The method is in [README.md](README.md); the numbers are in [${results.file}](${results.file}).`,
-    "",
-    "## The gate",
-    "",
-    `**${v.passes ? "Passes" : "Does not pass"}.** The gate (step 1.10 of Genter's open-source plan) passes when the median repository has ${GATE.records} or more decision records and ${GATE.marked} of the 50 have an explicit replaced mark.`,
-    "",
-    `* The median repository has **${n(v.median_records)}** decision records the readers read (${v.records_ok ? "at least" : "below"} ${GATE.records}). The records are there: by each group's own pattern for its records (candidates.json), whatever their format, the median repository holds ${n(v.median_present)} (the changelog group holds none by definition); the readers as shipped take few of their formats (below).`,
+
+// The gate's lines for one sample: the median, the marks, the marks by kind, what could not be read, and the groups.
+function gateLines(sample, groups) {
+  const v = sample.verdict;
+  return [
+    `* The median repository has **${n(v.median_records)}** decision records the readers read (${v.records_ok ? "at least" : "below"} ${GATE.records}). By each group's own pattern for its records (candidates.json), whatever their format, the median repository holds ${n(v.median_present)} (the changelog group holds none by definition).`,
     `* **${v.with_marks} of ${v.repos}** have at least one document that carries a mark the readers read (${v.marks_ok ? "at least" : "below"} ${GATE.marked}); in ${v.with_placed_marks} of them a mark names a replacing document that is in the repository (where Genter puts the current answer first).`,
-    ...(v.with_kind
-      ? [
-          `* The gate counts a mark of any kind, from any reader, the fallback ones (banners, front matter) included, as the readers read it: a heading or a sentence a fallback reader takes for a document's own mark counts too. By kind, the repositories with a mark: ${KINDS.filter((k) => v.with_kind[k]).map((k) => `${k} ${v.with_kind[k]}`).join(", ")}; with a superseded or moved mark (one that names a replacement or a new place) ${v.with_replaced}, ${v.with_replaced >= GATE.marked ? "at least" : "below"} ${GATE.marked}; with a superseded mark alone ${v.with_kind.superseded}, ${v.with_kind.superseded >= GATE.marked ? "at least" : "below"} ${GATE.marked}.`,
-        ]
-      : []),
-    ...(v.ran < v.repos ? [`* ${v.repos - v.ran} repositories could not be read: ${results.repos.filter((r) => r.error).map((r) => `${r.repo} (${r.error})`).join("; ")}.`] : []),
+    `* The gate counts a mark of any kind, from any reader, the fallback ones (banners, front matter) included, as the readers read it: a heading or a sentence a fallback reader takes for a document's own mark counts too. By kind, the repositories with a mark: ${KINDS.filter((k) => v.with_kind[k]).map((k) => `${k} ${v.with_kind[k]}`).join(", ") || "none"}; with a superseded or moved mark (one that names a replacement or a new place) ${v.with_replaced}, ${v.with_replaced >= GATE.marked ? "at least" : "below"} ${GATE.marked}; with a superseded mark alone ${v.with_kind.superseded}, ${v.with_kind.superseded >= GATE.marked ? "at least" : "below"} ${GATE.marked}.`,
+    ...(v.ran < v.repos ? [`* ${v.repos - v.ran} repositories could not be read: ${sample.repos.filter((r) => r.error).map((r) => `${r.repo} (${r.error})`).join("; ")}.`] : []),
     "",
-    "| group | repositories | median decision records read | median records in the tree | with a replaced mark | with a mark naming a document there |",
-    "| -- | --: | --: | --: | --: | --: |",
-    ...Object.entries(v.by_group).map(([g, x]) => `| ${groups[g]?.title ?? g} | ${x.repos} | ${x.median_records} | ${g === "changelogs" ? "–" : x.median_present} | ${x.with_marks} | ${x.with_placed_marks} |`),
+    "| group | repositories | median decision records read | median records in the tree | with 5 or more read | with a replaced mark | with a mark naming a document there |",
+    "| -- | --: | --: | --: | --: | --: | --: |",
+    ...Object.entries(v.by_group).map(([g, x]) => `| ${groups[g]?.title ?? g} | ${x.repos} | ${x.median_records} | ${g === "changelogs" ? "–" : x.median_present} | ${x.with_records} | ${x.with_marks} | ${x.with_placed_marks} |`),
     "",
-    `**The three archives** for the launch pages and the old-answer test (bench/old-answer): ${v.picks.map((r) => `[${r}](https://github.com/${r})`).join(", ")}: among the repositories with ${GATE.records} or more decision records, the most documents whose mark names a replacing document that is there, then the most that name what replaces them, then the most marked.`,
-    "",
-    ...picksRead(results),
-    "## Per repository",
-    "",
-    "Decision records: documents the adr or rfc reader reads a date, a status or a mark in, and entries of a decision log; in the tree: the files that match the group's own pattern for the repository's records (candidates.json), read or not. Replaced: documents that carry a mark the readers read (superseded, deprecated, obsolete, archived, moved, removed, unmaintained), from any reader; named: the mark names what replaces it; there: the replacing document it links is in the repository. Dated: documents a reader reads a date in. Changelog deprecations: entries' deprecated and removed items, not marks of a document.",
-    "",
-    "| repository | stars | commit | files read | decision records | in the tree | replaced | named | there | dated | changelog deprecations | readers that read something |",
-    "| -- | --: | -- | --: | --: | --: | --: | --: | --: | --: | --: | -- |",
   ];
-  for (const g of results.groups) {
-    lines.push(`| **${g.title}** | | | | | | | | | | | |`);
-    for (const r of results.repos.filter((x) => x.group === g.id)) {
+}
+
+// One sample's table, a row per repository; `before`: an earlier run's decision records per repository, when given.
+function tableLines(sample, groups, before) {
+  const was = new Map((before?.repos ?? []).map((r) => [r.repo, r]));
+  const extra = before ? " | decision records before" : "";
+  const lines = [
+    `| repository | stars | commit | files read | decision records${extra} | in the tree | replaced | named | there | dated | changelog deprecations | readers that read something |`,
+    `| -- | --: | -- | --: | --: | --: | --: | --: | --: | --: | --: |${before ? " --: |" : ""} -- |`,
+  ];
+  const cols = 12 + (before ? 1 : 0);
+  for (const g of groups) {
+    const rows = sample.repos.filter((x) => x.group === g.id);
+    if (!rows.length) continue;
+    lines.push(`| **${g.title}** |${" |".repeat(cols - 1)}`);
+    for (const r of rows) {
       if (r.error) {
-        lines.push(`| [${r.repo}](https://github.com/${r.repo}) | ${r.stars} | – | could not be read: ${r.error} | | | | | | | | |`);
+        lines.push(`| [${r.repo}](https://github.com/${r.repo}) | ${r.stars} | – | could not be read: ${r.error} |${" |".repeat(cols - 4)}`);
         continue;
       }
-      const readers = Object.entries(r.by_reader).sort((a, b) => b[1] - a[1]).map(([k, x]) => `${k} ${x}`).join(", ");
+      const readers = Object.entries(r.by_reader).sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1)).map(([k, x]) => `${k} ${x}`).join(", ");
       const files = `${r.files}${r.complete ? "" : " (cut)"}${r.tree_readable > 5000 ? "¹" : ""}`;
-      lines.push(`| [${r.repo}](https://github.com/${r.repo}) | ${r.stars} | [${r.commit.slice(0, 7)}](https://github.com/${r.repo}/tree/${r.commit}) ${r.committed.slice(0, 10)} | ${files} | ${r.records} | ${r.present ?? "–"} | ${r.marked} | ${r.named} | ${r.placed} | ${r.dated} | ${r.changelog_deprecations} | ${readers || "–"} |`);
+      const then = before ? ` | ${n(was.get(r.repo)?.records)}` : "";
+      lines.push(`| [${r.repo}](https://github.com/${r.repo}) | ${r.stars} | [${r.commit.slice(0, 7)}](https://github.com/${r.repo}/tree/${r.commit}) ${r.committed.slice(0, 10)} | ${files} | ${r.records}${then} | ${r.present ?? "–"} | ${r.marked} | ${r.named} | ${r.placed} | ${r.dated} | ${r.changelog_deprecations} | ${readers || "–"} |`);
     }
   }
-  lines.push("", "¹ The repository holds more than 5,000 files the engine reads (code included); Genter reads the first 5,000 of a folder in name order, so on a whole clone it may not reach every document counted here.");
-  const missed = results.repos.filter((r) => !r.error && r.present >= GATE.records && r.records < r.present / 2);
-  lines.push("", "## What the readers miss", "", `${missed.length} repositories hold ${GATE.records} or more records in the tree that the readers read less than half of: their records are in a place or a form no reader in readers/ takes yet (a reader is data: readers/<name>/reader.json, outside harden's Sources).`, "");
-  for (const r of missed) lines.push(`* **${r.repo}**: ${r.present} ${r.what ?? "records"} (\`${r.pattern}\`), ${r.records} read.`);
-  const pairs = results.repos.flatMap((r) => (r.pairs ?? []).map((p) => ({ ...p, repo: r.repo, commit: r.commit })));
-  lines.push("", "## Replaced documents whose mark names a replacing document there", "", `${pairs.length} in all; each links the replaced document at its commit, then the one its mark names.`, "");
-  for (const r of results.repos.filter((x) => x.pairs?.length)) {
+  return [...lines, ""];
+}
+
+function missedLines(sample) {
+  const missed = sample.repos.filter((r) => !r.error && r.present >= GATE.records && r.records < r.present / 2);
+  return [`${missed.length} repositories hold ${GATE.records} or more records in the tree that the readers read less than half of: their records are in a place or a form no reader in readers/ takes yet, or carry no date, status or mark a reader reads (a reader is data: readers/<name>/reader.json, outside harden's Sources).`, "", ...missed.map((r) => `* **${r.repo}**: ${r.present} ${r.what ?? "records"} (\`${r.pattern}\`), ${r.records} read.`), ""];
+}
+
+function pairLines(sample) {
+  const all = sample.repos.flatMap((r) => r.pairs ?? []);
+  const lines = [`${all.length} in all; each links the replaced document at its commit, then the one its mark names.`, ""];
+  for (const r of sample.repos.filter((x) => x.pairs?.length)) {
     lines.push(`* **${r.repo}** (${r.pairs.length}): ${r.pairs.slice(0, 12).map((p) => `[${p.replaced}](https://github.com/${r.repo}/blob/${r.commit}/${p.replaced}) → [${p.by}](https://github.com/${r.repo}/blob/${r.commit}/${p.by})`).join("; ")}${r.pairs.length > 12 ? `; and ${r.pairs.length - 12} more (results file)` : ""}`);
   }
-  return `${lines.join("\n")}\n`;
+  return [...lines, ""];
+}
+
+export function resultsMd(results) {
+  const groups = Object.fromEntries(results.groups.map((g) => [g.id, g]));
+  const sample = Object.fromEntries(results.samples.map((s) => [s.id, s]));
+  const held = sample.heldout;
+  const first = sample.first;
+  const before = results.before;
+  const records = new Set(results.record_readers);
+  const v = held.verdict;
+  const lines = [
+    "# 50 repositories, and 50 held out: what the readers find",
+    "",
+    `Written by \`node bench/repos/run.mjs\` on ${results.date} with genter-cli ${results.version} and the readers ${results.readers.join(", ")} (those of decision records: ${results.record_readers.join(", ")}). The method is in [README.md](README.md); the numbers are in [${results.file}](${results.file}).`,
+    "",
+    "## The gate, on the held-out 50",
+    "",
+    `**${v.passes ? "Passes" : "Does not pass"}.** The gate (step 1.10 of Genter's open-source plan) passes when the median repository has ${GATE.records} or more decision records and ${GATE.marked} of the 50 have an explicit replaced mark. It is judged on the held-out 50 ([${held.list}](${held.list}), picked on ${held.picked_on}): the same rule and groups as the first 50 (candidates.json), over repositories not among them, picked and committed before the readers ran on any of them. The first 50 are not a fair test any more: the readers were widened looking at them (below).`,
+    "",
+    ...gateLines(held, groups),
+    "## The first 50, after the readers were widened",
+    "",
+    `**${first.verdict.passes ? "Would pass" : "Would not pass"}** on the first 50 ([${first.list}](${first.list})), the repositories the readers were written for: a biased number, shown so the two can be compared.${before ? ` With the readers of [${before.file}](${before.file}) (${before.readers.join(", ")}), the median repository there had ${n(before.verdict.median_records)} decision records read, ${before.verdict.with_marks} of 50 a replaced mark and ${before.verdict.with_placed_marks} a mark naming a document there.` : ""}`,
+    "",
+    ...gateLines(first, groups),
+    "## The three archives",
+    "",
+    `The old-answer test (bench/old-answer) keeps the three archives step 1.10 picked, at the commits it read them at: its questions are written per pair and wait for a person's review. With the readers as they are now, the same rule (among the repositories with ${GATE.records} or more decision records, the most documents whose mark names a replacing document that is there, then the most that name what replaces them, then the most marked, then the most stars) picks ${first.verdict.picks.map((r) => `[${r}](https://github.com/${r})`).join(", ") || "none"} among the first 50, and ${held.verdict.picks.map((r) => `[${r}](https://github.com/${r})`).join(", ") || "none"} among the held-out 50.`,
+    "",
+    ...picksRead(first, records),
+    ...picksRead(held, records),
+    "## Per repository",
+    "",
+    "Decision records: documents a reader of decision records (its manifest says `records: true`) reads a date, a status or a mark in, and entries of a decision log; in the tree: the files that match the group's own pattern for the repository's records (candidates.json), read or not. Replaced: documents that carry a mark the readers read (superseded, deprecated, obsolete, archived, moved, removed, unmaintained), from any reader; named: the mark names what replaces it; there: the replacing document it links, or its id names, is in the repository. Dated: documents a reader reads a date in. Changelog deprecations: entries' deprecated and removed items, not marks of a document.",
+    "",
+    "### The held-out 50",
+    "",
+    ...tableLines(held, results.groups),
+    `### The first 50${before ? ", with the decision records step 1.10's readers read" : ""}`,
+    "",
+    ...tableLines(first, results.groups, before),
+    "¹ The repository holds more than 5,000 files the engine reads (code included); Genter reads the first 5,000 of a folder in name order, so on a whole clone it may not reach every document counted here.",
+    "",
+    "## What the readers miss",
+    "",
+    "### The held-out 50",
+    "",
+    ...missedLines(held),
+    "### The first 50",
+    "",
+    ...missedLines(first),
+    "## Replaced documents whose mark names a replacing document there",
+    "",
+    "### The held-out 50",
+    "",
+    ...pairLines(held),
+    "### The first 50",
+    "",
+    ...pairLines(first),
+  ];
+  return `${lines.join("\n").replace(/\n+$/, "")}\n`;
+}
+
+// The first `take` of each group that pass its check, from the candidates given; `skip`: repositories never taken.
+function pick(cache, groups, skip = new Set()) {
+  const picked = [];
+  for (const g of groups) {
+    let taken = 0;
+    for (const c of g.candidates) {
+      if (taken >= g.take) break;
+      if (skip.has(c.repo)) {
+        console.log(`${g.id} ${c.repo}: skipped, in the first 50`);
+        continue;
+      }
+      let why;
+      let co;
+      try {
+        co = checkout(cache, c.repo);
+        if (g.changelog) {
+          const logs = co.tree.filter((p) => CHANGELOG.test(p)).filter((p) => /deprecat/i.test(readOr(join(co.dir, p))));
+          if (!logs.length) why = "no changelog that says deprecat";
+        } else if (!co.tree.some((p) => new RegExp(c.records).test(p))) why = `no ${c.what} (${c.records})`;
+      } catch (e) {
+        why = e.message;
+      }
+      console.log(`${g.id} ${c.repo}: ${why ? `skipped, ${why}` : `taken at ${co.commit.slice(0, 7)}`}`);
+      if (why) continue;
+      picked.push({ repo: c.repo, group: g.id, stars: c.stars, commit: co.commit, committed: co.committed });
+      taken++;
+    }
+    if (taken < g.take) console.log(`${g.id}: only ${taken} of ${g.take} passed`);
+  }
+  return picked;
+}
+
+// One sample over its pinned commits: a row per repository.
+function runSample(cache, list, candidates, readers) {
+  const rows = [];
+  const all = [...candidates.groups, ...(candidates.heldout?.groups ?? [])].flatMap((g) => g.candidates);
+  for (const r of list) {
+    const started = Date.now();
+    try {
+      const co = checkout(cache, r.repo, r.commit);
+      const tree_readable = co.tree.filter((p) => !p.split("/").some((s) => s.startsWith(".")) && readable(basename(p))).length;
+      const c = all.find((x) => x.repo === r.repo);
+      const present = c?.records ? co.tree.filter((p) => new RegExp(c.records).test(p)).length : null;
+      rows.push({ ...r, committed: co.committed, tree_readable, present, ...(c?.records && { what: c.what, pattern: c.records }), ...countFolder(co.dir, { readers }) });
+    } catch (e) {
+      rows.push({ ...r, error: e.message.slice(0, 200) });
+    }
+    const x = rows.at(-1);
+    console.log(`${r.repo}: ${x.error ? `error ${x.error}` : `${x.files} files, ${x.records} records, ${x.marked} replaced (${x.placed} there), ${x.dated} dated`} (${Date.now() - started} ms)`);
+  }
+  return rows;
 }
 
 // ---- main ----
@@ -263,55 +397,32 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     writeFileSync(join(here, "RESULTS.md"), resultsMd(results));
     console.log(`RESULTS.md written from ${from}`);
   } else if (args.includes("--pick")) {
-    const picked = [];
-    for (const g of candidates.groups) {
-      let taken = 0;
-      for (const c of g.candidates) {
-        if (taken >= g.take) break;
-        let why;
-        let co;
-        try {
-          co = checkout(cache, c.repo);
-          if (g.changelog) {
-            const logs = co.tree.filter((p) => CHANGELOG.test(p)).filter((p) => /deprecat/i.test(readOr(join(co.dir, p))));
-            if (!logs.length) why = "no changelog that says deprecat";
-          } else if (!co.tree.some((p) => new RegExp(c.records).test(p))) why = `no ${c.what} (${c.records})`;
-        } catch (e) {
-          why = e.message;
-        }
-        console.log(`${g.id} ${c.repo}: ${why ? `skipped, ${why}` : `taken at ${co.commit.slice(0, 7)}`}`);
-        if (why) continue;
-        picked.push({ repo: c.repo, group: g.id, stars: c.stars, commit: co.commit, committed: co.committed });
-        taken++;
-      }
-      if (taken < g.take) console.log(`${g.id}: only ${taken} of ${g.take} passed`);
-    }
-    writeFileSync(join(here, "repos.json"), `${JSON.stringify({ picked_on: new Date().toISOString().slice(0, 10), stars_on: candidates.stars_on, repos: picked }, null, 2)}\n`);
-    console.log(`repos.json: ${picked.length} repositories`);
+    const heldout = args.includes("--heldout");
+    const first = heldout ? JSON.parse(readFileSync(join(here, "repos.json"), "utf8")).repos : [];
+    const groups = heldout ? candidates.heldout.groups.map((g) => ({ ...candidates.groups.find((x) => x.id === g.id), ...g })) : candidates.groups;
+    const picked = pick(cache, groups, new Set(first.map((r) => r.repo)));
+    const file = heldout ? "heldout.json" : "repos.json";
+    writeFileSync(join(here, file), `${JSON.stringify({ picked_on: new Date().toISOString().slice(0, 10), stars_on: (heldout ? candidates.heldout : candidates).stars_on, repos: picked }, null, 2)}\n`);
+    console.log(`${file}: ${picked.length} repositories`);
   } else {
-    const { repos } = JSON.parse(readFileSync(join(here, "repos.json"), "utf8"));
     const { readers } = loadReaders();
-    const rows = [];
-    for (const r of repos) {
-      const started = Date.now();
-      try {
-        const co = checkout(cache, r.repo, r.commit);
-        const tree_readable = co.tree.filter((p) => !p.split("/").some((s) => s.startsWith(".")) && readable(basename(p))).length;
-        const c = candidates.groups.flatMap((g) => g.candidates).find((x) => x.repo === r.repo);
-        const present = c?.records ? co.tree.filter((p) => new RegExp(c.records).test(p)).length : null;
-        rows.push({ ...r, committed: co.committed, tree_readable, present, ...(c?.records && { what: c.what, pattern: c.records }), ...countFolder(co.dir, { readers }) });
-      } catch (e) {
-        rows.push({ ...r, error: e.message.slice(0, 200) });
-      }
-      const x = rows.at(-1);
-      console.log(`${r.repo}: ${x.error ? `error ${x.error}` : `${x.files} files, ${x.records} records, ${x.marked} replaced (${x.placed} there), ${x.dated} dated`} (${Date.now() - started} ms)`);
+    const { docs, logs } = recordReaders(readers);
+    const samples = [];
+    for (const id of ["heldout", "first"]) {
+      const list = JSON.parse(readFileSync(join(here, SAMPLES[id].list), "utf8"));
+      const rows = runSample(cache, list.repos, candidates, readers);
+      samples.push({ id, ...SAMPLES[id], picked_on: list.picked_on, verdict: verdict(rows), repos: rows });
     }
     const date = new Date().toISOString().slice(0, 10);
-    const file = `results/${date}.json`;
-    const results = { date, version, file, readers: readers.map((r) => r.name), rule: candidates.rule, groups: candidates.groups.map((g) => ({ id: g.id, title: g.title, rule: g.rule, take: g.take })), gate: GATE, verdict: verdict(rows), repos: rows };
-    mkdirSync(join(here, "results"), { recursive: true });
-    writeFileSync(join(here, file), `${JSON.stringify(results, null, 2)}\n`);
+    const out = option("--out") ? resolve(option("--out")) : join(here, "results", `${date}.json`);
+    const file = relative(here, out).split(sep).join("/");
+    const was = option("--before") && JSON.parse(readFileSync(option("--before"), "utf8"));
+    const before = was && { file: relative(here, resolve(option("--before"))).split(sep).join("/"), date: was.date, version: was.version, readers: was.readers, verdict: was.verdict ?? was.samples?.find((s) => s.id === "first")?.verdict, repos: (was.repos ?? was.samples?.find((s) => s.id === "first")?.repos ?? []).map((r) => ({ repo: r.repo, group: r.group, records: r.records, marked: r.marked, placed: r.placed })) };
+    const results = { date, version, file, readers: readers.map((r) => r.name), record_readers: [...docs, ...logs].sort(), rule: candidates.rule, heldout_rule: candidates.heldout?.rule, groups: candidates.groups.map((g) => ({ id: g.id, title: g.title, rule: g.rule, take: g.take })), gate: GATE, samples, ...(before && { before }) };
+    mkdirSync(dirname(out), { recursive: true });
+    writeFileSync(out, `${JSON.stringify(results, null, 2)}\n`);
     writeFileSync(join(here, "RESULTS.md"), resultsMd(results));
-    console.log(`${file} and RESULTS.md written; the gate ${results.verdict.passes ? "passes" : "does not pass"}`);
+    const v = samples[0].verdict;
+    console.log(`${file} and RESULTS.md written; on the held-out 50 the gate ${v.passes ? "passes" : "does not pass"} (median ${v.median_records}, ${v.with_marks} with a mark); on the first 50: median ${samples[1].verdict.median_records}, ${samples[1].verdict.with_marks} with a mark`);
   }
 }

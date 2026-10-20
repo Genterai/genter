@@ -160,6 +160,27 @@ describe("genter decisions", () => {
     }
   });
 
+  it("[rl:decisions-page/explicit-only] [rl:readers/by-id] a PEP replaced by a number names the file of the project that number leads to; a number that leads to no file names the number", () => {
+    const box = repo({
+      ".git/HEAD": ACME[".git/HEAD"],
+      ".git/refs/heads/main": ACME[".git/refs/heads/main"],
+      "peps/pep-0438.rst": "PEP: 438\nTitle: Hosting files outside the index\nStatus: Superseded\nCreated: 15-Oct-2013\nSuperseded-By: 470\n\nAbstract\n========\n\nFiles may be hosted elsewhere.\n",
+      "peps/pep-0470.rst": "PEP: 470\nTitle: Hosting files on the index only\nStatus: Final\nCreated: 12-May-2014\nReplaces: 438\n\nAbstract\n========\n\nFiles are hosted on the index.\n",
+      "peps/pep-0501.rst": "PEP: 501\nTitle: Interpolation templates\nStatus: Withdrawn\nCreated: 08-Aug-2015\nSuperseded-By: 750\n\nAbstract\n========\n\nTemplates are handed to a function.\n",
+    });
+    try {
+      const rows = rowsOf(box);
+      const at = (path) => rows.find((r) => r.path === path);
+      assert.deepEqual(at("peps/pep-0438.rst"), { state: "replaced", title: "Hosting files outside the index", path: "peps/pep-0438.rst", line: 4, date: "2013-10-15", notice: { line: 5, quote: "Superseded-By: 470" }, by: { path: "peps/pep-0470.rst" } });
+      assert.equal(at("peps/pep-0470.rst").state, "current");
+      assert.deepEqual(at("peps/pep-0501.rst").by, { name: "750" });
+      const body = bodyOf(decisionsPage({ project: "acme", commit: COMMIT, date: "2026-10-20", rows }));
+      assert.ok(body.includes("<code>peps/pep-0438.rst:5</code> says: “Superseded-By: 470” · replaced by <code>peps/pep-0470.rst</code>"), body);
+    } finally {
+      box.done();
+    }
+  });
+
   it("[rl:decisions-page/explicit-only] a listing that stopped at its limit is said, on the page and by the command, and the page claims no absence past it", () => {
     const files = { ".git/HEAD": ACME[".git/HEAD"], ".git/refs/heads/main": ACME[".git/refs/heads/main"], "docs/adr/0001-queue.md": "# 1. Queue\n\nDate: 2026-01-01\n\n## Status\n\nAccepted\n" };
     for (let i = 0; i < LIMITS.files; i++) files[`apps/web/src/f${i}.js`] = "x\n";

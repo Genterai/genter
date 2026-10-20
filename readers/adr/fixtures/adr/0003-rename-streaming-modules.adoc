@@ -1,0 +1,9 @@
+= Rename the streaming modules
+
+* Status: _accepted_
+* Date: 2025-10-17 by @omar
+* Authors: @omar, @priya
+
+== Context and Problem Statement
+
+The streaming modules carry a name that no longer says what they do.

@@ -1,0 +1,51 @@
+{
+  "peps/README.rst": null,
+  "peps/pep-0042.rst": {
+    "date": {
+      "value": "2021-07-05",
+      "line": 6
+    },
+    "status": {
+      "value": "superseded",
+      "line": 4
+    },
+    "marks": [
+      {
+        "kind": "superseded",
+        "line": 7,
+        "quote": "Superseded-By: 57",
+        "name": "57",
+        "place": "pep-0057.*"
+      }
+    ]
+  },
+  "peps/pep-0057.rst": {
+    "date": {
+      "value": "2024-03-12",
+      "line": 6
+    },
+    "status": {
+      "value": "final",
+      "line": 4
+    }
+  },
+  "peps/pep-0060.rst": {
+    "date": {
+      "value": "2024-06-01",
+      "line": 6
+    },
+    "status": {
+      "value": "withdrawn",
+      "line": 4
+    },
+    "marks": [
+      {
+        "kind": "superseded",
+        "line": 7,
+        "quote": "Superseded-By: 61",
+        "name": "61",
+        "place": "pep-0061.*"
+      }
+    ]
+  }
+}
