@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { describe, it } from "node:test";
@@ -223,6 +223,8 @@ describe("replacements named by an id", () => {
       ["{id}?.md", /a path from the document's folder/],
       ["https://example.com/{id}", /an address/],
     ];
+    // {id} in a folder's name (an archive of one folder per document) is a place too, as the red line says.
+    assert.deepEqual(lintReader(withPlace("../{id:04}/README.adoc")), []);
     for (const [place, why] of refused) {
       const found = lintReader(withPlace(place));
       assert.ok(found.some((p) => why.test(p)), `${place}: ${found.join(" | ")}`);
@@ -252,7 +254,7 @@ describe("replacements named by an id", () => {
     }), null);
   });
 
-  it("[rl:readers/by-id] [rl:local-search/reader-marks] [rl:local-search/current-first] a PEP superseded by a number: the replacing PEP comes first, its notice quoted; a number that names no file, or one switched off, brings nothing and the mark stays", async () => {
+  it("[rl:readers/by-id] [rl:local-search/reader-marks] [rl:local-search/current-first] a PEP superseded by a number: the replacing PEP comes first, its notice quoted; a number that names no file, one switched off, a link out of the project or a file genter.json leaves out brings nothing and the mark stays", async () => {
     const base = mkdtempSync(join(tmpdir(), "genter-by-id-"));
     const dir = join(base, "project");
     const pep = (n, status, extra, body) => `PEP: ${n}\nTitle: Exporting invoices\nStatus: ${status}\nCreated: 05-Jul-2021\n${extra}\nAbstract\n========\n\n${body}\n`;
@@ -288,6 +290,24 @@ describe("replacements named by an id", () => {
       assert.equal(credits.results[0].path, join(dir, "peps/pep-0070.rst"));
       assert.deepEqual(credits.results[0].anchor.superseded, { marker: "superseded", line: 5, reader: "pep" });
       assert.ok(!credits.results.some((r) => r.path === join(dir, "peps/pep-0071.rst")));
+      // In a project of its own: PEP 81 is a link to a file outside the project, PEP 91 is left out by the project's
+      // genter.json. Neither is named or brought, and each mark stays.
+      const other = join(base, "other");
+      const outside = join(base, "outside");
+      for (const d of [join(other, "peps"), outside, join(base, "home2")]) mkdirSync(d, { recursive: true });
+      writeFileSync(join(other, "peps/pep-0080.rst"), pep(80, "Superseded", "Superseded-By: 81\n", "Payouts are exported as one file per month, in CSV."));
+      writeFileSync(join(outside, "notes.rst"), pep(81, "Final", "", "Payouts are exported as one file per customer."));
+      symlinkSync(join(outside, "notes.rst"), join(other, "peps/pep-0081.rst"));
+      writeFileSync(join(other, "peps/pep-0090.rst"), pep(90, "Superseded", "Superseded-By: 91\n", "Taxes are exported as one file per month, in CSV."));
+      writeFileSync(join(other, "peps/pep-0091.rst"), pep(91, "Final", "", "Taxes are exported as one file per customer."));
+      writeFileSync(join(other, "genter.json"), JSON.stringify({ exclude: ["peps/pep-0091.rst"] }));
+      const g2 = createLocal({ home: join(base, "home2"), secret: "s", cwd: other });
+      for (const [q, n] of [["payouts exported one file per month CSV", 80], ["taxes exported one file per month CSV", 90]]) {
+        const got = await g2.find(q, { limit: 3 });
+        assert.equal(got.results[0].path, join(other, `peps/pep-00${n}.rst`), q);
+        assert.deepEqual(got.results[0].anchor.superseded, { marker: "superseded", line: 5, reader: "pep" }, q);
+        assert.ok(!got.results.some((r) => r.path === join(other, `peps/pep-00${n + 1}.rst`)), q);
+      }
     } finally {
       rmSync(base, { recursive: true, force: true });
     }

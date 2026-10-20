@@ -83,7 +83,7 @@ node bench/repos/run.mjs --pick      # the 50 again from candidates.json (re-pin
 node bench/repos/run.mjs --pick --heldout   # the held-out sample again from candidates.json's heldout lists
 node bench/repos/run.mjs             # the readers over both samples' commits: results/<date>.json and RESULTS.md (~5 min the first time)
 node bench/repos/run.mjs --before bench/repos/results/2026-10-20.json   # the same, with step 1.10's counts of the first 50 beside
-node bench/repos/run.mjs --from bench/repos/results/2026-10-20.json   # RESULTS.md from a run's numbers, no network
+node bench/repos/run.mjs --from bench/repos/results/2026-10-20-heldout.json   # RESULTS.md from a run's numbers, no network
 ```
 
 It needs `git` and access to github.com; checkouts are kept in `--cache <dir>` (default: the system's temp folder).

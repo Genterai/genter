@@ -377,17 +377,26 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
   // The file a reader's place names (a replacement named by its id: readers.js findPlace), for a file inside the
   // project: in the folder the place leads to, inside the project and not through a link, the one file there this project
   // reads (readable, not hidden, not switched off, not narrowed out by a genter.json) that the place names; else null.
+  // Within one pass of readFiles (pass: its skip, each folder's names) a folder is listed once.
+  let pass = null;
   function placeLink(path, place) {
     if (!under(path, [root]) || path === root) return null;
-    let skip;
-    const top = realOf(root);
+    const at = pass ?? { names: new Map() };
     const found = findPlace(relative(root, path).split(sep).join("/"), place, (folder) => {
-      const dir = join(root, ...folder.split("/").filter(Boolean));
-      if (!under(realOf(dir), [top])) return [];
-      skip ??= scope().skip;
-      return readdirSync(dir, { withFileTypes: true })
-        .filter((e) => e.isFile() && readable(e.name) && !skip(join(dir, e.name)))
-        .map((e) => e.name);
+      if (!at.names.has(folder)) {
+        const dir = join(root, ...folder.split("/").filter(Boolean));
+        let names = [];
+        try {
+          if (under(realOf(dir), [(at.top ??= realOf(root))])) {
+            at.skip ??= scope().skip;
+            names = readdirSync(dir, { withFileTypes: true })
+              .filter((e) => e.isFile() && readable(e.name) && !at.skip(join(dir, e.name)))
+              .map((e) => e.name);
+          }
+        } catch {}
+        at.names.set(folder, names);
+      }
+      return at.names.get(folder);
     });
     return found ? join(root, ...found.split("/")) : null;
   }
@@ -458,7 +467,13 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
     const s = state;
     const { files, complete } = filesOf(source, skip);
     const looks = await pool(files, LIMITS.readers, look);
-    const out = files.map((path, i) => settle(path, source.id, looks[i]));
+    pass = { skip, names: new Map() };
+    let out;
+    try {
+      out = files.map((path, i) => settle(path, source.id, looks[i]));
+    } finally {
+      pass = null;
+    }
     const listed = new Set(files);
     // A file of this source that a whole listing no longer has is gone (deleted, or ignored now); after a cut-off
     // listing it is read on its own. One this project leaves out is neither read nor gone. A file another source read

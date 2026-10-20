@@ -210,6 +210,8 @@ function why(q) {
   if (q.genter.old_first && q.genter.first_marked) return "Genter shows the old document's own mark, quoted, but keeps the order: the mark names no replacing document by its place in the archive, and the current answer comes first only for a replacing file Genter reads";
   if (q.genter.old_unmarked) return "the replaced document carries no mark the readers read";
   if (q.genter.old_first) return "the old document ranks first and carries no mark";
+  const marked = (q.genter.top ?? []).filter((t) => t.endsWith(" (marked)")).map((t) => t.slice(0, -" (marked)".length));
+  if (!q.genter.current_first && currents(q).some((c) => marked.includes(c))) return `the current answer's own document is marked as replaced too, and Genter follows the replacements among the sections it found, so a later document of that chain (${q.genter.first}) comes first`;
   return "the ranking differs from plain ranking's";
 }
 

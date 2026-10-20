@@ -32,9 +32,10 @@ and the language rules (`rules/`) are outside Sources on purpose: CI is their br
   reaches a name that starts with ".", and the interpreter refuses such a path or a hidden one whatever a glob says.
 * **[by-id]** A mark may name what replaces its document by an id ("Superseded-By: 470") and say, with `place`, where
   that document is: a template from the marked document's folder (`..` only at its start, at most 3, then folders and a
-  file's name holding `{id}` or `{id:0N}` once and at most two `*`), never an address, an absolute or home path, a
-  backslash, a hidden or a secret-looking name (refused at lint, saying why). An id is letters, digits and `-`, at most
-  32 characters (`{id:0N}` digits only), so it cannot climb out of the folder; anything else names no place. A reader
+  file's name, with `{id}` or `{id:0N}` once, in a folder's name or the file's, and at most two `*`, in the file's name
+  only), never an address, an absolute or home path, a backslash, a hidden or a secret-looking name (refused at lint,
+  saying why). An id is letters, digits and `-`, at most 32 characters (`{id:0N}` digits only), so it cannot climb out
+  of the folder; anything else names no place. A reader
   gives the place it made and never looks for it: the engine takes the one file there, inside the project and not
   through a link, that it reads (readable, not hidden, not switched off, not narrowed out by a genter.json), never the
   document itself; none or more than one, and the mark names no place. That file is then what replaces the document,

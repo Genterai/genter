@@ -79,10 +79,12 @@ no key and no clock in the ranking, so the same commits give the same numbers. T
   an id into a place (readers/by-id: the pep reader's `pep-{id:04}.*` beside the document), Genter showed the mark but
   could not bring PEP 470 first: its 7 "old answer first" losses of the first run. RESULTS.md's "Before and after" shows
   that run's first results beside this one's, question by question.
-- **A chain of replacements.** Genter brings what replaces a document first, one step: PEP 241's replacement, PEP 314,
-  is itself replaced by PEP 345, and PEP 345 by PEP 566. One question's current answer (peps/0241) was corrected after
-  the run that brought replacements named by number showed it (questions.json says why); RESULTS.md shows how that run
-  scores it with its first current answer too, a loss by that scoring.
+- **A chain of replacements.** PEP 241's replacement, PEP 314, is itself replaced by PEP 345, and PEP 345 by PEP 566.
+  Genter follows a chain among the sections a search found (each place once, so two documents that name each other
+  end); only a replacement brought from outside them stops after one step, its own mark showing. On peps/0241 it puts
+  PEP 566 first where plain ranking puts PEP 314, the current answer written before any run: a loss as the question is
+  written, listed under RESULTS.md's "Losses", and `--guard` fails on it until the owner decides whether a later
+  document of a chain counts as current (for every question alike).
 - **One agent wrote the questions.** Until they are reviewed, read the numbers with that in mind; the pairs come from the
   documents' own marks, not from a judgment.
 - **Out of scope here:** memory layers (mem0 and the others) and a real agent with its own grep, with and without Genter.

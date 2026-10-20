@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
@@ -93,6 +93,9 @@ describe("the old-answer test", () => {
     assert.match(md, /Plain ranking puts the current answer first on 67% of the questions, under 90%/);
     assert.match(md, /Out of scope here: memory layers \(mem0 and others\)/);
     assert.equal(losses(leads).length, 1);
+    // The current answer's own document marked as replaced, and a later document of its chain first: said so.
+    const chain = results([{ ...row("d", won, { ...won, current_first: false }), genter: { ...won, current_first: false, first: "docs/adr/0012-x.md", first_marked: false, top: ["docs/adr/0012-x.md", `${NEW} (marked)`, `${OLD} (marked)`] } }]);
+    assert.match(resultsMd(chain), /\*\*d\*\* "question d\?" — worse than plain ranking: the current answer's own document is marked as replaced too, and Genter follows the replacements among the sections it found, so a later document of that chain \(docs\/adr\/0012-x\.md\) comes first\./);
     const notLead = results(Array.from({ length: 10 }, (_, i) => row(`q${i}`, i < 9 ? won : lost, won)));
     assert.match(resultsMd(notLead), /already puts the current answer first on 90% of the questions, 90% or more: \*\*the local picture is not the lead\*\*/);
     assert.match(resultsMd(notLead), /None: Genter never puts the old answer first/);
@@ -120,8 +123,9 @@ describe("the old-answer test", () => {
   it("[rl:old-answer/questions-reviewed] every question names a public archive at a commit, its replaced and current documents, the mark that pairs them and who reviewed it", () => {
     const spec = json("old-answer/questions.json");
     const repos = new Map(json("repos/repos.json").repos.map((r) => [r.repo, r]));
-    // The three archives step 1.10's run picked (the run the gate's RESULTS.md shows as "before").
-    const picks = json(`repos/${json(`repos/${resultsOf("repos")}`).before.file}`).verdict.picks;
+    // The three archives step 1.10's run picked: its own results file, whatever run RESULTS.md names now.
+    const picks = json("repos/results/2026-10-20.json").verdict?.picks;
+    assert.ok(picks, "bench/repos/results/2026-10-20.json is step 1.10's run, which picked the archives: a later run replaced it (restore it with git)");
     assert.deepEqual(spec.sources.map((s) => s.repo).sort(), [...picks].sort(), "the archives are the three bench/repos picked");
     for (const s of spec.sources) {
       assert.match(s.repo, /^[\w.-]+\/[\w.-]+$/);
@@ -193,6 +197,27 @@ describe("the old-answer test", () => {
     assert.equal(md, reposMd(published));
     assert.match(md, new RegExp(`## The gate, on the ${held.repos.length} held out\\n\\n\\*\\*${sample("heldout").verdict.passes ? "Passes" : "Does not pass"}\\.\\*\\*`));
     assert.match(md, /## The first 50, after the readers were widened\n\n\*\*Would (not )?pass\*\* on the first 50 .*a biased number/);
+  });
+
+  it("[rl:old-answer/repos-gate] [rl:readers/by-id] a replacement named by a number counts as there when the file its id names is, as the engine resolves it: never through a link", () => {
+    const dir = mkdtempSync(join(tmpdir(), "repos-by-id-"));
+    try {
+      const pep = (n, extra) => `PEP: ${n}\nTitle: Exporting invoices\nStatus: ${extra ? "Superseded" : "Final"}\nCreated: 05-Jul-2021\n${extra}\nAbstract\n========\n\nInvoices are exported.\n`;
+      mkdirSync(join(dir, "peps"));
+      mkdirSync(join(dir, "elsewhere"));
+      writeFileSync(join(dir, "peps/pep-0042.rst"), pep(42, "Superseded-By: 57\n"));
+      writeFileSync(join(dir, "peps/pep-0057.rst"), pep(57, ""));
+      writeFileSync(join(dir, "peps/pep-0060.rst"), pep(60, "Superseded-By: 61\n"));
+      writeFileSync(join(dir, "elsewhere/notes.rst"), pep(61, ""));
+      symlinkSync(join(dir, "elsewhere/notes.rst"), join(dir, "peps/pep-0061.rst"));
+      const counts = countFolder(dir);
+      assert.equal(counts.marked, 2);
+      assert.equal(counts.named, 2);
+      assert.equal(counts.placed, 1, "PEP 61 is a link: not there");
+      assert.deepEqual(counts.pairs.map((p) => [p.replaced, p.by, p.reader]), [["peps/pep-0042.rst", "peps/pep-0057.rst", "pep"]]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   it("[rl:old-answer/repos-gate] a sample is picked by the check alone, most stars first, the first `take` that pass, none of the first 50 and none twice; a group short of candidates takes fewer", () => {

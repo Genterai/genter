@@ -64,14 +64,11 @@
       "source": "python/peps",
       "question": "Which metadata fields say what a package requires, provides and obsoletes?",
       "replaced": "peps/pep-0241.rst",
-      "current": [
-        "peps/pep-0345.rst",
-        "peps/pep-0566.rst"
-      ],
+      "current": "peps/pep-0314.rst",
       "pair": "peps/pep-0241.rst says \"Superseded-By: 314\" in its header (a number: the pep reader makes it peps/pep-0314.*, which Genter finds in the archive)",
-      "current_says": "Requires-Dist, Provides-Dist and Obsoletes-Dist (metadata 1.2, PEP 345); PEP 566 keeps them, with version specifiers no longer in parentheses.",
+      "current_says": "Requires, Provides and Obsoletes, added in metadata 1.1.",
       "reviewed": "pending owner",
-      "note": "Corrected in the step that turns a replacement named by number into its file, after its run showed it: the pair's replacing document, PEP 314, is itself marked \"Superseded-By: 345\" (and PEP 345 \"Superseded-By: 566\"), and PEP 345 renamed its Requires, Provides and Obsoletes, so the current answer is PEP 345's and PEP 566's, not PEP 314's (the question was first scored with PEP 314 as current)."
+      "note": "The current answer is the one written before any run: PEP 314, the document PEP 241's mark names. PEP 314 is itself marked \"Superseded-By: 345\" (and PEP 345 \"Superseded-By: 566\"), and PEP 345 renamed the fields the question asks about; whether a later document of that chain counts as current is the owner's to decide, for every question alike."
     },
     {
       "id": "peps/0248",

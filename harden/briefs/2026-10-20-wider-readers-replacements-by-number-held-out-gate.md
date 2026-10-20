@@ -45,7 +45,8 @@ explicit-only and local-search/current-first name the new paths without changing
 readers/declarative, restricted-patterns, no-network, secrets-never-read, off-honoured, contract-tested (every new reader
 has fixtures and expected output, checked by `genter reader check` and `test/readers.test.js` in CI);
 local-search/current-first (a replacement is brought first only for a file inside the project this search reads);
-old-answer/never-worse; driftbench/old-first; zero runtime dependencies; nothing in `src/` spawns a process.
+driftbench/old-first; zero runtime dependencies; nothing in `src/` spawns a process. old-answer/never-worse does not
+hold on one question, peps/0241 (Open).
 Open:
 * **The gate does not pass on the held-out sample.** The median of the 46 held out has 0 decision records read (9 of
   46 have 5 or more: 3 of 14 decision archives, 5 of 16 projects with records in their tree, 1 changelog project); 20
@@ -77,50 +78,67 @@ Open:
   seeing them would bias this sample. → Proposal: the next readers pull request (a sentence about code, a list heading,
   a state's name are no mark of a document), measured on the next held-out sample; the old-answer brief's open banners
   issues (partial status lines, titles) still stand. [non-blocking]
-* **One old-answer question was corrected after a run showed it.** peps/0241's replacing document, PEP 314, is itself
-  "Superseded-By: 345" (and PEP 345 by 566), and PEP 345 renamed the fields the question asks about, so its current
-  answer is now PEP 345 and PEP 566 (questions.json says why). The correction favours Genter: scored with PEP 314 as
-  current, plain ranking puts it first and Genter puts PEP 566 first, a loss. RESULTS.md prints both scorings under
-  "Before and after". [non-blocking: all questions wait for the owner's review]
-* **One step of a chain.** Genter brings what replaces a document first, one step; a replacement that is itself replaced
-  shows its own mark. On peps/0248 Genter's first result is now PEP 566, which replaces PEP 426, the document both arms
-  ranked first (neither the old nor the current answer, so no count changes). → Following a chain inside the project,
-  bounded, is a later step of local-search. [non-blocking]
+* **peps/0241 is a loss, published as one.** Its current answer, written before any run, is PEP 314, the document PEP
+  241's mark names. PEP 314 is itself "Superseded-By: 345", and PEP 345 "Superseded-By: 566" (PEP 345 renamed the
+  fields the question asks about). Now that those numbers lead to files, Genter follows the chain (below) and puts PEP
+  566 first, where plain ranking puts PEP 314: Genter does worse than plain ranking on this question, RESULTS.md lists
+  it under "Losses", and `--guard` fails on it, so old-answer/never-worse does not hold and the weekly old-answer job
+  (bench.yml, not run on pull requests) is red until this is decided. An earlier draft of this step changed the
+  question's current answer after seeing that run; that is undone, and the question is scored as it was written. →
+  Proposal: a rule in old-answer [counts] and [questions-reviewed], written down before the next run and applied to
+  every question, that a document later in the replacing document's own chain of marks counts as current too; or the
+  loss accepted as it is. [non-blocking here, for the owner: this step publishes the loss; until the owner decides,
+  old-answer/never-worse is broken on this question]
+* **Chains of replacements.** Genter follows replacements among the sections a search found (local-search/
+  current-first, as before this step), each place once so two documents that name each other end: on peps/0241 it
+  brings PEP 314, then PEP 345, then PEP 566 ahead of PEP 241. Only a replacement brought from outside the sections
+  found stops after one step, its own mark showing. On peps/0248 Genter's first result is now PEP 566, which replaces
+  PEP 426, the document both arms ranked first (neither the old nor the current answer, so no count changes).
+  [non-blocking]
 * **The replacement named by an id, decided here.** The place is a template from the marked document's folder rather
   than a path from the repository's root, so a reader works wherever the archive sits in a project; the reader only
   fills it in, and the engine alone looks in the folder it names, with the same scope, off list and readability rules
-  as everything it reads; a place that matches no file, or two, names nothing. It is a reader-schema change, its own
-  red line, needing no new key, address or file on disk. [non-blocking, decided here]
+  as everything it reads; a place that matches no file, or two, names nothing. `{id}` may sit in a folder's name (one
+  folder per document) as well as in the file's. Within one pass over a source's files the engine lists each folder a
+  place leads to once, so marks named by number cost a warm search nothing it can measure. The adr reader's
+  `{id:04}-*.md` names nothing in an `adr-NNN-*.md` folder (its own fixture's); widening it waits for the next readers
+  pull request, so that the held-out run stays what these readers give. It is a reader-schema change, its own red line,
+  needing no new key, address or file on disk. [non-blocking, decided here]
 * **Same check, lighter.** The pick check now reads tree listings and a changelog's text from a blobless clone instead of
   a sparse checkout (the same names, the same text), so a crawl of large repositories is cheap; nothing is checked out
   until a picked repository is read. `.claude/AGENTS.md`'s map still does not list the old-answer area. [non-blocking]
 Proof: `test/readers.test.js` "[rl:readers/by-id] a mark's id becomes a place…": the PEP template gives `pep-0470.*`;
-`{id}` as written, `{id:0N}` digits only; an id with `/`, `.`, `%` or over 32 characters names nothing; 18 templates
-refused at lint, each saying why (absolute, home, drive, backslash, secret-looking, a climb in the middle or past 3, a
-hidden folder, `*` in a folder, three `*`, no or two `{id}`, braces, `?`, an address), an id without its place and a
-phrases mark with one refused / "[rl:readers/by-id] a place names one file…": without case, never two, never the
-document itself, a hidden or secret-looking name, never above the project's root, a folder that cannot be listed gives
-nothing / "[rl:readers/by-id] [rl:local-search/reader-marks] [rl:local-search/current-first] a PEP superseded by a
-number…": through `createLocal().find`, PEP 57 comes right before PEP 42 and says "replaces [n]", the notice quoted;
-PEP 61 not there and PEP 71 switched off bring nothing and the mark stays / "[rl:readers/records]": the readers of
-decision records are the manifests that say so, never a fallback one, and `src/page.js` names no reader /
-`test/page.test.js` "[rl:decisions-page/explicit-only] [rl:readers/by-id]": PEP 438's row says "replaced by
-`peps/pep-0470.rst`", a number that leads to no file names the number / `test/old-answer.test.js`
+`{id}` as written, `{id:0N}` digits only; an id with `/`, `.`, `%` or over 32 characters names nothing; `{id}` in a
+folder's name accepted; 18 templates refused at lint, each saying why (absolute, home, drive, backslash, secret-looking,
+a climb in the middle or past 3, a hidden folder, `*` in a folder, three `*`, no or two `{id}`, braces, `?`, an
+address), an id without its place and a phrases mark with one refused / "[rl:readers/by-id] a place names one file…":
+without case, never two, never the document itself, a hidden or secret-looking name, never above the project's root, a
+folder that cannot be listed gives nothing / "[rl:readers/by-id] [rl:local-search/reader-marks]
+[rl:local-search/current-first] a PEP superseded by a number…": through `createLocal().find`, PEP 57 comes right before
+PEP 42 and says "replaces [n]", the notice quoted; PEP 61 not there, PEP 71 switched off, PEP 81 a link to a file
+outside the project and PEP 91 left out by the project's genter.json bring nothing and the mark stays /
+"[rl:readers/records]": the readers of decision records are the manifests that say so, never a fallback one, and
+`src/page.js` names no reader / `test/page.test.js` "[rl:decisions-page/explicit-only] [rl:readers/by-id]": PEP 438's
+row says "replaced by `peps/pep-0470.rst`", a number that leads to no file names the number / `test/old-answer.test.js`
 "[rl:old-answer/repos-gate]" (two tests): both samples at their pinned commits, the held-out one none of the first 50,
-none twice, each group at most its take and most stars first, the verdict on the held-out sample, RESULTS.md exactly what
-the published results give; the pick takes the first that pass the check alone, skips the first 50 and a repository an
-earlier group took, and says why for every one it does not take / "[rl:old-answer/one-command] an earlier run beside
-this one…": what each arm put first then and now, and a corrected question scored both ways / `genter reader check`
-(13 readers, every fixture as expected). The runs: the held-out list committed and pushed (a93d935) before
-`node bench/repos/run.mjs --out bench/repos/results/2026-10-20-heldout.json --before bench/repos/results/2026-10-20.json`
-(96 of 96 read; held out: does not pass, median 0, 20 of 46 with a mark; first 50: median 1, 30 of 50 with a mark, 12
-naming a document there, picks python/peps, ethereum/EIPs, numpy/numpy); `node bench/old-answer/run.mjs --out
+none twice, each group at most its take and most stars first, the verdict on the held-out sample, RESULTS.md exactly
+what the published results give; the pick takes the first that pass the check alone, skips the first 50 and a repository
+an earlier group took, and says why for every one it does not take / "[rl:old-answer/repos-gate] [rl:readers/by-id] a
+replacement named by a number counts as there…": `countFolder` pairs PEP 42 with PEP 57, and PEP 61, a link, is not
+there / "[rl:old-answer/losses-published]": a loss to a chain says so / "[rl:old-answer/one-command] an earlier run
+beside this one…": what each arm put first then and now, and a corrected question scored both ways / `genter reader
+check` (13 readers, every fixture as expected). The runs: the held-out list committed and pushed (a93d935) before `node
+bench/repos/run.mjs --out bench/repos/results/2026-10-20-heldout.json --before bench/repos/results/2026-10-20.json` (96
+of 96 read; held out: does not pass, median 0, 20 of 46 with a mark; first 50: median 1, 30 of 50 with a mark, 12 naming
+a document there, picks python/peps, ethereum/EIPs, numpy/numpy); `node bench/old-answer/run.mjs --out
 bench/old-answer/results/2026-10-20-by-id.json --md bench/old-answer/RESULTS.md --before
 bench/old-answer/results/2026-10-20.json --guard` (39 questions; old answer first: plain 8, Genter 0, was 7; old answer
-unmarked in the first five: plain 31, Genter 0; current answer first: plain 19, Genter 28, was 20 and 21; the 7 losses to
-a number are gone, no loss left; guard green); `node bench/drift/check.mjs` and `node bench/drift/run.mjs --no-takes
---guard README.md` (green: genter 77% current and 0% stale after the edits, deprecated 3 fresh · 0 stale · 0 old first,
-0 of 65 old first; an index built once 24). `npm test`, `npm run lint`, `harden check` (numbers in the pull request).
+unmarked in the first five: plain 31, Genter 0; current answer first: plain 20, Genter 27, was 20 and 21; the 7 losses
+to a number are gone; one loss, peps/0241, to a chain: the guard fails on it, Open); `node bench/drift/check.mjs` and
+`node bench/drift/run.mjs --no-takes --guard README.md` (green: genter 77% current and 0% stale after the edits,
+deprecated 3 fresh · 0 stale · 0 old first, 0 of 65 old first; an index built once 24). Warm searches of python/peps at
+its pinned commit: 51 to 64 ms with a folder listed once per pass, 88 to 105 ms when each mark listed it. `npm test`,
+`npm run lint`, `harden check` (numbers in the pull request).
 
 ## Red lines after
 
