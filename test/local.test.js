@@ -911,7 +911,7 @@ describe("the genter command", () => {
       assert.equal(asked.status, 0, asked.stderr);
       assert.match(asked.stdout, /docs\/deploy\.md/);
       assert.doesNotMatch(asked.stdout, /Genter Cloud|From the cloud/);
-      assert.match(asked.stderr, /removed the Genter Cloud token genter 0\.3 kept in .*config\.json/);
+      assert.match(asked.stderr, /removed the Genter Cloud token genter 0\.3's login kept in .*config\.json/);
       assert.equal(config().cloud, undefined);
       assert.ok(config().secret, "the rest of the config is kept");
       if (process.platform !== "win32") assert.equal(statSync(file).mode & 0o777, 0o600);
@@ -943,6 +943,70 @@ describe("the genter command", () => {
       assert.deepEqual(seen, []);
     } finally {
       server.close();
+      pkg.done();
+    }
+  });
+
+  it("[rl:cli/cloud-own-server] whatever command runs first removes the token 0.3's genter login kept and says so once, on stderr, changing no byte of stdout: install --dry-run, demo, reader check, help, --version, ask, mcp", async () => {
+    const pkg = installed();
+    try {
+      const token = `gnt_${"t".repeat(43)}`;
+      // What 0.3 left in config.json: the store's secret and the person's own keys and list, which stay as they are, and
+      // "cloud", which genter login wrote (the token, its address, the workspace and the user).
+      const kept = { secret: "s0", user_id: "me", composio_api_key: "ck_kept", openrouter_api_key: "sk-or-kept", off: ["~/private"] };
+      const signedIn = { ...kept, cloud: { token, url: "https://genter.ai", workspace: "Acme", user: "anna@acme.test" } };
+      // Three homes side by side for each command: 0.3's config with the token, the same without it, and none at all.
+      const homes = { token: join(pkg.base, "home-token"), kept: join(pkg.base, "home-kept"), none: join(pkg.base, "home-none") };
+      const fileOf = (home) => join(home, "config.json");
+      const configOf = (home) => JSON.parse(readFileSync(fileOf(home), "utf8"));
+      const reset = () => {
+        for (const home of Object.values(homes)) rmSync(home, { recursive: true, force: true });
+        for (const [home, config] of [[homes.token, signedIn], [homes.kept, kept]]) {
+          mkdirSync(home, { recursive: true });
+          writeFileSync(fileOf(home), JSON.stringify(config, null, 2), { mode: 0o600 });
+        }
+      };
+      const notice = /^genter: removed the Genter Cloud token genter 0\.3's login kept in (.+), and kept the rest of the file: nothing uses it now, and Genter Cloud may still accept it\n/;
+      const said = (text) => /Genter Cloud token|config\.json/.test(text);
+      const initialize = `${JSON.stringify({ jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-06-18" } })}\n`;
+      const commands = [[["install", "--dry-run"]], [["demo"]], [["reader", "check", join(root, "readers/adr")]], [["help"]], [["--version"]], [["ask", "production"]], [["mcp"], initialize]];
+      for (const [args, input = ""] of commands) {
+        const name = args.join(" ");
+        reset();
+        const run = (home) => pkg.start(args, { env: { GENTER_HOME: home }, input });
+        const [first, without, none] = await Promise.all([run(homes.token), run(homes.kept), run(homes.none)]);
+        assert.equal(first.status, without.status, `${name}: ${first.stderr}`);
+        // Gone from the disk, the rest of the file kept as it was and still its owner's only.
+        assert.deepEqual(configOf(homes.token), kept, name);
+        if (process.platform !== "win32") assert.equal(statSync(fileOf(homes.token)).mode & 0o777, 0o600, name);
+        // Said first, on stderr, naming the file; past it the command's own stderr, and its stdout byte for byte, as a
+        // run without a token gives them (--version's line, mcp's initialize answer). The token itself is never printed.
+        const line = first.stderr.match(notice);
+        assert.ok(line, `${name}: ${first.stderr}`);
+        assert.equal(line[1], fileOf(homes.token), name);
+        assert.equal(first.stderr.slice(line[0].length), without.stderr, name);
+        assert.equal(first.stdout, without.stdout, name);
+        assert.equal(first.stdout, none.stdout, name);
+        assert.ok(!`${first.stdout}${first.stderr}`.includes(token), name);
+        // Nothing said where there was no token, nor by the next command once it is gone.
+        assert.ok(!said(without.stderr) && !said(none.stderr), `${name}: ${without.stderr}${none.stderr}`);
+        const again = await run(homes.token);
+        assert.ok(!said(again.stderr), `${name}: ${again.stderr}`);
+        assert.equal(again.stdout, without.stdout, name);
+      }
+      assert.equal((await pkg.start(["--version"], { env: { GENTER_HOME: homes.token } })).stdout, `${JSON.parse(readFileSync(join(root, "package.json"), "utf8")).version}\n`);
+      const [init] = (await pkg.start(["mcp"], { env: { GENTER_HOME: homes.token }, input: initialize })).stdout.trim().split("\n").map((l) => JSON.parse(l));
+      assert.equal(init.result.serverInfo.name, "genter");
+
+      // A config.json that is not JSON is left as it is, byte for byte, and named; the token in it is never printed.
+      const broken = `{"secret":"s0","cloud":{"token":"${token}"`;
+      writeFileSync(fileOf(homes.token), broken, { mode: 0o600 });
+      const version = await pkg.start(["--version"], { env: { GENTER_HOME: homes.token } });
+      assert.equal(version.status, 0);
+      assert.equal(version.stdout, (await pkg.start(["--version"], { env: { GENTER_HOME: homes.kept } })).stdout);
+      assert.equal(version.stderr, `genter: ${fileOf(homes.token)} is not JSON, so it is left as it is: if it holds the Genter Cloud token genter 0.3's login kept ("cloud"), delete that by hand; nothing uses it now\n`);
+      assert.equal(readFileSync(fileOf(homes.token), "utf8"), broken);
+    } finally {
       pkg.done();
     }
   });

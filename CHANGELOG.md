@@ -17,9 +17,9 @@ own words. It needs no account and no key, and it has no dependencies.
   [`legacy`](https://github.com/Genterai/genter/tree/legacy) branch, unsupported. Your team's apps are Genter Cloud's.
 - **No more `genter login`.** genter-cli no longer calls Genter Cloud: `genter login`, `genter logout`, `GENTER_TOKEN`,
   `GENTER_URL` and `--cloud` are gone. Add Genter Cloud to your AI tool as its own MCP server,
-  `https://genter.ai/api/mcp` (the tool signs you in), or run `genter install --cloud`. The first command that opens
-  Genter's store (`ask`, `add`, `remember`, `forget`, `sources`, `mcp`, `serve`, `decisions`) removes the token that
-  0.3's `genter login` kept in `~/.genter/config.json`, and says so; `install`, `demo` and `reader` leave it there.
+  `https://genter.ai/api/mcp` (the tool signs you in), or run `genter install --cloud`. The first command you run,
+  whatever it is (`genter --version` and `genter help` too), removes the token that 0.3's `genter login` kept in
+  `~/.genter/config.json` (or in `$GENTER_HOME`), keeps the rest of the file, and says so on stderr.
   `login`, `logout` and `--cloud` now exit 1 and print that address. `--local` still works and changes nothing.
 - **The MCP tools are `search` and `read`.** `genter mcp` serves the same two tools as Genter Cloud: `search` with a
   question, then `read` with the ids it returned. 0.3's `genter_find`, `genter_add`, `genter_remember` and
