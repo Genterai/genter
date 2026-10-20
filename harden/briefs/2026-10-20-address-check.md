@@ -7,7 +7,8 @@ now, not "before publishing"), released as genter-cli 0.3.1 so that people pinne
 
 Intent: an address a person adds is fetched only where the check looked, keys stay with the origin they were given to,
 and a key committed by mistake fails a check before it is merged — success: every IPv4-in-IPv6 form of a private
-address (mapped, compatible `::a.b.c.d`, NAT64 `64:ff9b::/96`) is refused; a name that answers public, then private,
+address (mapped, compatible `::a.b.c.d`, NAT64 `64:ff9b::/96`) is refused, and so are the reserved ranges
+(documentation, benchmarking, discard-only); a name that answers public, then private,
 never reaches the private address; a redirect to another origin carries no Authorization, Cookie, API key or MCP
 session; gitleaks runs on every pull request and every push to main, and a full mirror of Genterai/genter (pull request
 refs included) scans clean but for one fixture's page cursor, ignored by its fingerprint.
@@ -26,8 +27,9 @@ read); new security/checked-address and security/keys-stay; security/never-run s
 Open:
 * Fetch can not be told which address to connect to without undici's own Agent, a runtime dependency. → A name goes
   through node's http(s) client, whose connection asks a lookup that answers only the checked addresses (TLS still
-  checks the name); an IP address goes to fetch as before, since nothing is looked up and nothing can be swapped.
-  [non-blocking, decided here]
+  checks the name) and which sends what fetch sent by default (User-Agent `node`, Accept `*/*`, Accept-Language `*`),
+  so a server sees the same request; an IP address goes to fetch as before, since nothing is looked up and nothing can
+  be swapped. [non-blocking, decided here]
 * The local-use NAT64 prefix `64:ff9b:1::/48` can carry its IPv4 address at other places than the last 32 bits. →
   Judged by its embedded IPv4 address in the /96 form, any other address of it refused; Teredo (`2001::/32`) hides its
   IPv4 address, so refused; 6to4 (`2002::/16`) judged by its IPv4 address. [non-blocking]
@@ -38,9 +40,13 @@ Open:
   (GitHub may already have it on for this public repository), and adds the `gitleaks` check to main's required checks.
   [non-blocking]
 Proof: `test/web.test.js` W6 (private, reserved and IPv4-in-IPv6 cases), W7 (every answer of
-a name and every hop judged), W8 (rebinding: one lookup, the private server never reached), W9 (the request connects to
-the addresses given, under its name, with no DNS), W10 (key headers dropped on a redirect to another origin, kept on the
-same origin); W6, W7, W8 and W10 fail with the old code put back. TLS still checks the name with a pinned address
+a name and every hop judged), W8 (rebinding: one lookup, and with both the resolver's second answer and the system's
+connect-time lookup pointing at this machine, the server waiting there is never reached), W9 (the request connects to
+the addresses given, under its name, with no DNS, sending fetch's default headers), W10 (key headers dropped on a
+redirect that changes only the host, only the scheme or only the port, and still dropped when the chain comes back;
+kept on the same origin). Each fails when its part is undone: W8 when a name goes through fetch again or the
+connection asks the system's DNS (W9 too), W10 when only the host is compared or keys are kept, W9 without fetch's
+default headers, W6 without the reserved ranges. TLS still checks the name with a pinned address
 (checked by hand against a local self-signed server: its name passes, another name fails). gitleaks v8.30.1 over a full
 mirror (20 branches, 1 tag, 79 pull request refs; not shallow): 147 commits scanned, 1 finding (generic-api-key: a Jira
 `nextPageToken` in the fictional fixture `test/fixtures/catalogues.json`), 0 with `.gitleaksignore`. / `npm test`,

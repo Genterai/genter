@@ -9,7 +9,9 @@ import zlib from "node:zlib";
 // also after a redirect. A name is looked up once per hop: every answer must be public, and the request connects to
 // those checked addresses, so a second DNS answer can not swap in a private one (DNS rebinding).
 
-const PRIVATE_V4 = ["0.0.0.0/8", "10.0.0.0/8", "100.64.0.0/10", "127.0.0.0/8", "169.254.0.0/16", "172.16.0.0/12", "192.0.0.0/24", "192.168.0.0/16", "198.18.0.0/15", "224.0.0.0/3"];
+// Not public (the IANA special-purpose registry): 192.0.2/24, 198.51.100/24 and 203.0.113/24 are documentation,
+// 198.18/15 benchmarking, 224/3 multicast and the reserved 240/4.
+const PRIVATE_V4 = ["0.0.0.0/8", "10.0.0.0/8", "100.64.0.0/10", "127.0.0.0/8", "169.254.0.0/16", "172.16.0.0/12", "192.0.0.0/24", "192.0.2.0/24", "192.168.0.0/16", "198.18.0.0/15", "198.51.100.0/24", "203.0.113.0/24", "224.0.0.0/3"];
 
 const v4 = (ip) => ip.split(".").reduce((acc, part) => acc * 256 + Number(part), 0);
 function privateV4(ip) {
@@ -54,6 +56,8 @@ export function privateAddress(ip) {
   if (h[0] === 0x64 && h[1] === 0xff9b && h[2] === 1) return !zero(3, 6) || privateV4(quad(h[6], h[7]));
   if (h[0] === 0x2002) return privateV4(quad(h[1], h[2]));
   if (h[0] === 0x2001 && h[1] === 0) return true;
+  // Discard-only 100::/64, benchmarking 2001:2::/48, documentation 2001:db8::/32 and 3fff::/20.
+  if ((h[0] === 0x100 && zero(1, 4)) || (h[0] === 0x2001 && (h[1] === 0xdb8 || (h[1] === 2 && h[2] === 0))) || (h[0] === 0x3fff && h[1] < 0x1000)) return true;
   // Unique local fc00::/7, link-local fe80::/10, the old site-local fec0::/10, multicast ff00::/8.
   return (h[0] & 0xfe00) === 0xfc00 || (h[0] & 0xff80) === 0xfe80 || (h[0] & 0xff00) === 0xff00;
 }
@@ -91,6 +95,10 @@ export function fetchAt(url, init, addresses) {
   const u = new URL(url);
   const method = String(init.method ?? "GET").toUpperCase();
   const headers = Object.fromEntries(new Headers(init.headers));
+  // What fetch sends when the caller does not say, so a server sees the same request as before.
+  headers["user-agent"] ??= "node";
+  headers.accept ??= "*/*";
+  headers["accept-language"] ??= "*";
   headers["accept-encoding"] ??= "gzip, deflate, br";
   const body = init.body == null ? undefined : typeof init.body === "string" || init.body instanceof Uint8Array ? init.body : String(init.body);
   if (body !== undefined) headers["content-length"] ??= String(Buffer.byteLength(body));

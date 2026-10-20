@@ -8,9 +8,9 @@ Sources: the security spec on the legacy branch of Genterai/specs (archive); `sr
 ## Red lines
 
 * **[public-only]** An address a person adds (a website, an MCP server) is fetched only at a public address, at every
-  hop of a redirect too: private, loopback, link-local, unique local, multicast and reserved addresses (IPv4 and IPv6)
-  are refused, an IPv4 address carried in IPv6 (mapped, compatible, translated, NAT64, 6to4) is judged as that IPv4
-  address, and an address that cannot be read is refused.
+  hop of a redirect too: private, loopback, link-local, unique local, multicast and reserved addresses (IPv4 and IPv6,
+  documentation, benchmarking and discard-only ranges included) are refused, an IPv4 address carried in IPv6 (mapped,
+  compatible, translated, NAT64, 6to4) is judged as that IPv4 address, and an address that cannot be read is refused.
 * **[checked-address]** A name is looked up once per request: every answer must be public, and the request connects
   only to the addresses that were checked (TLS still checks the name), so a second DNS answer cannot swap in a private
   address.
