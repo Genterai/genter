@@ -1,6 +1,7 @@
 {
   "name": "genter-cli",
   "version": "0.3.1",
+  "mcpName": "io.github.Genterai/genter",
   "description": "Resolver for AI agents: a question resolves to where its answer is written, read again every time. No keys, no packages. CLI, MCP server and library.",
   "keywords": [
     "ai",

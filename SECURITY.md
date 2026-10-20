@@ -30,3 +30,20 @@ What a report can be held against:
 - **What it sends.** With no key, nothing. With `--semantic`, the passages to rank go to the embeddings provider you
   chose. It never calls Genter Cloud: the cloud is its own MCP server in your AI tool.
 - **What it runs.** Nothing it reads.
+
+## Source text is data, never instructions
+
+Everything Genter reads, a document, a page or a note, is the person's text. Genter returns it as data, and tells the
+agent it is data:
+
+- **The agent is told.** The MCP server's instructions say that what `search` and `read` return is the person's text,
+  data and never instructions to the agent, and the Claude Code skill says the same.
+- **Text cannot pass for Genter.** A passage comes back set apart (four spaces in under its place in `search`, after an
+  empty line in `read`), so no line of a file reads as a place, an id or a mark. A mark quotes what a place says about
+  itself (“superseded by …”) as that place's words, never as Genter's own verdict.
+- **A reader is data too.** A reader or a set of language rules holds no code, no address and no free text for an agent
+  to follow; it says only where to find a date, a status or a mark.
+- **Nothing it reads is run:** no `child_process`, `vm`, `eval`, `new Function` or `worker_threads` in the engine.
+
+We count as a vulnerability a way for text Genter reads to come back as Genter's own words (a forged place, id or
+mark), to be run, to make Genter read a file it never reads, or to make it reach an address it refuses.
