@@ -2,7 +2,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { appendFileSync, close as closeFile, existsSync, mkdirSync, open as openFile, read as readInto, readdirSync, readFileSync, realpathSync, renameSync, statSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
-import { classifyFailure, contentHash, recipeId, splitMarkdown } from "./anchor.js";
+import { classifyFailure, contentHash, MARKDOWN_FILE as MARKDOWN, pieces as cut, recipeId, splitMarkdown } from "./anchor.js";
 import { cloneWindow, driftFacts, HEAD_LINES, noticeWords, supersededOf } from "./drift.js";
 import { bm25, prepare, terms, topTerms } from "./lexical.js";
 import { LIMITS as READER_LIMITS, readDocument } from "./readers.js";
@@ -41,7 +41,6 @@ const BARE_FILE = /^(readme|license|licence|changelog|contributing|authors|notic
 const SECRET_FILE = /^(id_(rsa|dsa|ecdsa|ed25519)(\.pub)?|credentials(\.json)?|service[-_]?account.*\.json|.*\.(pem|key|p12|pfx|jks|keystore|kdbx|ppk|asc|gpg))$/i;
 const NOISE_FILE = /^(package-lock\.json|npm-shrinkwrap\.json|yarn\.lock|pnpm-lock\.yaml|bun\.lockb?|composer\.lock|cargo\.lock|poetry\.lock|gemfile\.lock|go\.sum|.*\.min\.(js|css)|.*\.map)$/i;
 const PRIVATE_KEY = /-----BEGIN (?:RSA |EC |DSA |OPENSSH |ENCRYPTED |PGP )?PRIVATE KEY/;
-const MARKDOWN = /\.(md|mdx|markdown)$/i;
 
 const now = () => new Date().toISOString();
 const sha = (text) => createHash("sha256").update(text).digest("hex");
@@ -492,7 +491,7 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
     if (hit) return hit;
     const where = record.args.path ?? record.args.url;
     const starts = lineStarts(text);
-    const pieces = MARKDOWN.test(where) || record.tool === PAGE_READ ? splitMarkdown(where, text).map((p) => [p.start, p.end, p.headings[0] === "Introduction" && p.headings.length === 1 ? [] : p.headings]) : blocks(text).map(([a, b]) => [a, b, []]);
+    const pieces = cut(where, text, { markdown: MARKDOWN.test(where) || record.tool === PAGE_READ, chunk: LIMITS.chunkChars });
     const name = record.tool === PAGE_READ ? record.title : basename(where);
     const out = pieces
       .map(([start, end, headings]) => {
@@ -1233,42 +1232,6 @@ function lineOf(starts, offset) {
     else hi = mid - 1;
   }
   return lo + 1;
-}
-
-// Text that is not Markdown, cut at blank lines into blocks of about LIMITS.chunkChars: [[start, end]].
-function blocks(text) {
-  const out = [];
-  let start = 0;
-  let last = 0;
-  const re = /\n[ \t]*\n/g;
-  let m = re.exec(text);
-  while (m) {
-    if (m.index - start > LIMITS.chunkChars && last > start) {
-      out.push([start, last]);
-      start = last;
-    }
-    last = m.index + m[0].length;
-    m = re.exec(text);
-  }
-  if (text.length - start > LIMITS.chunkChars * 1.5 && last > start) {
-    out.push([start, last]);
-    start = last;
-  }
-  out.push([start, text.length]);
-  // A block still longer than three blocks (no blank lines): cut at line ends.
-  return out.flatMap(([a, b]) => {
-    if (b - a <= LIMITS.chunkChars * 3) return [[a, b]];
-    const parts = [];
-    let from = a;
-    while (b - from > LIMITS.chunkChars) {
-      const cut = text.lastIndexOf("\n", from + LIMITS.chunkChars);
-      const to = cut > from ? cut + 1 : from + LIMITS.chunkChars;
-      parts.push([from, to]);
-      from = to;
-    }
-    parts.push([from, b]);
-    return parts;
-  });
 }
 
 // The part of a section to show: all of it when short, else the lines around the one holding most of the question's

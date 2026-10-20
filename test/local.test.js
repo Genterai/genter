@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import { spawn, spawnSync } from "node:child_process";
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, symlinkSync, unlinkSync, utimesSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, symlinkSync, unlinkSync, utimesSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { recipeId } from "../src/anchor.js";
 import { bm25, prepare, stem, terms } from "../src/lexical.js";
 import { createLocal, embedderFor, embeddingProvider, FILE_READ, findText, listFolder, projectOf } from "../src/local.js";
@@ -947,16 +947,148 @@ describe("the genter command", () => {
     }
   });
 
-  it("[spec:cli/demo] [rl:local-search/current-first] shows a changed answer and a replaced doc on a temp folder, with no key: the new doc first, the old one quoting its notice", () => {
+  // `genter demo` as the README's first screen and its GIF show it, the whole output. A change in the engine's wording,
+  // order or line numbers (the runbook's Friday section is at line 31 once the notice is on top, the new doc's at 12)
+  // shows up here first.
+  const DEMO = `Genter, on a temp folder with one runbook: offline, no key, no model, nothing of yours read.
+
+$ genter ask "Can we deploy on Friday?"
+  [1] RUNBOOK.md:29-31 · Runbook › Deploys
+      dated 2026-03-12
+  ## Deploys
+
+  Yes, deploys go out on Fridays from the release branch.
+
+Then someone adds docs/release-process-v2.md ("No deploys on Fridays", dated 2026-10-03) and puts
+"Superseded by Release process v2" at the top of RUNBOOK.md. Nobody tells Genter.
+
+$ genter ask "Can we deploy on Friday?"
+  Since the last look: RUNBOOK.md changed; docs/release-process-v2.md is new.
+
+  [1] docs/release-process-v2.md:12-14 · Release process v2 › Deploy windows
+      replaces [2] · new since the last look · dated 2026-10-03
+  ## Deploy windows
+
+  No deploys on Fridays. Deploys go out Monday to Thursday, before 15:00.
+
+  [2] RUNBOOK.md:31-33 · Runbook › Deploys
+      changed since the last look · dated 2026-03-12 · RUNBOOK.md says at its top: "Superseded by Release process v2"
+  ## Deploys
+
+  Yes, deploys go out on Fridays from the release branch.
+
+Next: npx genter-cli install   # adds Genter to your AI tools; shows each change and asks first
+`;
+
+  it("[spec:cli/demo] [rl:cli/demo] [rl:local-search/current-first] answers from a runbook, then puts the doc that replaced it first and quotes the runbook's notice, and ends with the next command", async () => {
     const pkg = installed();
     try {
-      const out = pkg.run("demo");
+      const tmp = join(pkg.base, "tmp");
+      mkdirSync(tmp);
+      const out = await pkg.start(["demo"], { env: { TMPDIR: tmp, TMP: tmp, TEMP: tmp, NO_COLOR: "1" } });
       assert.equal(out.status, 0, out.stderr);
-      assert.match(out.stdout, /port 6432[\s\S]*Since the last look: docs\/deploy\.md changed[\s\S]*changed since the last look[\s\S]*port 5433/);
-      assert.match(out.stdout, /still answers:\n {2}"Staging deploys every Tuesday from `main`\. The pooler listens on port 6432\."/);
-      assert.match(out.stdout, /\[1\] docs\/runbook-v2\.md:3-5 · Runbook v2 › Restarting the probes\n {6}replaces \[2\] · new since the last look\n[\s\S]*\[2\] docs\/runbook\.md:5-7 · Runbook › Restarting the probes\n {6}changed since the last look · docs\/runbook\.md says at its top: "Deprecated: replaced by Runbook v2"/);
-      assert.match(out.stdout, /https:\/\/genter\.ai\/api\/mcp/);
-      assert.doesNotMatch(out.stdout, /genter login/);
+      assert.equal(out.stderr, "");
+      assert.equal(out.stdout, DEMO);
+      assert.equal(out.stdout.includes("\u001b"), false); // plain text: nothing to switch off
+      assert.equal(out.stdout.trimEnd().split("\n").at(-1), "Next: npx genter-cli install   # adds Genter to your AI tools; shows each change and asks first");
+      // Its own folder and store, removed after; the project it ran in and the person's Genter home as they were.
+      assert.deepEqual(readdirSync(tmp), []);
+      assert.equal(existsSync(pkg.home), false);
+      assert.deepEqual(readdirSync(join(pkg.base, "project"), { recursive: true }).sort(), ["docs", "docs/deploy.md"]);
+    } finally {
+      pkg.done();
+    }
+  });
+
+  it("[rl:cli/demo] reads nothing of the person's, even when the temp folder is inside their repository", async () => {
+    const pkg = installed();
+    try {
+      // A repository (a .git) whose own temp folder is where the demo's folder is made, with a doc that answers the question.
+      const repo = join(pkg.base, "repo");
+      mkdirSync(join(repo, ".git"), { recursive: true });
+      mkdirSync(join(repo, "docs"));
+      mkdirSync(join(repo, "tmp"));
+      writeFileSync(join(repo, "docs/plan.md"), "# Plan\n\n## Friday\n\nOur private plan: deploy on Friday at midnight, the password is hunter2.\n");
+      const tmp = join(repo, "tmp");
+      const out = await pkg.start(["demo"], { env: { TMPDIR: tmp, TMP: tmp, TEMP: tmp } });
+      assert.equal(out.status, 0, out.stderr);
+      assert.equal(out.stdout, DEMO);
+      assert.equal(out.stdout.includes("hunter2"), false);
+      assert.deepEqual(readdirSync(tmp), []);
+    } finally {
+      pkg.done();
+    }
+  });
+
+  it("[rl:cli/demo] runs offline: nothing opens a connection or looks up a name", async () => {
+    const pkg = installed();
+    try {
+      const log = join(pkg.base, "network.log");
+      const hook = join(pkg.base, "offline.mjs");
+      // The engine's own name lookup is `import { lookup } from "node:dns/promises"` (src/net.js): a named import, which
+      // only syncBuiltinESMExports() lets see the replacement.
+      writeFileSync(
+        hook,
+        `import { appendFileSync } from "node:fs";
+import { syncBuiltinESMExports } from "node:module";
+import dns from "node:dns";
+import dnsPromises from "node:dns/promises";
+import net from "node:net";
+const refuse = (what) => {
+  appendFileSync(${JSON.stringify(log)}, \`\${what}\\n\`);
+  throw new Error(\`offline: \${what}\`);
+};
+globalThis.fetch = (url) => refuse(\`fetch \${url}\`);
+net.Socket.prototype.connect = function (...args) {
+  return refuse(\`connect \${JSON.stringify(args[0])}\`);
+};
+dns.lookup = (name) => refuse(\`lookup \${name}\`);
+dnsPromises.lookup = (name) => refuse(\`lookup \${name}\`);
+syncBuiltinESMExports();
+`,
+      );
+      const env = { NODE_OPTIONS: `--import=${pathToFileURL(hook).href}` };
+      // The hook is not vacuous: a program that fetches, connects or looks a name up, however it imports the lookup, is
+      // caught by it.
+      const control = join(pkg.base, "control.mjs");
+      writeFileSync(
+        control,
+        `import { lookup as callback } from "node:dns";
+import { lookup as promised } from "node:dns/promises";
+import net from "node:net";
+for (const attempt of [() => fetch("http://localhost:9/"), () => promised("a.invalid"), () => callback("b.invalid", () => {}), () => net.connect(9, "localhost")]) {
+  try {
+    await attempt();
+  } catch {}
+}
+`,
+      );
+      spawnSync(process.execPath, [control], { env: { PATH: process.env.PATH, ...env } });
+      const caught = readFileSync(log, "utf8").trimEnd().split("\n");
+      assert.deepEqual(caught.map((line) => line.split(" ")[0]), ["fetch", "lookup", "lookup", "connect"]);
+      assert.deepEqual(caught.slice(0, 3), ["fetch http://localhost:9/", "lookup a.invalid", "lookup b.invalid"]);
+      unlinkSync(log);
+      const out = await pkg.start(["demo"], { env });
+      assert.equal(out.status, 0, out.stderr);
+      assert.equal(out.stdout, DEMO);
+      assert.equal(existsSync(log), false);
+    } finally {
+      pkg.done();
+    }
+  });
+
+  it("[rl:cli/demo-fast] finishes, node's start included, in under half a second (the median of three runs)", () => {
+    const pkg = installed();
+    try {
+      const times = [];
+      for (let i = 0; i < 3; i++) {
+        const started = performance.now();
+        const out = pkg.run("demo");
+        times.push(Math.round(performance.now() - started));
+        assert.equal(out.status, 0, out.stderr);
+      }
+      times.sort((a, b) => a - b);
+      assert.ok(times[1] < 500, `genter demo took ${times.join(", ")} ms`);
     } finally {
       pkg.done();
     }

@@ -61,7 +61,7 @@ and a search takes 3 ms. Without an embeddings key, nothing leaves your computer
 ## Quickstart
 
 ```bash
-npx genter-cli demo                                    # 1. see it work on a temp folder: no key, no install
+npx genter-cli demo                                    # 1. a decision is replaced, your AI gets the new one first: offline, no key
 export OPENAI_API_KEY=sk-...                           # 2. a key for ranking by meaning (or Ollama, below)
 npx genter-cli ask "how do we deploy?" --semantic      # 3. ask your folder
 claude mcp add genter -e GENTER_SEMANTIC=1 -- npx -y genter-cli mcp   # 4. give it to your agent
@@ -322,7 +322,7 @@ Cloud connected, the decision behind the code (a ticket, a thread) becomes a Sou
 - Taking a folder in calls no model: 200 files in 0.2 s. Without an embeddings key, nothing leaves your computer.
 
 ```bash
-npx genter-cli demo     # a doc is edited and nobody tells Genter: the next answer is the new one
+npx genter-cli demo     # a doc is replaced and nobody tells Genter: the next answer has the new doc first, the old one quoting its notice
 ```
 
 ## Benchmarks
@@ -388,7 +388,7 @@ memory layers publish), run `node bench/convo/run.mjs --answer` with a key. [Res
 
 | | |
 | -- | -- |
-| `genter demo` | see it work on a temp folder |
+| `genter demo` | a decision is replaced and nobody tells Genter: the next answer has the new one first (a temp folder, offline, no key) |
 | `genter ask <question>` | the passages that answer, read now (the first time, this project's folder) |
 | `genter add <folder\|file\|url> ...` | search these from now on, in this project |
 | `genter remember <text>` | keep a note in `~/.genter/notes.md`, found in every project; edit it as you like |
