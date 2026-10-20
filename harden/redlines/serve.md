@@ -55,8 +55,9 @@ against).
 * **[notes-off]** No one's notes: the notes file in Genter's home is neither searched nor read (its id is refused like
   any place outside the project) and `remember` throws; `createLocal({ notes: false })` is how.
 * **[own-home]** It keeps a store of its own: with Genter's home at the person's own `~/.genter` (`GENTER_HOME` unset,
-  naming it, or linking to it) it does not start, before it reads or writes anything, and says to set `GENTER_HOME`
-  to a folder for it. So a team's server never opens, seals again with its key, or shares the person's own store.
+  naming it, or linking to it) it does not start, before it reads or writes anything (beyond removing 0.3's Genter
+  Cloud token from the config, as every command does first, cli/cloud-own-server), and says to set `GENTER_HOME` to a
+  folder for it. So a team's server never opens, seals again with its key, or shares the person's own store.
 * **[seal-outside]** The store is sealed with the key in `GENTER_SECRET_FILE`, and the config keeps no secret. The key
   file must lie outside Genter's home (`GENTER_HOME`, the data volume), as written and where its links lead, and hold
   32 characters or more of 10 kinds or more; a key file inside the home, weak, missing or unreadable stops it from

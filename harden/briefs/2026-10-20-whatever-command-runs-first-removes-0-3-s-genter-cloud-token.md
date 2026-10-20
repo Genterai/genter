@@ -24,25 +24,35 @@ change's own `dropCloudToken` in `bin/local.js` (main's is the same function, ca
 the upgrade" removes it), `harden/redlines/cli.md` [cloud-own-server] and `CHANGELOG.md`'s 0.4.0 breaking changes,
 which named the commands that leave it.
 Sources: `bin/local.js` (`local`, `dropCloudToken`, `config`), `bin/genter.js` (it calls `local` and nothing else),
-`bin/reader.js`, `src/local.js` (`genterHome`; `readConfig`: a `config.json` that is not a JSON object stops the
-store's commands), `src/install/index.js` (`install` takes `genterHome`), `src/mcp-server.js` (stdout is the JSON-RPC
-stream, cli/local-mcp-stdout), `test/local.test.js` (`installed`, the earlier [rl:cli/cloud-own-server] test); 0.3.0
-at the tag `v0.3.0`: `bin/local.js` (`login` keeps `cloud: { token, url, workspace, user }` with `saveConfig`,
-`logout` deletes `cloud`), `src/cloud.js` (`cloudOf` reads `config.cloud.token`), `bin/genter.js` (`genter login
-'{…}'` keeps `composio_api_key`, `openrouter_api_key` and `user_id` for the apps engine: the person's own keys, not
-Genter Cloud's); the 0.4.0 release brief's Open line on this; `npm view genter-cli versions` (0.0.0-stage, 0.3.0: 0.4.0
-is not published, so its `CHANGELOG.md` section can still change); `README.md`'s Genter Cloud section ("the first
-command removes the one 0.3's `genter login` kept"), true now as written.
+`bin/reader.js`, `src/local.js` (`genterHome`; `readConfig`: a `config.json` that is not a JSON object stops the store's
+commands), `src/install/index.js` (`install` takes `genterHome`), `src/mcp-server.js` (stdout is the JSON-RPC stream,
+cli/local-mcp-stdout), `src/http.js` (`serveSetup`: the own-home refusal), `test/local.test.js` (`installed`, the
+earlier [rl:cli/cloud-own-server] test), `test/serve.test.js` ([rl:serve/own-home]), `harden/redlines/serve.md`
+[own-home] and `harden/redlines/cli.md` [demo], which said nothing of the person's is read; 0.3.0 at the tag `v0.3.0`:
+`bin/local.js` (`login` keeps `cloud: { token, url, workspace, user }` with `saveConfig`, `logout` deletes `cloud`),
+`src/cloud.js` (`cloudOf` reads `config.cloud.token`), `bin/genter.js` (`genter login '{…}'` keeps `composio_api_key`,
+`openrouter_api_key` and `user_id` for the apps engine: the person's own keys, not Genter Cloud's); the 0.4.0 release
+brief's Open line on this; `npm view genter-cli versions` (0.0.0-stage, 0.3.0: 0.4.0 is not published, so its
+`CHANGELOG.md` section can still change); `README.md`'s Genter Cloud section ("the first command removes the one 0.3's
+`genter login` kept"), true now as written.
 Red lines: cli/cloud-own-server stays as written ("the first command removes the token 0.3's `genter login` kept in the
 config, saying so on stderr"), now true for every command; cli/local-mcp and cli/local-mcp-stdout unchanged (the notice
-is on stderr; `mcp`'s stdout carries the JSON-RPC answers alone, byte for byte as without a token); cli/help (its
-stdout unchanged, its last line the address); cli/config-private (the file is rewritten 0600, through a temp file);
-cli/demo and cli/demo-fast (the demo's stdout unchanged; one small file read before it); cli/no-packages;
-cli/release-notes (the 0.4.0 section keeps its shape, breaking changes first).
+is on stderr; `mcp`'s stdout carries the JSON-RPC answers alone, byte for byte as without a token); cli/help (its stdout
+unchanged, its last line the address); cli/config-private (the file is rewritten 0600, through a temp file);
+cli/demo-fast (the demo's stdout unchanged; one small file read before it); cli/no-packages; cli/release-notes (the
+0.4.0 section keeps its shape, breaking changes first). Two red lines promised that nothing of the person's is read,
+which the removal now does first, so each names it as its one exception, worded the same: cli/demo ("reads nothing of
+the person's") and serve/own-home (with Genter's home at the person's own `~/.genter`, serve "does not start, before it
+reads or writes anything", and now takes 0.3's token out of that config first, then refuses as before, the store never
+opened).
 Decided:
 * The removal runs once, at the top of `local()` in `bin/local.js`, before the command is parsed: every command goes
   through it, so `install`, `demo`, `reader`, `help`, `--version`, an unknown command, and `serve` (whose setup ran
   before the removal and could stop it) remove the token too (the lead, 2026-10-20)
+* serve/own-home and cli/demo keep their promise for everything but this removal, which they name as their one
+  exception (beyond removing 0.3's Genter Cloud token from the config, as every command does first): the token is the
+  one thing in the person's home that should not wait for another command, and serve still refuses before its setup
+  reads anything else or opens the store
 * Only `cloud` goes, the one key 0.3's `genter login <token>` wrote (the token, its address, workspace and user) and
   `genter logout` deleted. `secret`, `user_id`, `off`, `semantic` and the keys `genter login '{…}'` kept for the apps
   engine (`composio_api_key`, `openrouter_api_key`) are the person's own and stay as they are, in their order
@@ -59,19 +69,28 @@ Open:
   store's commands already refuse such a file, and the token may be in it [non-blocking]
 Proof: `test/local.test.js` "[rl:cli/cloud-own-server] whatever command runs first removes the token 0.3's genter login
 kept and says so once, on stderr, changing no byte of stdout …": for `install --dry-run`, `demo`, `reader check` (of the
-repository's `adr` reader), `help`, `--version`, `ask production` and `mcp` (an initialize request on stdin), each
-spawned as `bin/genter.js` from a copy of the package with a scratch `GENTER_HOME` holding 0.3's config (`cloud` beside
-`secret`, `user_id`, `composio_api_key`, `openrouter_api_key` and `off`), beside the same config without `cloud` and no
-config at all: the file keeps every other key and 0600; stderr starts with the notice naming the file and, past it, is
-the run's without a token; stdout is both other runs' byte for byte; the token is in no output; the runs without a token
-say nothing, nor does the next run once it is gone; `--version` prints the package's version alone; a config that is not
-JSON is left byte for byte and named, `--version` still printing its line. With `main`'s `bin/local.js` it fails at the
-first command, `install --dry-run` (the token stays). The earlier test (`ask` and `mcp` against a stand-in for the old
-token API, `login`, `logout` and `--cloud`) passes with the notice's new words. / `npm test` 277 of 277, `npm run lint`
-(no errors; its one warning and one info are main's, in `bench/drift/results/` and `biome.jsonc`), `node bin/genter.js
-reader check` (every reader and the rules ok), `harden check`.
+repository's `adr` reader), `help`, `--version`, `ask production`, `mcp` (an initialize request on stdin), `serve repos
+--host 0.0.0.0` (its setup refuses, with no tokens off loopback, so the store is never opened) and an unknown command,
+each spawned as `bin/genter.js` from a copy of the package with a scratch `GENTER_HOME` holding 0.3's config (`cloud`
+beside `secret`, `user_id`, `composio_api_key`, `openrouter_api_key` and `off`), beside the same config without `cloud`
+and no config at all: the file keeps every other key and 0600; stderr starts with the notice naming the file and, past
+it, is the run's without a token; stdout is both other runs' byte for byte; the token is in no output; the runs without
+a token say nothing, nor does the next run once it is gone; `--version` prints the package's version alone; a config
+that is not JSON is left byte for byte and named, `--version` still printing its line. With `main`'s `bin/local.js` it
+fails at the first command, `install --dry-run` (the token stays). `test/serve.test.js` "[rl:serve/own-home] …": with
+`GENTER_HOME` unset and the person's `~/.genter/config.json` holding 0.3's token beside `secret`, `genter serve` exits
+1, its stderr the notice and then the own-home refusal, the config left as `{ "secret": "s0" }` and the person's store
+as it was, nothing else written; with `main`'s `bin/local.js` the token stays (serve refused first). The earlier test
+(`ask` and `mcp` against a stand-in for the old token API, `login`, `logout` and `--cloud`) passes with the notice's new
+words. / `npm test` 277 of 277, `npm run lint` (no errors; its one warning and one info are main's, in
+`bench/drift/results/` and `biome.jsonc`), `node bin/genter.js reader check` (every reader and the rules ok), `harden
+check`.
 
 ## Red lines after
 
 - cli/cloud-own-server (kept as written; now true for every command, `install`, `demo`, `reader`, `help` and
   `--version` included)
+- cli/demo (reads nothing of the person's beyond removing 0.3's Genter Cloud token from the config, as every command
+  does first)
+- serve/own-home (it does not start, before it reads or writes anything beyond removing 0.3's Genter Cloud token from
+  the config, as every command does first)

@@ -947,7 +947,7 @@ describe("the genter command", () => {
     }
   });
 
-  it("[rl:cli/cloud-own-server] whatever command runs first removes the token 0.3's genter login kept and says so once, on stderr, changing no byte of stdout: install --dry-run, demo, reader check, help, --version, ask, mcp", async () => {
+  it("[rl:cli/cloud-own-server] whatever command runs first removes the token 0.3's genter login kept and says so once, on stderr, changing no byte of stdout: install --dry-run, demo, reader check, help, --version, ask, mcp, serve, an unknown command", async () => {
     const pkg = installed();
     try {
       const token = `gnt_${"t".repeat(43)}`;
@@ -967,9 +967,10 @@ describe("the genter command", () => {
         }
       };
       const notice = /^genter: removed the Genter Cloud token genter 0\.3's login kept in (.+), and kept the rest of the file: nothing uses it now, and Genter Cloud may still accept it\n/;
-      const said = (text) => /Genter Cloud token|config\.json/.test(text);
+      const said = (text) => /Genter Cloud token/.test(text); // the notice, or a config it could not read or rewrite (help names config.json too)
       const initialize = `${JSON.stringify({ jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-06-18" } })}\n`;
-      const commands = [[["install", "--dry-run"]], [["demo"]], [["reader", "check", join(root, "readers/adr")]], [["help"]], [["--version"]], [["ask", "production"]], [["mcp"], initialize]];
+      // serve: its setup refuses (no tokens off loopback) and opens nothing, once the token is gone; an unknown command exits 1.
+      const commands = [[["install", "--dry-run"]], [["demo"]], [["reader", "check", join(root, "readers/adr")]], [["help"]], [["--version"]], [["ask", "production"]], [["mcp"], initialize], [["serve", "repos", "--host", "0.0.0.0"]], [["nope"]]];
       for (const [args, input = ""] of commands) {
         const name = args.join(" ");
         reset();
