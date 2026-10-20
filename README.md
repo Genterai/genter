@@ -74,9 +74,15 @@ Your agent now has two tools, the same two as [Genter Cloud](#genter-cloud-your-
 | `read {ids}` | reads places whole, as they are now, by the ids `search` returned, several at once |
 
 ```
+[1] Release process v2 › Friday
+  docs/release-process-v2.md:5-7 · file · updated 2026-10-03 · replaces [2]
+    ## Friday
+
+    No deploys on Fridays since October 3: deploy on Thursday.
+
 [2] Release process › Friday
   docs/runbook.md:5-7 · file · updated 2026-10-20
-  ⚠ superseded by [1] on 2026-10-03: “> **Deprecated:** replaced by [Release process v2](release-process-v2.md)”
+  ⚠ superseded by [1] on 2026-10-03: “Deprecated: replaced by Release process v2”
     ## Friday
 
     Deploys go out on Fridays from the release branch.
@@ -141,7 +147,7 @@ What changes:
 | "where do we check who may see an invoice?" | the agent greps `invoice`, `permission`, `canView`… and reads ten files | one `search`, which returns 5 passages with `path:lines` |
 | a question your docs answer | it reaches you | the agent answers it, citing the doc |
 | a doc edited an hour ago | an index answers with the old text | the new text, marked *changed since the last look* |
-| a page replaced by a newer one | both look equally true | the old page is marked *superseded by [id]* with its own notice quoted, and the new one comes right after it |
+| a page replaced by a newer one | both look equally true | the new one comes first, and the old page right after it, marked *superseded by [id]* with its own notice quoted |
 | a decision made in chat | lost after the session | `genter remember`, found later with its date |
 
 ### A new project
@@ -256,8 +262,12 @@ becomes a Source too.
 - Each file or page is an **Anchor**: one read with a fixed argument (`FILE_READ docs/deploy.md`). Genter keeps where
   it is, its headings, its dates and a digest of it, never a copy of its text.
 - Every question reads the sources again. A changed file is answered from its new text, marked *changed since the last
-  look*. A deleted file is *gone* and answers nothing. A file marked `Deprecated: replaced by [v2](v2.md)` brings v2
-  right after it.
+  look*. A deleted file is *gone* and answers nothing. When a file of the project marks itself
+  `Deprecated: replaced by [v2](v2.md)` and v2 is in the project too, v2 comes first and the file right after it,
+  quoting its own notice; a mark from anywhere else shows on its place and moves nothing.
+- A decision's date is the one its document gives (an ADR's `Date:`, a CHANGELOG heading, front matter). When a
+  folder's files were all written within seconds (a fresh clone), their times say when the clone was made: Genter says
+  *file dates unknown (fresh clone)* instead of using them.
 - Readers in [`readers/`](readers) read what a document says about itself: an ADR's date, status and "Superseded by",
   a CHANGELOG's dated versions and what they deprecate or remove, a banner at the top, an RFC's status, a decision
   log's dated headings, Obsidian front matter. They are data, never run, and anyone can add one

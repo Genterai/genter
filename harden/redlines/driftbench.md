@@ -20,6 +20,9 @@ Most weight: [readme-generated] and [scheduled-run]: a published number nobody c
   each.
 * **[takes]** What genter takes is measured: packages, network, model calls, time to the first answer, search time.
 * **[takes-store-checked]** The store is checked: no line of the docs' text is kept, the headings are.
+* **[old-first]** The full report counts, per arm and per kind, the questions whose first passage after the edits holds
+  the replaced answer, marked or not ("old first"); genter's is 0 on the deprecated kind, and a run where it is not
+  fails the guard.
 
 ### What is published
 

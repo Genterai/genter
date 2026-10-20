@@ -1,25 +1,8 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { areaStats, driftFacts, sourceDates, supersededOf } from "../src/drift.js";
+import { CLONE_GAP_MS, CLONE_MIN_FILES, cloneWindow, driftFacts, noticeWords, supersededOf } from "../src/drift.js";
 
 const NOW = Date.parse("2026-10-07T12:00:00Z");
-
-describe("Anchor Drift: source dates", () => {
-  it("reads modified and created dates by field name, whatever the connector", () => {
-    assert.deepEqual(sourceDates({ modifiedTime: "2019-03-02T10:00:00Z", createdTime: "2018-01-01T00:00:00Z" }, { now: NOW }), { source_at: "2019-03-02T10:00:00.000Z", source_created_at: "2018-01-01T00:00:00.000Z" });
-    for (const key of ["modified_time", "updated_at", "updatedAt", "last_edited_time", "lastModified", "last_modified"]) {
-      assert.equal(sourceDates({ [key]: "2020-05-05T00:00:00Z" }, { now: NOW }).source_at, "2020-05-05T00:00:00.000Z", key);
-    }
-  });
-  it("a commit's committer date counts; a list takes its freshest item", () => {
-    assert.equal(sourceDates([{ commit: { committer: { date: "2021-01-01T00:00:00Z" } } }, { commit: { committer: { date: "2024-06-01T00:00:00Z" } } }], { now: NOW }).source_at, "2024-06-01T00:00:00.000Z");
-  });
-  it("a site's Last-Modified header is a date; nothing found, nothing returned; bad and future dates are ignored", () => {
-    assert.equal(sourceDates({ text: "x" }, { lastModified: "Tue, 05 Mar 2019 10:00:00 GMT", now: NOW }).source_at, "2019-03-05T10:00:00.000Z");
-    assert.deepEqual(sourceDates({ title: "x", date_label: "soon" }, { now: NOW }), {});
-    assert.deepEqual(sourceDates({ updated_at: "2031-01-01T00:00:00Z", modified: "not a date" }, { now: NOW }), {});
-  });
-});
 
 describe("Anchor Drift: replaced marks", () => {
   it("[rl:anchor-drift/top-marks] [rl:anchor-drift/mark-link] finds a mark at the top of a document, with its link", () => {
@@ -58,21 +41,42 @@ describe("Anchor Drift: facts only on deviation", () => {
     assert.deepEqual(driftFacts({ updated_at: "2026-09-01T00:00:00Z" }, [fresh], { now: NOW }), []);
     assert.deepEqual(driftFacts(undefined, [], { now: NOW }), []);
   });
-  it("area statistics: most of the area changed lately", () => {
-    const area = { ...old, area_stats: { items: 16, recent: 14, days: 90 } };
-    assert.deepEqual(driftFacts(area, [area], { now: NOW }), ["source last changed 2019-03; 14 of 16 items in this area changed in the last 90 days"]);
-    assert.deepEqual(driftFacts({ ...old, area_stats: { items: 16, recent: 2, days: 90 } }, [], { now: NOW }), []);
-    assert.deepEqual(driftFacts({ ...old, area_stats: { items: 3, recent: 3, days: 90 } }, [], { now: NOW }), []); // too small an area
-  });
-  it("[rl:anchor-drift/facts-on-deviation] a replaced mark is shown even when the date is fine", () => {
-    assert.deepEqual(driftFacts({ ...fresh, superseded: { marker: "deprecated", by: "https://x.io/new" } }, [], { now: NOW }), ["marked as replaced: https://x.io/new"]);
+  it("[rl:anchor-drift/facts-on-deviation] [rl:anchor-drift/quote-not-verdict] a replaced mark is shown even when the date is fine, as what the place says, quoted", () => {
+    assert.deepEqual(driftFacts({ ...fresh, superseded: { marker: "deprecated", by: "https://x.io/new", place: "https://x.io/old", quote: "This page is deprecated. See the new guide." } }, [], { now: NOW }), ['https://x.io/old says at its top: "This page is deprecated. See the new guide."']);
+    assert.deepEqual(driftFacts({ superseded: { marker: "superseded", place: "docs/adr/0003.md", quote: "Superseded by 11. Run jobs on Redis", line: 9 } }, [], { now: NOW }), ['docs/adr/0003.md says at line 9: "Superseded by 11. Run jobs on Redis"']);
     assert.deepEqual(driftFacts({ superseded: { marker: "redirect", by: "https://x.io/b" } }, [], { now: NOW }), ["address now redirects to https://x.io/b"]);
   });
-  it("area stats from listed versions", () => {
-    const s = areaStats(["2026-09-30T00:00:00Z", "2026-08-01T00:00:00Z", "2019-01-01T00:00:00Z", "", "abc"], { now: NOW });
-    assert.equal(s.items, 3);
-    assert.equal(s.recent, 2);
-    assert.equal(s.median, "2026-08-01T00:00:00.000Z");
-    assert.equal(areaStats(["", "v1"], { now: NOW }), null);
+  it("[rl:anchor-drift/fresh-clone] an age is said only from a date the source gives: a file written in a fresh clone gives none", () => {
+    // A file of a fresh clone has no source_at (local-search leaves it out): no age fact for it, and it counts as no
+    // recent sibling for an old file beside it.
+    assert.deepEqual(driftFacts({}, [old, {}], { now: NOW }), []);
+    assert.deepEqual(driftFacts(old, [old, {}, {}], { now: NOW }), []);
+    assert.equal(driftFacts(old, [old, fresh], { now: NOW }).length, 1);
+  });
+});
+
+describe("Anchor Drift: plain words and clone times", () => {
+  it("[rl:anchor-drift/quote-not-verdict] a notice is quoted in its own words, without Markdown's signs", () => {
+    assert.equal(noticeWords("> **Deprecated:** replaced by [Release process v2](release-process-v2.md)"), "Deprecated: replaced by Release process v2");
+    assert.equal(noticeWords("Superseded by [11. Run background jobs on Redis](0011-run-jobs-on-redis.md)"), "Superseded by 11. Run background jobs on Redis");
+    assert.equal(noticeWords("- **Status:** Superseded by ADR-11"), "Status: Superseded by ADR-11");
+    assert.equal(noticeWords("> [!WARNING] *Deprecated*: use `v2` instead"), "Deprecated: use v2 instead");
+    assert.equal(noticeWords('superseded_by: "[[Release process v2]]"'), 'superseded_by: "Release process v2"');
+    assert.equal(noticeWords("snake_case_name is deprecated"), "snake_case_name is deprecated", "a word's own signs stay");
+    assert.equal(noticeWords('<div class="deprecated">'), '<div class="deprecated">', "a line that is all signs stays as it is");
+  });
+  it("[rl:anchor-drift/fresh-clone] the files of a folder written at one moment: at least five, at least half of them, each within seconds of the one before", () => {
+    const at = Date.parse("2026-10-20T10:00:00Z");
+    const clone = Array.from({ length: 8 }, (_, i) => at + i * 40);
+    assert.deepEqual(cloneWindow(clone), [at, at + 280]);
+    // A file changed after the clone has a time of its own, outside the window.
+    assert.deepEqual(cloneWindow([...clone, at + 86_400_000]), [at, at + 280]);
+    // A slow clone is one run as long as no file waits more than the gap after the one before.
+    assert.deepEqual(cloneWindow(Array.from({ length: 6 }, (_, i) => at + i * (CLONE_GAP_MS - 1))), [at, at + 5 * (CLONE_GAP_MS - 1)]);
+    // Too few files, files written apart, or a run that is less than half of the folder: no clone.
+    assert.equal(cloneWindow(clone.slice(0, CLONE_MIN_FILES - 1)), null);
+    assert.equal(cloneWindow(Array.from({ length: 8 }, (_, i) => at + i * 60_000)), null);
+    assert.equal(cloneWindow([...clone.slice(0, 5), ...Array.from({ length: 6 }, (_, i) => at + (i + 1) * 3_600_000)]), null);
+    assert.equal(cloneWindow([]), null);
   });
 });

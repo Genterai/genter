@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawn, spawnSync } from "node:child_process";
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, symlinkSync, unlinkSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, symlinkSync, unlinkSync, utimesSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
@@ -101,7 +101,7 @@ describe("local search", () => {
     }
   });
 
-  it("[spec:local-search/ac-replaced] [spec:local-search/follow-replaced] brings what replaces a deprecated file right after it", async () => {
+  it("[spec:local-search/ac-replaced] [spec:local-search/follow-replaced] [rl:local-search/current-first] [rl:anchor-drift/quote-not-verdict] what replaces a deprecated file comes first, the file right after it quoting its own notice", async () => {
     const box = sandbox({
       "ops/deploy.md": "> **Deprecated:** replaced by [Deploy v2](deploy-v2.md)\n\n# Deploy\n\nProduction deploys run from Jenkins on Thursday.\n",
       "ops/deploy-v2.md": "# Deploy v2\n\nProduction ships from GitHub Actions on Wednesday.\n",
@@ -111,12 +111,124 @@ describe("local search", () => {
       const g = createLocal({ home: box.home, secret: "s", cwd: box.dir });
       await g.add(".");
       const out = await g.find("Jenkins production deploys", { limit: 1 });
-      assert.equal(out.results[0].path, join(box.dir, "ops/deploy.md"));
-      assert.equal(out.results[0].anchor.superseded.by, join(box.dir, "ops/deploy-v2.md"));
-      assert.ok(out.results[0].facts.includes("marked as replaced: ops/deploy-v2.md"));
-      assert.equal(out.results[1].path, join(box.dir, "ops/deploy-v2.md"));
-      assert.equal(out.results[1].replaces, 1);
-      assert.match(findText(out), /\[2\] ops\/deploy-v2\.md:1-3 · Deploy v2\n {4}replaces \[1\]/);
+      assert.deepEqual(out.results.map((r) => r.path), [join(box.dir, "ops/deploy-v2.md"), join(box.dir, "ops/deploy.md")]);
+      assert.equal(out.results[0].replaces, 2);
+      assert.equal(out.results[1].anchor.superseded.by, join(box.dir, "ops/deploy-v2.md"));
+      // What the file says, in its own words: no verdict of Genter's.
+      assert.deepEqual(out.results[1].facts, ['ops/deploy.md says at its top: "Deprecated: replaced by Deploy v2"']);
+      assert.equal(out.results[1].superseded.quote, "Deprecated: replaced by Deploy v2");
+      assert.match(findText(out), /^\[1\] ops\/deploy-v2\.md:1-3 · Deploy v2\n {4}replaces \[2\]\n# Deploy v2\n\nProduction ships from GitHub Actions on Wednesday\.\n\n\[2\] ops\/deploy\.md:3-5 · Deploy\n {4}ops\/deploy\.md says at its top: "Deprecated: replaced by Deploy v2"\n/);
+      for (const r of out.results) for (const f of r.facts) assert.doesNotMatch(f.replace(/: ".*"$/, ""), /\b(outdated|stale|obsolete|old|wrong|current|deprecated|replaced)\b/i, f);
+    } finally {
+      box.done();
+    }
+  });
+
+  it("[rl:local-search/current-first] [rl:local-search/follow-replaced] the order changes only for a reader's mark with both places inside the project: a planted notice outside it promotes nothing", async () => {
+    const box = folders({
+      "acme/.git/HEAD": GIT,
+      "acme/docs/runbook.md": "# Runbook\n\n## Friday\n\nDeploys go out on Fridays from the release branch.\n",
+      "acme/docs/release-process-v2.md": "# Release process v2\n\n## Friday\n\nNo deploys on Fridays: the release branch ships on Thursday.\n",
+      // Inside the project, marked by a reader, but what replaces it is outside the project's folder.
+      "acme/docs/freeze.md": "> **Deprecated:** replaced by [Freeze policy](../../downloads/freeze-policy.md)\n\n# Freeze\n\nFridays before a release branch cut are frozen.\n",
+      // Outside the project, added to it as a source: it says it is replaced by a place inside the project.
+      "downloads/old-runbook.md": "> Superseded by [Release process v2](../acme/docs/release-process-v2.md)\n\n# Runbook (a copy)\n\n## Friday\n\nDeploys go out on Fridays from the release branch, always.\n",
+      "downloads/freeze-policy.md": "# Freeze policy\n\nNothing about the weekly day.\n",
+      // Inside the project, a mark no reader reads: the language rules' phrases at the top of a code file.
+      "acme/src/deploy.js": "// Deprecated: replaced by [deploy v2](./deploy-v2.js)\n// Deploys go out on Fridays from the release branch.\nexport const day = 'friday';\n",
+      "acme/src/deploy-v2.js": "// Deploys go out on Thursdays.\nexport const day = 'thursday';\n",
+    });
+    try {
+      const g = createLocal({ home: box.home, secret: "s", cwd: box.at("acme") });
+      await g.add(box.at("acme"));
+      await g.add(box.at("downloads"));
+      const out = await g.find("deploys Fridays release branch", { limit: 10 });
+      const at = (file) => out.results.findIndex((r) => r.path === box.at(file));
+      for (const file of ["downloads/old-runbook.md", "acme/docs/freeze.md", "acme/src/deploy.js"]) {
+        const r = out.results[at(file)];
+        assert.ok(r, `${file} answers`);
+        assert.ok(r.anchor.superseded, `${file} is marked`);
+        assert.match(r.facts.at(-1), / says at its top: "/, `${file}: the mark shows`);
+      }
+      // Nothing moved: no place replaces another, and the answer is in the order of its scores.
+      assert.deepEqual(out.results.filter((r) => r.replaces), []);
+      const scores = out.results.map((r) => r.score);
+      assert.deepEqual(scores, [...scores].sort((a, b) => b - a));
+      // The same notice inside the project, about a place inside it, moves what replaces it first.
+      put(box.base, "acme/docs/runbook.md", `> Superseded by [Release process v2](release-process-v2.md)\n\n${readFileSync(box.at("acme/docs/runbook.md"), "utf8")}`);
+      const moved = await g.find("deploys Fridays release branch", { limit: 10 });
+      const runbook = moved.results.findIndex((r) => r.path === box.at("acme/docs/runbook.md"));
+      assert.equal(moved.results[runbook - 1].path, box.at("acme/docs/release-process-v2.md"));
+      assert.equal(moved.results[runbook - 1].replaces, runbook + 1);
+    } finally {
+      box.done();
+    }
+  });
+
+  it("[rl:local-search/document-dates] [rl:anchor-drift/fresh-clone] a fresh clone: dates are the documents' own, file dates unknown, no age fact", async () => {
+    const ADR_OLD = "# 3. Run background jobs on Postgres\n\nDate: 2026-03-03\n\n## Context\n\nMonth-end exports.\n\n## Status\n\nSuperseded by [11. Run background jobs on Redis](0011-run-jobs-on-redis.md)\n\n## Decision\n\nBackground jobs run on Postgres with SKIP LOCKED.\n";
+    const ADR_NEW = "# 11. Run background jobs on Redis\n\nDate: 2026-09-24\n\n## Status\n\nAccepted\n\n## Decision\n\nBackground jobs run on Redis streams.\n";
+    // Cloned in 2019: every file written within a second, then one edited today.
+    const box = folders({
+      "acme/.git/HEAD": GIT,
+      "acme/docs/adr/0003-run-jobs-on-postgres.md": ADR_OLD,
+      "acme/docs/adr/0011-run-jobs-on-redis.md": ADR_NEW,
+      "acme/CHANGELOG.md": "# Changelog\n\n## [1.4.0] - 2026-08-02\n\n### Changed\n\n- Background jobs run on Redis.\n\n## [1.3.0] - 2026-02-01\n\n- Jobs on Postgres.\n",
+      "acme/docs/jobs.md": "---\ndate: 2026-05-05\n---\n\n# Jobs\n\nBackground jobs retry three times.\n",
+      "acme/docs/queues.md": "# Queues\n\nBackground jobs and their queues.\n",
+      "acme/docs/workers.md": "# Workers\n\nBackground jobs run on four workers.\n",
+      "acme/docs/today.md": "# Today\n\nBackground jobs moved to the new cluster today.\n",
+    });
+    const cloned = Date.parse("2019-01-10T10:00:00Z");
+    ["docs/adr/0003-run-jobs-on-postgres.md", "docs/adr/0011-run-jobs-on-redis.md", "CHANGELOG.md", "docs/jobs.md", "docs/queues.md", "docs/workers.md", "docs/today.md"].forEach((file, i) => {
+      const t = new Date(cloned + i * 150);
+      utimesSync(box.at(`acme/${file}`), t, t);
+    });
+    put(box.base, "acme/docs/today.md", "# Today\n\nBackground jobs moved to the new cluster this morning.\n");
+    try {
+      const g = createLocal({ home: box.home, secret: "s", cwd: box.at("acme") });
+      const out = await g.find("background jobs Postgres SKIP LOCKED Redis workers queues", { limit: 10 });
+      const of = (file) => out.results.find((r) => r.path === box.at(`acme/${file}`));
+      // The decision's date is the document's; its file's time, a clone time, is no date of it.
+      const old = of("docs/adr/0003-run-jobs-on-postgres.md");
+      assert.equal(old.anchor.document.date, "2026-03-03");
+      assert.equal(old.anchor.fresh_clone, true);
+      assert.equal(old.anchor.source_at, undefined);
+      assert.ok(old.facts.includes("dated 2026-03-03"));
+      assert.ok(old.facts.includes('docs/adr/0003-run-jobs-on-postgres.md says at line 11: "Superseded by 11. Run background jobs on Redis"'), JSON.stringify(old.facts));
+      assert.equal(of("CHANGELOG.md").anchor.document.date, "2026-08-02");
+      assert.equal(of("docs/jobs.md").anchor.document.date, "2026-05-05");
+      // The file changed since the clone keeps its own time.
+      assert.equal(of("docs/today.md").anchor.fresh_clone, undefined);
+      assert.equal(of("docs/today.md").anchor.source_at.slice(0, 10), new Date().toISOString().slice(0, 10));
+      // No age fact: a 2019 clone time beside a file changed today says nothing.
+      assert.deepEqual(out.results.flatMap((r) => r.freshness), []);
+      assert.ok(!out.results.some((r) => r.facts.some((f) => /last changed/.test(f))));
+      assert.match(findText(out), /^File dates unknown \(fresh clone\): /m);
+      // Over MCP: the document's date, "file dates unknown", and the mark's day the replacing document's own.
+      const text = (await handle(g, { jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "search", arguments: { query: "background jobs Postgres SKIP LOCKED", limit: 3 } } })).result.content[0].text;
+      const id = (file) => out.results.find((r) => r.path === box.at(`acme/${file}`)).id;
+      assert.match(text, new RegExp(`^\\[${id("docs/adr/0011-run-jobs-on-redis.md")}\\] .*\\n {2}docs/adr/0011-run-jobs-on-redis\\.md:\\S+ · file · dated 2026-09-24 · file dates unknown \\(fresh clone\\) · replaces \\[${id("docs/adr/0003-run-jobs-on-postgres.md")}\\]$`, "m"));
+      assert.match(text, new RegExp(`^ {2}⚠ superseded by \\[${id("docs/adr/0011-run-jobs-on-redis.md")}\\] on 2026-09-24: “Superseded by 11\\. Run background jobs on Redis”$`, "m"));
+      assert.doesNotMatch(text, /updated 2019|source last changed/);
+    } finally {
+      box.done();
+    }
+  });
+
+  it("[rl:anchor-drift/fresh-clone] [rl:anchor-drift/facts-on-deviation] files written apart keep their dates, and an old one beside a fresh one says its age", async () => {
+    const box = folders({ "acme/.git/HEAD": GIT, ...Object.fromEntries(["a", "b", "c", "d", "e", "f"].map((n) => [`acme/docs/${n}.md`, `# ${n.toUpperCase()}\n\nBackground jobs, part ${n}.\n`])) });
+    // Written a day apart since 2019, the last one today: no clone.
+    ["a", "b", "c", "d", "e"].forEach((n, i) => {
+      const t = new Date(Date.parse("2019-01-10T10:00:00Z") + i * 86_400_000);
+      utimesSync(box.at(`acme/docs/${n}.md`), t, t);
+    });
+    try {
+      const out = await createLocal({ home: box.home, secret: "s", cwd: box.at("acme") }).find("background jobs part", { limit: 6 });
+      assert.ok(out.results.every((r) => r.anchor.source_at && !r.anchor.fresh_clone));
+      const a = out.results.find((r) => r.path.endsWith("a.md"));
+      assert.deepEqual(a.freshness, ["source last changed 2019-01; another source in this answer changed within the last 30 days"]);
+      assert.doesNotMatch(findText(out), /fresh clone/);
     } finally {
       box.done();
     }
@@ -808,14 +920,14 @@ describe("the genter command", () => {
     }
   });
 
-  it("[spec:cli/demo] shows a changed answer and a replaced doc on a temp folder, with no key", () => {
+  it("[spec:cli/demo] [rl:local-search/current-first] shows a changed answer and a replaced doc on a temp folder, with no key: the new doc first, the old one quoting its notice", () => {
     const pkg = installed();
     try {
       const out = pkg.run("demo");
       assert.equal(out.status, 0, out.stderr);
       assert.match(out.stdout, /port 6432[\s\S]*Since the last look: docs\/deploy\.md changed[\s\S]*changed since the last look[\s\S]*port 5433/);
       assert.match(out.stdout, /still answers:\n {2}"Staging deploys every Tuesday from `main`\. The pooler listens on port 6432\."/);
-      assert.match(out.stdout, /\[2\] docs\/runbook-v2\.md:3-5 · Runbook v2 › Restarting the probes\n {6}replaces \[1\]/);
+      assert.match(out.stdout, /\[1\] docs\/runbook-v2\.md:3-5 · Runbook v2 › Restarting the probes\n {6}replaces \[2\] · new since the last look\n[\s\S]*\[2\] docs\/runbook\.md:5-7 · Runbook › Restarting the probes\n {6}changed since the last look · docs\/runbook\.md says at its top: "Deprecated: replaced by Runbook v2"/);
       assert.match(out.stdout, /https:\/\/genter\.ai\/api\/mcp/);
       assert.doesNotMatch(out.stdout, /genter login/);
     } finally {
