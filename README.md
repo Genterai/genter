@@ -1,73 +1,138 @@
-<p align="center">
-  <img src="https://raw.githubusercontent.com/Genterai/genter/main/docs/banner.png" alt="Genter: resolver for AI agents">
-</p>
+<p align="right"><b>English</b> · <a href="README.ru.md">Русский</a></p>
 
 <p align="center">
-  An agent works something out once. Genter remembers where the answer is written,<br>
-  and next time the agent reads it right there, as it is now.
+  <a href="https://genter.ai/try"><picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/hero-dark.png">
+    <img src="docs/hero.png" width="760" alt="Genter Cloud on Kestrel Works, a fictional team, recorded as of 2026-10-16. Your AI asks: In which AWS region must the Mira booking app keep patient data? Genter found 10 sources and gives the first five. First, a Slack thread of 2026-09-10: patient data must be hosted in the Nordics, AWS eu-north-1 (Stockholm). Second, the Notion page Mira booking app: requirements, which still says AWS region eu-central-1, marked: Superseded by the Slack thread on 2026-09-10, its words quoted.">
+  </picture></a>
 </p>
+
+<h1 align="center">Genter</h1>
+
+<p align="center"><b>Your AI stops quoting the old answer.</b><br>
+Genter shows your AI what your team decided, where it is written and when,<br>
+and marks what was replaced since.</p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/genter-cli"><img src="https://img.shields.io/npm/v/genter-cli" alt="npm"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue" alt="License: Apache-2.0"></a>
-  <img src="https://img.shields.io/badge/dependencies-0-brightgreen" alt="dependencies: 0">
+  <a href="https://genter.ai/try"><b>See it on a sample team</b></a> ·
+  <a href="#add-genter-cloud-to-claude">Add to Claude</a> ·
+  <a href="#add-genter-cloud-to-chatgpt">Add to ChatGPT</a> ·
+  <a href="https://cursor.com/install-mcp?name=genter&config=eyJ0eXBlIjoic3RkaW8iLCJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsImdlbnRlci1jbGkiLCJtY3AiXX0%3D">Add to Cursor</a> ·
+  <a href="https://vscode.dev/redirect/mcp/install?name=genter&config=%7B%22type%22%3A%22stdio%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22genter-cli%22%2C%22mcp%22%5D%7D">Install in VS Code</a> ·
+  <a href="https://github.com/Genterai/genter/releases">Claude Desktop (.mcpb, next release)</a>
 </p>
 
-<p align="center">
-  <a href="#quickstart">Quickstart</a> ·
-  <a href="#add-it-to-claude-code">Claude Code</a> ·
-  <a href="#add-it-to-your-project">Add it to your project</a> ·
-  <a href="#in-code">In code</a> ·
-  <a href="#genter-cloud-your-teams-apps">Genter Cloud</a> ·
-  <a href="#benchmarks">Benchmarks</a>
-</p>
+**The picture is Genter Cloud** on a fictional team, as the [try page](https://genter.ai/try) shows it with no sign-in:
+the Notion page never says it was replaced, and finding the Slack thread that replaced it takes a model. **What needs
+what:** with no key, Genter's open engine marks what a document says about itself (superseded, deprecated, an ADR's
+status) and puts the current answer first. A contradiction nobody wrote down needs a model: Genter Cloud finds it today;
+the open engine does not yet (planned: with your own key or Ollama).
 
-**An MCP server and a library that give your coding agent the place an answer is written.** Ask in your own words, in
-any language. Genter returns the passages that answer, read just now, with the file and lines (`path:lines`) where
-each one is written. There is no index to build and nothing to keep in sync, so there is no copy to go stale.
+## Your repository, no key
 
+**The old-answer test.** 39 questions whose answer was replaced: 34 from public decision archives (Python's PEPs,
+Kubernetes' KEPs, Jaeger's RFCs and ADRs) and 5 from [DriftBench](bench/drift). An agent's plain ranking leaves the
+replaced document unmarked in its first five on 31 of 39; Genter on 0 of 39, each quoting the document's own notice.
+Genter still puts the old answer first on 7 of 39 (plain ranking: 8 of 39): PEPs whose `Superseded-By:` names a number,
+not a file, so Genter marks them but cannot bring the replacement first. Every question and every loss:
+[bench/old-answer/RESULTS.md](bench/old-answer/RESULTS.md) (the archive questions wait for a person's review).
+
+| of 39 questions ([results](bench/old-answer/RESULTS.md)) | plain ranking | Genter, no key |
+| -- | --: | --: |
+| old answer unmarked in the first five | 31 of 39 | **0 of 39** |
+| old answer first | 8 of 39 | 7 of 39 |
+| current answer first | 20 of 39 | 21 of 39 |
+
+It reads what your documents say about themselves ([readers/](readers)): ADRs, RFCs in `rfc/` and `rfcs/` folders,
+Python PEPs, Kubernetes KEPs, a CHANGELOG's versions and deprecations, a `docs/decisions.md` log, a "Superseded by" or
+"Deprecated" notice at a document's top, Obsidian front matter. Many repositories keep their records where no reader
+looks yet: of 50 popular ones, the median holds 0 records the readers read ([bench/repos/RESULTS.md](bench/repos/RESULTS.md)),
+and a reader is a JSON file anyone can add ([CONTRIBUTING.md](CONTRIBUTING.md)).
+
+<p align="center"><img src="docs/demo.gif" alt="genter demo, its own output line by line, paced to be read (the command takes about a tenth of a second). Asked Can we deploy on Friday?, Genter answers from RUNBOOK.md:29-31, dated 2026-03-12: Yes, deploys go out on Fridays from the release branch. Then someone adds docs/release-process-v2.md, dated 2026-10-03, and puts Superseded by Release process v2 at the top of RUNBOOK.md; nobody tells Genter. Asked again, the new doc comes first: No deploys on Fridays. Deploys go out Monday to Thursday, before 15:00. The runbook's Friday line follows, with RUNBOOK.md says at its top: Superseded by Release process v2. Last line: Next: npx genter-cli install."></p>
+
+```bash
+npx genter-cli demo        # offline, no key: the runbook above, before and after a newer doc replaces it
+npx genter-cli install     # finds Claude Code, Claude Desktop, Cursor, VS Code, Codex, Gemini CLI, Zed, goose; shows each change, then asks
+npx genter-cli decisions   # in a clone: a page of its decisions, current and replaced, by their own text
 ```
-$ genter ask "is a test that was skipped counted as proof?" --semantic
-  [1] skills/hardening-changes/references/red-line-tests.md:54-77 · Red line tests › Layer 3: the last run proved it
-  ## Layer 3: the last run proved it
 
-  A tag that exists does not mean the test ran. Database and browser tests are often skipped without their secrets,
-  and then a line covered only by them is not proved at all. `harden proof` reads the junit report of a real run:
-  …
-  | skipped | every test tagged with it was skipped |
-  …
-  `harden proof` exits 1 when a line failed; with `--strict`, also when one was only skipped or not run.
+> **Until the next release:** npm has genter-cli 0.3.0, older than these three commands and than the server that
+> `install` and the editor links add (`npx -y genter-cli mcp`). `npx -y github:Genterai/genter <command>` runs this
+> repository as it is today.
+
+<p align="center">Works with Claude · ChatGPT · Claude Code · Claude Desktop · Cursor · VS Code · Codex · Gemini CLI · Zed · goose · any MCP client</p>
+
+<p align="center"><a href="https://www.npmjs.com/package/genter-cli">npm</a> · <a href="LICENSE">Apache-2.0</a> · 0 dependencies · <a href="STEWARDSHIP.md">no telemetry</a> · <a href="#benchmarks">DriftBench</a> · <b>English</b> | <a href="README.ru.md">Русский</a></p>
+
+> The package is `genter-cli`. The npm package called `genter` belongs to someone else.
+
+---
+
+## Contents
+
+[Genter Cloud](#genter-cloud-your-teams-apps) · [The local engine](#the-local-engine) ·
+[Add it to your AI tools](#add-it-to-your-ai-tools) · [What it reads](#what-it-reads) ·
+[The decisions page](#the-decisions-page) · [Benchmarks](#benchmarks) · [Ranking by meaning](#ranking-by-meaning) ·
+[Each project searches its own](#each-project-searches-its-own) · [For a small team](#for-a-small-team) ·
+[Your apps' own MCP servers](#your-apps-own-mcp-servers) · [In code](#in-code) · [Commands](#commands) ·
+[More](#more)
+
+## Genter Cloud: your team's apps
+
+Why something works the way it does is rarely written in code. It is in a ticket, a Slack thread or an email.
+[Genter Cloud](https://genter.ai) connects your apps (GitHub, Linear, Slack, Gmail, Notion, Google Drive and more), and
+marks what a newer message, page or ticket replaced or went against, with a model. The
+[try page](https://genter.ai/try) shows its recorded answers on Kestrel Works, a fictional team, with no sign-in.
+
+It is its own MCP server, `https://genter.ai/api/mcp`, beside the local `genter mcp`. The AI tool signs you in with
+OAuth the first time; genter-cli never calls Genter Cloud and keeps nothing on your disk for it (the first command
+removes the token 0.3's `genter login` kept). Your agent then has the same two tools from each, `search` and `read`:
+`genter` for your folders and `genter-cloud` for your apps, each with the places it cites and its marks in the same
+format.
+
+### Add Genter Cloud to Claude
+
+In Claude (web, desktop or mobile): [Customize › Connectors](https://claude.ai/customize/connectors) › **Add custom
+connector**, paste `https://genter.ai/api/mcp`, then **Add**; Claude signs you in to Genter. On Claude's Free plan you
+can add one custom connector ([Claude's guide](https://claude.com/docs/connectors/custom/add-unlisted)). In Claude Code:
+
+```bash
+claude mcp add --transport http genter-cloud https://genter.ai/api/mcp
 ```
 
-That is [Genterai/harden](https://github.com/Genterai/harden), a small repository of docs and code. `grep -rn skipped`
-returns 13 lines in the docs alone, and the agent has to read them all to work out which one answers. Ranked by words,
-Genter returns the code that prints the proof report. Ranked by meaning, it returns the section that answers, with the
-place to cite.
+### Add Genter Cloud to ChatGPT
 
-## Why Genter
+In ChatGPT: [Plugins](https://chatgpt.com/plugins) › **+** › **Add custom MCP server**, name it, choose the public
+endpoint under Connection and paste `https://genter.ai/api/mcp`, choose OAuth, confirm, then **Create as a plugin**
+([OpenAI's guide](https://developers.openai.com/apps-sdk/deploy/connect-chatgpt)). Your account's or workspace's
+policies decide whether you can add one.
 
-**Your agent stops guessing.** Without a resolver an agent greps for names it guesses and reads whole files, or it
-asks you something your docs already answer. With Genter it asks once and gets the 5 passages that answer, each with
-the place it is written, ready to cite.
+Cursor, VS Code and other clients that take a remote MCP server add the same address; `npx genter-cli install --cloud`
+adds it to the tools on your computer that take one.
 
-**It never answers from a stale copy.** A RAG index or a memory layer keeps a copy of your docs and answers from it
-until someone rebuilds it. Genter keeps where each answer is written and reads that place again at every question.
-After 61 edits to a company's docs, an index built once gives the old answer 42% of the time. Genter gives it 0% of the
-time ([DriftBench](#benchmarks)).
+| | `genter-cli` | Genter Cloud |
+| -- | -- | -- |
+| Sources | folders, files, websites, notes, your apps' own MCP servers | your apps |
+| Marks | what a document says about itself, no key | also what a newer message, page or ticket replaced or contradicts, found with a model |
+| Kept current | read again at every question | every event in an app rechecks what it touches |
+| Runs | on your computer | at genter.ai; your AI tool connects to it |
+| Price | free, Apache-2.0 | see [genter.ai](https://genter.ai) |
 
-**It is small.** No dependencies, and no server to run. 200 files are taken in within 0.2 s without calling a model,
-and a search takes 3 ms. Without an embeddings key, nothing leaves your computer.
+## The local engine
 
-## Quickstart
+**An MCP server, a command and a library that give your agent the place an answer is written.** Ask in your own words.
+Genter returns the passages that answer, read just now, with the file and lines where each one is written, the date
+the document gives itself, and its marks. There is no index to build and nothing to keep in sync, so there is no copy
+to go stale. No dependencies, no server to run, and without an embeddings key nothing leaves your computer.
 
 ```bash
 npx genter-cli demo                                    # 1. a decision is replaced, your AI gets the new one first: offline, no key
-export OPENAI_API_KEY=sk-...                           # 2. a key for ranking by meaning (or Ollama, below)
-npx genter-cli ask "how do we deploy?" --semantic      # 3. ask your folder
-claude mcp add genter -e GENTER_SEMANTIC=1 -- npx -y genter-cli mcp   # 4. give it to your agent
+npx genter-cli ask "how do we deploy?"                 # 2. ask the folder you are in, ranked by words
+npx genter-cli install                                 # 3. give it to your AI tools (it shows each change, then asks)
 ```
 
-Your agent now has two tools, the same two as [Genter Cloud](#genter-cloud-your-teams-apps), both read-only:
+Your agent then has two tools, the same two as [Genter Cloud](#genter-cloud-your-teams-apps), both read-only:
 
 | Tool | What it does |
 | -- | -- |
@@ -110,7 +175,10 @@ server, `--semantic` turns on ranking by meaning, and `--dry-run` only shows. A 
 in `~/.genter/install/`; `--undo` puts it back, or, if the tool has saved the file since, takes only Genter's entries
 out of it.
 
-## Add it to Claude Code
+The **Add to Cursor** and **Install in VS Code** links at the top add the same entry `install` writes for those two
+editors (`npx -y genter-cli mcp`), through each editor's own install link.
+
+### Claude Code
 
 In Claude Code:
 
@@ -147,23 +215,15 @@ search first, cite the [id] and place it returns, and repeat a mark as the quote
 the local server (`npx genter-cli install`, from 0.4) or Genter Cloud. `skills` is Vercel's command, not Genter's; it
 sends anonymous usage data unless `DO_NOT_TRACK=1` is set.
 
-## Choose how you run it
+### Other MCP clients
 
-| | Words | **Meaning** (recommended) | Genter Cloud |
-| -- | -- | -- | -- |
-| **Best for** | a quick look, an offline machine | an agent working in a repository every day | a team whose answers also live in tickets, chats and mail |
-| **Setup** | `npx genter-cli mcp` | `--semantic` (or `GENTER_SEMANTIC=1`) and an embeddings key, or Ollama | its own MCP server, `https://genter.ai/api/mcp`, beside either |
-| **Finds** | questions asked in the docs' own words | other words, other languages | + GitHub, Linear, Slack, Gmail, Notion and 500 more apps |
-| **DriftBench, current answers** | 77% | **88%** | |
-| **Leaves your computer** | nothing | the ranked passages go to the embeddings provider (with Ollama, nothing) | what your AI tool asks Genter Cloud |
-| **Price** | free | free + your provider's embeddings | see [genter.ai](https://genter.ai) |
+Any MCP client that starts a server over stdio:
 
-If you are just looking, the demo and words are enough. If an agent works in your repository every day, use meaning.
-If you are a team, add Genter Cloud.
+```json
+{ "mcpServers": { "genter": { "command": "npx", "args": ["-y", "genter-cli", "mcp", "."], "env": { "GENTER_SEMANTIC": "1" } } } }
+```
 
-## Add it to your project
-
-### An existing repository
+### A repository the whole team works in
 
 Commit two files, and every agent on the team asks Genter before it guesses:
 [`examples/project/`](examples/project).
@@ -178,8 +238,6 @@ curl -fsSL https://raw.githubusercontent.com/Genterai/genter/main/examples/proje
 person has set, and without one it ranks by words. `AGENTS.md` tells the agent to call Genter's `search` first and to
 cite `path:lines`.
 
-What changes:
-
 | | Without Genter | With Genter |
 | -- | -- | -- |
 | "where do we check who may see an invoice?" | the agent greps `invoice`, `permission`, `canView`… and reads ten files | one `search`, which returns 5 passages with `path:lines` |
@@ -188,20 +246,179 @@ What changes:
 | a page replaced by a newer one | both look equally true | the new one comes first, and the old page right after it, marked *superseded by [id]* with its own notice quoted |
 | a decision made in chat | lost after the session | `genter remember`, found later with its date |
 
-### A new project
+Starting a new project: write each decision where it is made (`docs/decisions.md`, one heading per decision, with a
+date). When a page is replaced, mark the old one `> Deprecated: replaced by [v2](v2.md)`. Nothing needs to be
+re-indexed as the project grows.
 
-Start with the same two files and a `docs/` folder. Write each decision where it is made (`docs/decisions.md`, one
-heading per decision, with a date). When a page is replaced, mark the old one
-`> Deprecated: replaced by [v2](v2.md)`. From the first day the agent finds all of it by meaning, and nothing needs to
-be re-indexed as the project grows.
+## What it reads
 
-### Other MCP clients
+- Each file or page is an **Anchor**: one read with a fixed argument (`FILE_READ docs/deploy.md`). Genter keeps where
+  it is, its headings, its dates and a digest of it, never a copy of its text.
+- Every question reads the sources again. A changed file is answered from its new text, marked *changed since the last
+  look*. A deleted file is *gone* and answers nothing. When a file of the project marks itself
+  `Deprecated: replaced by [v2](v2.md)` and v2 is in the project too, v2 comes first and the file right after it,
+  quoting its own notice; a mark from anywhere else shows on its place and moves nothing.
+- A decision's date is the one its document gives (an ADR's `Date:`, a CHANGELOG heading, front matter). When a
+  folder's files were all written within seconds (a fresh clone), their times say when the clone was made: Genter says
+  *file dates unknown (fresh clone)* instead of using them.
+- Readers in [`readers/`](readers) read what a document says about itself: an ADR's date, status and "Superseded by"
+  (in `adr/`, `adrs/`, `decisions/` and architecture-decision folders); an RFC's, a PEP's or a KEP's date and status
+  (`rfc/` and `rfcs/` folders, `peps/pep-*`, a KEP's `kep.yaml`); a CHANGELOG's dated versions and what they deprecate
+  or remove; a decision log's dated headings (`decisions.md`, `decision-log.md`); a "Superseded by" or "Deprecated"
+  banner at a document's top; Obsidian front matter. They are data, never run, and anyone can add one
+  ([CONTRIBUTING.md](CONTRIBUTING.md)); the phrases that mark a page as replaced are in [`rules/`](rules), English and
+  Russian.
+- Genter never reads hidden files, `.gitignore`d files, lockfiles, keys, or anything that holds a private key. Taking
+  the docs in calls no model. Without an embeddings key, nothing leaves your computer.
 
-Cursor, Windsurf, Codex, VS Code or any MCP client:
+## The decisions page
+
+```bash
+npx genter-cli decisions   # in a clone: ~/.genter/pages/<project>.html
+```
+
+One page of the project's decisions: each ADR, RFC and heading of `docs/decisions.md`, current or replaced, with where it
+is written (`path:line`) and the date the document gives itself. A replaced one quotes its own notice and names what
+replaces it; a document that says at its top or in its front matter that it is replaced is listed too, with what it
+names. Every row is what a document says about itself: no model, no key, no file dates, and no row says that two
+documents disagree (that needs a model).
+
+```
+Decisions in acme · generated at 3f2c1ab on 2026-10-20 · run `genter decisions` again to refresh
+1 current · 1 replaced, by their own text · dates as the documents give them
+CURRENT    Jobs run on Redis · Status: accepted   docs/adr/0011.md:3   2026-09-24
+REPLACED   Jobs run on Postgres                   docs/adr/0003.md:3   2026-03-03
+           docs/adr/0003.md:7 says: “Superseded by [ADR-0011](0011.md)” · replaced by docs/adr/0011.md
+```
+
+It quotes your documents, so it is written outside the repository, readable by you only (`--out <file>` puts it
+elsewhere): check it before you share it. It is one HTML file with no script and nothing to load, so it opens offline,
+and it is stamped with the commit it was made at, read from `.git` (Genter runs nothing, `git` included).
+
+## Benchmarks
+
+Every number here comes from a run of the open code in [`bench/`](bench), which anyone can repeat with no key and no
+account. Genter Cloud's own numbers are not on this page.
+
+**[The old-answer test](bench/old-answer)** asks 39 questions whose answer a newer document replaced and counts, for an
+agent's plain ranking and for Genter over the same sections, how often the replaced document comes first or appears
+unmarked in the first five. The table at the top is its summary; [RESULTS.md](bench/old-answer/RESULTS.md) has every
+question, every loss and the plan's decision rule. `node bench/old-answer/run.mjs` rebuilds it (it fetches the three
+archives at pinned commits with `git`).
+
+**[The 50-repository gate](bench/repos)** runs the readers on 50 popular repositories at pinned commits: the median
+holds 0 decision records the readers read, 28 of 50 hold at least one document with a mark the readers read, and the
+records the readers miss are listed by repository ([RESULTS.md](bench/repos/RESULTS.md)). `node bench/repos/run.mjs`
+rebuilds it.
+
+**[DriftBench](bench/drift)** uses the docs of a 40-person company, 61 edits over two months, and the same 65 questions
+asked before and after the edits, taking the top 5 passages. The run itself writes the tables below; they are not
+written by hand.
+
+<!-- driftbench:start -->
+| | needs | before the edits | after the edits: current answer | after the edits: stale answer |
+| -- | -- | -- | -- | -- |
+| **genter** | nothing | 80% | **77%** (89% of the changed facts) | **0%** |
+| an index built once, same ranking | nothing | 80% | 34% (11% of the changed facts) | 42% |
+| **genter --semantic** | an embeddings key | 92% | **88%** (92% of the changed facts) | **0%** |
+| an index built once + vectors | an embeddings key | 92% | 42% (8% of the changed facts) | 43% |
+| a memory that extracts facts with a model, docs not added again | an LLM key, 34 packages, 277 LLM calls to take the docs in | 75% | 40% (11% of the changed facts) | 32% |
+| the same memory, every edited file deleted from it and added again | an LLM key, 34 packages, 277 LLM calls to take the docs in, 320 more to add the edited files again | 75% | 75% (75% of the changed facts) | 3% |
+
+**Over time.** The same 61 edits land one by one, 2 to 30 minutes apart; each of the 36 changed facts is asked again some time after its edit. An index re-synced every N minutes is genter's own search over a copy of the docs taken every N minutes. Current answer · stale answer (5 seeded timelines):
+
+| time since the edit | 1 min | 5 min | 15 min | 30 min | 1 h | 2 h |
+| -- | -- | -- | -- | -- | -- | -- |
+| **genter**, reading the docs at each question | **89% · 0%** | **89% · 0%** | **89% · 0%** | **89% · 0%** | **89% · 0%** | **89% · 0%** |
+| an index re-synced every 15 minutes, same ranking | 20% · 55% | 41% · 37% | 89% · 0% | 89% · 0% | 89% · 0% | 89% · 0% |
+| an index re-synced every 60 minutes, same ranking | 13% · 69% | 18% · 64% | 29% · 52% | 54% · 30% | 89% · 0% | 89% · 0% |
+
+**What it takes**, measured by `bench/drift/takes.mjs` (Node v22.22.0, linux x64). The store keeps each file's place, title, headings, dates, size and a digest of its text, sealed: 38155 bytes for 96396 bytes of docs.
+
+| | **genter** | a memory that extracts facts with a model |
+| -- | -- | -- |
+| packages installed with it | **0** | 34 |
+| model calls to take the docs in | **0** | 277 |
+| network connections · servers started | **0 · 0** | a model provider's API on every add and search |
+| from a cold start to the first answer (34 docs) | **184 ms** | 14 min to take the docs in |
+| median search | **3 ms** | 288 ms |
+| of the docs' text, it keeps | **0 of 1065 lines of body text (0 bytes); its headings** | 569 facts written by its model |
+
+[Results, 2026-10-10](bench/drift/results/2026-10-10.md).
+<!-- driftbench:end -->
+
+**Reproduce it.** You need no key, no account and nothing to install. A fresh run on a GitHub runner every week
+([bench.yml](.github/workflows/bench.yml)) fails if genter answers anything stale:
+
+```bash
+git clone https://github.com/Genterai/genter && cd genter
+npm run bench                                         # the tables above, except the rows that need a key: ~30 s
+node bench/drift/takes.mjs                            # what it takes, alone
+```
+
+**[LoCoMo and LongMemEval](bench/convo)** are the conversational-memory benchmarks. They measure whether the evidence
+is among the passages Genter finds. Words only, no key, no model
+([results, 2026-10-09](bench/convo/results/2026-10-09.md)).
+
+| ([results](bench/convo/results/2026-10-09.md)) | questions | evidence in the top 5 | all of it in the top 5 | a search |
+| -- | -- | -- | -- | -- |
+| LoCoMo | 1,536 | 84.5% | 72.0% | 3 ms |
+| LongMemEval-S | 470 | 96.6% | 82.3% (knowledge updates: 98.6%) | 110 ms |
+
+This measures retrieval, which is Genter's own job. To judge answers with each benchmark's own prompt (the numbers
+memory layers publish), run `node bench/convo/run.mjs --answer` with a key.
+
+## Ranking by meaning
+
+Ranking by words finds a question asked in the docs' own words. `--semantic` also ranks by meaning and fuses the two
+rankings. On [DriftBench](bench/drift/results/2026-10-10.md), current answers go from 77% to 88%, and Russian questions
+about English docs from 1 of 6 to 5 of 6. A passage is embedded once and its vector kept in the sealed store; later
+questions embed only the question and what changed.
+
+| | Words | **Meaning** (recommended for daily work) |
+| -- | -- | -- |
+| **Best for** | a quick look, an offline machine | an agent working in a repository every day |
+| **Setup** | `npx genter-cli mcp` | `--semantic` (or `GENTER_SEMANTIC=1`) and an embeddings key, or Ollama |
+| **Finds** | questions asked in the docs' own words | other words, other languages |
+| **[DriftBench](bench/drift/results/2026-10-10.md), current answers** | 77% | **88%** |
+| **Leaves your computer** | nothing | the ranked passages go to the embeddings provider (with Ollama, nothing) |
+
+The passages go to the provider you pick:
+
+| Provider | Set |
+| -- | -- |
+| OpenAI | `OPENAI_API_KEY` |
+| OpenRouter | `OPENROUTER_API_KEY` |
+| Vercel AI Gateway | `AI_GATEWAY_API_KEY` or `AI_GATEWAY_TOKEN` (free tier: `GENTER_EMBED_MODEL=google/gemini-embedding-001`) |
+| Ollama, on your computer (nothing leaves it) | nothing: `ollama pull nomic-embed-text` |
+| Any OpenAI-compatible endpoint | `GENTER_EMBED_URL`, `GENTER_EMBED_KEY`, `GENTER_EMBED_MODEL` |
+
+Genter uses the first key it finds; `--provider openai|openrouter|vercel|ollama` picks one. If the provider fails, Genter
+ranks by words (`genter ask` says why).
+
+## Each project searches its own
+
+A search reads its own project's sources and your notes, never another project's. The project is the nearest folder
+up from where `genter` runs that holds a `genter.json` or a `.git`; with neither, the folder itself (the home folder and
+`/` never count). The first `genter ask` in a project adds its folder. `genter add`, `forget` and `sources`, and the MCP
+server, work on the project they run in; `genter mcp <folder>` works on that folder's project wherever your AI tool
+starts it. Your notes are yours and answer in every project, with their dates.
+
+A project's `genter.json` comes with a clone, so it can only narrow what Genter reads there:
 
 ```json
-{ "mcpServers": { "genter": { "command": "npx", "args": ["-y", "genter-cli", "mcp", "."], "env": { "GENTER_SEMANTIC": "1" } } } }
+{ "include": ["docs", "README.md"], "exclude": ["docs/archive"], "off": ["docs/private"] }
 ```
+
+Every path in it is inside the project. If one is not (`~/…`, `../…`, an absolute path elsewhere), Genter uses nothing
+from the file and says so. A folder inside with its own `genter.json` is a project of its own, and its `genter.json`
+still holds when the outer project reads there. Your own `"off"` list in `~/.genter/config.json` (paths; `~/` works)
+switches places off in every project: Genter never reads them, through a link either, drops what it kept of them, and
+no `genter.json` brings them back. An address in it (`https://mcp.linear.app`) switches off the MCP servers there.
+
+A store from 0.3 (one list of sources) is split once, the first time it is opened after the upgrade: each folder or
+file goes to the project that holds it (one outside any project answers from its own folder), websites stay in every
+project, notes stay yours.
 
 ## For a small team
 
@@ -266,50 +483,6 @@ if (!report.ok) console.error(report.checks.filter((c) => !c.ok));
 
 Genter's own tests run it against `genter mcp` over stdio ([test/contract.test.js](test/contract.test.js)).
 
-## Ranking by meaning
-
-Ranking by words finds a question asked in the docs' own words. `--semantic` also ranks by meaning and fuses the two
-rankings. On DriftBench, current answers go from 77% to 88%. Russian questions about English docs go from 1 of 6 to 5
-of 6. A passage is embedded once and its vector kept in the sealed store; later questions embed only the question and what changed.
-
-The passages go to the provider you pick:
-
-| Provider | Set |
-| -- | -- |
-| OpenAI | `OPENAI_API_KEY` |
-| OpenRouter | `OPENROUTER_API_KEY` |
-| Vercel AI Gateway | `AI_GATEWAY_API_KEY` or `AI_GATEWAY_TOKEN` (free tier: `GENTER_EMBED_MODEL=google/gemini-embedding-001`) |
-| Ollama, on your computer (nothing leaves it) | nothing: `ollama pull nomic-embed-text` |
-| Any OpenAI-compatible endpoint | `GENTER_EMBED_URL`, `GENTER_EMBED_KEY`, `GENTER_EMBED_MODEL` |
-
-Genter uses the first key it finds; `--provider openai|openrouter|vercel|ollama` picks one. If the provider fails, Genter
-ranks by words (`genter ask` says why).
-
-## Genter Cloud: your team's apps
-
-Why something works the way it does is rarely written in code. It is in a ticket, a Slack thread or an email.
-[Genter Cloud](https://genter.ai) connects your apps (GitHub, Linear, Slack, Gmail, Notion, Google Drive and 500 more)
-and keeps their Anchors current as their own events come in.
-
-Add it to your AI tool as its own MCP server, next to the local `genter mcp`:
-
-```bash
-claude mcp add --transport http genter-cloud https://genter.ai/api/mcp
-```
-
-Claude, ChatGPT, Cursor, VS Code and other clients that take a remote MCP server add the same address. The client signs
-you in with OAuth the first time. Nothing is kept on your disk for it: genter-cli never calls Genter Cloud and holds no
-token (the first command removes the one 0.3's `genter login` kept). Your agent then has the same two tools from each,
-`search` and `read`: `genter` for your folders and `genter-cloud` for your apps, each with the places it cites, its
-marks in the same format.
-
-| | `genter-cli` | Genter Cloud |
-| -- | -- | -- |
-| Sources | folders, files, websites, notes, your apps' own MCP servers | your apps |
-| Kept current | read again at every question | every event in an app rechecks the Anchors it touches |
-| Runs | on your computer | at genter.ai; your AI tool connects to it |
-| Price | free, Apache-2.0 | see [genter.ai](https://genter.ai) |
-
 ## With harden
 
 [harden](https://github.com/Genterai/harden) has the agent write a brief before code: what the change is for, where
@@ -317,87 +490,6 @@ the truth lives and what must not break. Its Claude Code plugin is in this repos
 (`/plugin install harden@genter`). Before the agent asks the owner a question, it searches with genter-cli, and a
 question the code or the docs already answer becomes a Source in the brief instead of reaching the owner. With Genter
 Cloud connected, the decision behind the code (a ticket, a thread) becomes a Source too.
-
-## How it resolves, and why it stays current
-
-- Each file or page is an **Anchor**: one read with a fixed argument (`FILE_READ docs/deploy.md`). Genter keeps where
-  it is, its headings, its dates and a digest of it, never a copy of its text.
-- Every question reads the sources again. A changed file is answered from its new text, marked *changed since the last
-  look*. A deleted file is *gone* and answers nothing. When a file of the project marks itself
-  `Deprecated: replaced by [v2](v2.md)` and v2 is in the project too, v2 comes first and the file right after it,
-  quoting its own notice; a mark from anywhere else shows on its place and moves nothing.
-- A decision's date is the one its document gives (an ADR's `Date:`, a CHANGELOG heading, front matter). When a
-  folder's files were all written within seconds (a fresh clone), their times say when the clone was made: Genter says
-  *file dates unknown (fresh clone)* instead of using them.
-- Readers in [`readers/`](readers) read what a document says about itself: an ADR's date, status and "Superseded by",
-  a CHANGELOG's dated versions and what they deprecate or remove, a banner at the top, an RFC's status, a decision
-  log's dated headings, Obsidian front matter. They are data, never run, and anyone can add one
-  ([CONTRIBUTING.md](CONTRIBUTING.md)); the phrases that mark a page as replaced are in [`rules/`](rules), English and
-  Russian.
-- Taking a folder in calls no model: 200 files in 0.2 s. Without an embeddings key, nothing leaves your computer.
-
-```bash
-npx genter-cli demo     # a doc is replaced and nobody tells Genter: the next answer has the new doc first, the old one quoting its notice
-```
-
-## Benchmarks
-
-**[DriftBench](bench/drift)** uses the docs of a 40-person company, 61 edits over two months, and the same 65 questions
-asked before and after the edits, taking the top 5 passages. The run itself writes the tables below; they are not
-written by hand.
-
-<!-- driftbench:start -->
-| | needs | before the edits | after the edits: current answer | after the edits: stale answer |
-| -- | -- | -- | -- | -- |
-| **genter** | nothing | 80% | **77%** (89% of the changed facts) | **0%** |
-| an index built once, same ranking | nothing | 80% | 34% (11% of the changed facts) | 42% |
-| **genter --semantic** | an embeddings key | 92% | **88%** (92% of the changed facts) | **0%** |
-| an index built once + vectors | an embeddings key | 92% | 42% (8% of the changed facts) | 43% |
-| a memory that extracts facts with a model, docs not added again | an LLM key, 34 packages, 277 LLM calls to take the docs in | 75% | 40% (11% of the changed facts) | 32% |
-| the same memory, every edited file deleted from it and added again | an LLM key, 34 packages, 277 LLM calls to take the docs in, 320 more to add the edited files again | 75% | 75% (75% of the changed facts) | 3% |
-
-**Over time.** The same 61 edits land one by one, 2 to 30 minutes apart; each of the 36 changed facts is asked again some time after its edit. An index re-synced every N minutes is genter's own search over a copy of the docs taken every N minutes. Current answer · stale answer (5 seeded timelines):
-
-| time since the edit | 1 min | 5 min | 15 min | 30 min | 1 h | 2 h |
-| -- | -- | -- | -- | -- | -- | -- |
-| **genter**, reading the docs at each question | **89% · 0%** | **89% · 0%** | **89% · 0%** | **89% · 0%** | **89% · 0%** | **89% · 0%** |
-| an index re-synced every 15 minutes, same ranking | 20% · 55% | 41% · 37% | 89% · 0% | 89% · 0% | 89% · 0% | 89% · 0% |
-| an index re-synced every 60 minutes, same ranking | 13% · 69% | 18% · 64% | 29% · 52% | 54% · 30% | 89% · 0% | 89% · 0% |
-
-**What it takes**, measured by `bench/drift/takes.mjs` (Node v22.22.0, linux x64). The store keeps each file's place, title, headings, dates, size and a digest of its text, sealed: 38155 bytes for 96396 bytes of docs.
-
-| | **genter** | a memory that extracts facts with a model |
-| -- | -- | -- |
-| packages installed with it | **0** | 34 |
-| model calls to take the docs in | **0** | 277 |
-| network connections · servers started | **0 · 0** | a model provider's API on every add and search |
-| from a cold start to the first answer (34 docs) | **184 ms** | 14 min to take the docs in |
-| median search | **3 ms** | 288 ms |
-| of the docs' text, it keeps | **0 of 1065 lines of body text (0 bytes); its headings** | 569 facts written by its model |
-
-[Results, 2026-10-10](bench/drift/results/2026-10-10.md).
-<!-- driftbench:end -->
-
-**Reproduce it.** You need no key, no account and nothing to install. A fresh run on a GitHub runner every week
-([bench.yml](.github/workflows/bench.yml)) fails if genter answers anything stale:
-
-```bash
-npx genter-cli demo                                   # see it on a temp folder
-git clone https://github.com/Genterai/genter && cd genter
-npm run bench                                         # the tables above, except the rows that need a key: ~30 s
-node bench/drift/takes.mjs                            # what it takes, alone
-```
-
-**[LoCoMo and LongMemEval](bench/convo)** are the conversational-memory benchmarks. They measure whether the evidence
-is among the passages Genter finds. Words only, no key, no model.
-
-| | questions | evidence in the top 5 | all of it in the top 5 | a search |
-| -- | -- | -- | -- | -- |
-| LoCoMo | 1,536 | 84.5% | 72.0% | 3 ms |
-| LongMemEval-S | 470 | 96.6% | 82.3% (knowledge updates: 98.6%) | 110 ms |
-
-This measures retrieval, which is Genter's own job. To judge answers with each benchmark's own prompt (the numbers
-memory layers publish), run `node bench/convo/run.mjs --answer` with a key. [Results](bench/convo/results/2026-10-09.md).
 
 ## Commands
 
@@ -416,66 +508,22 @@ memory layers publish), run `node bench/convo/run.mjs --answer` with a key. [Res
 | `genter reader new <name>` · `genter reader check` | make a reader for a text format; check readers against their fixtures |
 
 `--semantic` ranks by meaning too (or set `GENTER_SEMANTIC=1`); `--json` prints JSON; `--limit N` sets the number of
-passages. Genter never reads hidden files, `.gitignore`d files, lockfiles, keys, or anything that holds a private key.
-The store (`~/.genter`, or `GENTER_HOME`) is sealed with a secret made on the first run.
-
-### Each project searches its own
-
-A search reads its own project's sources and your notes, never another project's. The project is the nearest folder
-up from where `genter` runs that holds a `genter.json` or a `.git`; with neither, the folder itself (the home folder and
-`/` never count). The first `genter ask` in a project adds its folder. `genter add`, `forget` and `sources`, and the MCP
-server, work on the project they run in; `genter mcp <folder>` works on that folder's project wherever your AI tool
-starts it. Your notes are yours and answer in every project, with their dates.
-
-A project's `genter.json` comes with a clone, so it can only narrow what Genter reads there:
-
-```json
-{ "include": ["docs", "README.md"], "exclude": ["docs/archive"], "off": ["docs/private"] }
-```
-
-Every path in it is inside the project. If one is not (`~/…`, `../…`, an absolute path elsewhere), Genter uses nothing
-from the file and says so. A folder inside with its own `genter.json` is a project of its own, and its `genter.json`
-still holds when the outer project reads there. Your own `"off"` list in `~/.genter/config.json` (paths; `~/` works)
-switches places off in every project: Genter never reads them, through a link either, drops what it kept of them, and
-no `genter.json` brings them back. An address in it (`https://mcp.linear.app`) switches off the MCP servers there.
-
-A store from 0.3 (one list of sources) is split once, the first time it is opened after the upgrade: each folder or
-file goes to the project that holds it (one outside any project answers from its own folder), websites stay in every
-project, notes stay yours.
-
-## The decisions page
-
-```bash
-npx genter-cli decisions   # in a clone: ~/.genter/pages/<project>.html
-```
-
-One page of the project's decisions: each ADR, RFC and heading of `docs/decisions.md`, current or replaced, with where it
-is written (`path:line`) and the date the document gives itself. A replaced one quotes its own notice and names what
-replaces it; a document that says at its top or in its front matter that it is replaced is listed too, with what it
-names. Every row is what a document says about itself: no model, no key, no file dates, and no row says that two
-documents disagree (that needs a model).
-
-```
-Decisions in acme · generated at 3f2c1ab on 2026-10-20 · run `genter decisions` again to refresh
-1 current · 1 replaced, by their own text · dates as the documents give them
-CURRENT    Jobs run on Redis · Status: accepted   docs/adr/0011.md:3   2026-09-24
-REPLACED   Jobs run on Postgres                   docs/adr/0003.md:3   2026-03-03
-           docs/adr/0003.md:7 says: “Superseded by [ADR-0011](0011.md)” · replaced by docs/adr/0011.md
-```
-
-It quotes your documents, so it is written outside the repository, readable by you only (`--out <file>` puts it
-elsewhere): check it before you share it. It is one HTML file with no script and nothing to load, so it opens offline,
-and it is stamped with the commit it was made at, read from `.git` (Genter runs nothing, `git` included).
+passages. The store (`~/.genter`, or `GENTER_HOME`) is sealed with a secret made on the first run.
 
 ## More
 
 - [`examples/`](examples): the files that add Genter to a project, and the docs assistant.
+- What the project promises, how it is run and how to contribute: [STEWARDSHIP.md](STEWARDSHIP.md),
+  [GOVERNANCE.md](GOVERNANCE.md), [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md).
 - The apps engine of 0.3 and earlier (Composio, `genter run`, `find`, `write`) is on the
   [`legacy`](https://github.com/Genterai/genter/tree/legacy) branch, unsupported.
 - [The red lines](harden/redlines) genter-cli keeps, and how a change gets in ([harden](harden/README.md)).
+- The README's pictures are rendered from [`docs/art/`](docs/art) (`node docs/art/render.mjs`): the first is Genter
+  Cloud's try page, the GIF is `genter demo`'s own output.
 - Releases: raise `version` in `package.json` in a pull request. Merging it into `main` publishes it to npm and creates
   the GitHub release.
 
 ## License
 
-[Apache-2.0](LICENSE).
+[Apache-2.0](LICENSE), since 2026-10-09; older commits were published under another license
+([STEWARDSHIP.md](STEWARDSHIP.md)).

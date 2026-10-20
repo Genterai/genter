@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=760">
+<title>Genter: the README's first picture</title>
+<!--
+  The README's first picture, docs/hero.png (light) and docs/hero-dark.png (dark), rendered from this file by
+  docs/art/render.mjs. It draws what Genter Cloud's try page (https://genter.ai/try) shows for one of its preset
+  questions: the recorded answer on Kestrel Works, a fictional team. Every word below is the try page's own: its label,
+  the question, the line over the results, the first two results' titles and meta lines, the mark, and passages quoted
+  from those results (an ellipsis marks where a passage is cut). Nothing here is Genter's open engine: finding that a Slack thread
+  replaced a Notion page that says nothing about it takes a model, and the README says so.
+-->
+<style>
+  :root {
+    --bg: #ffffff; --panel: #f6f7f8; --card: #ffffff; --line: #e3e5e8; --text: #16181b; --muted: #6a6f76;
+    --you: #1f9d4c; --you-text: #ffffff; --bubble: #eef0f2; --mark: #9a5b00; --mark-bg: #fff6e5; --mark-line: #f1d39a;
+    --old: #b3261e; --old-bg: #fdecea; --new: #146c34; --new-bg: #e6f5ec; --chip: #eef0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0d1117; --panel: #111418; --card: #151a21; --line: #2b313a; --text: #ececec; --muted: #9a9ea5;
+      --you: #3fbf63; --you-text: #06130a; --bubble: #222428; --mark: #f2b84b; --mark-bg: #261d0c; --mark-line: #5a4417;
+      --old: #ff8f87; --old-bg: #3a1714; --new: #7fe0a0; --new-bg: #11301c; --chip: #222428;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg); }
+  body { width: 760px; padding: 22px 26px 24px; color: var(--text); font: 13px/1.5 Inter, "DejaVu Sans", sans-serif; -webkit-font-smoothing: antialiased; }
+  .top { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+  .logo { width: 22px; height: 22px; color: var(--text); flex: none; }
+  .label { font-size: 12.5px; color: var(--muted); }
+  .label b { color: var(--text); font-weight: 600; }
+  .addr { margin-left: auto; font-size: 12px; color: var(--muted); background: var(--chip); border-radius: 999px; padding: 3px 10px; }
+  .sender { display: flex; justify-content: flex-end; align-items: center; gap: 5px; font-size: 11.5px; color: var(--muted); margin: 0 6px 4px 0; }
+  .sender svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .ask { margin-left: auto; width: fit-content; max-width: 560px; background: var(--you); color: var(--you-text); font-size: 14px; font-weight: 500; padding: 8px 14px; border-radius: 16px 16px 4px 16px; }
+  .found { width: fit-content; margin: 12px 0 10px; background: var(--bubble); padding: 7px 13px; border-radius: 16px 16px 16px 4px; font-size: 13.5px; }
+  .hit { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 11px 14px 12px; }
+  .hit + .hit { margin-top: 8px; }
+  .title { font-weight: 600; font-size: 13.5px; }
+  .meta { color: var(--muted); font-size: 11.5px; margin-top: 1px; font-variant-numeric: tabular-nums; }
+  .text { margin-top: 6px; color: var(--text); opacity: 0.86; font-size: 12.5px; }
+  .mark { display: flex; gap: 8px; margin-top: 8px; padding: 8px 10px; border: 1px solid var(--mark-line); background: var(--mark-bg); color: var(--mark); border-radius: 8px; font-size: 12.5px; }
+  .mark svg { flex: none; width: 15px; height: 15px; margin-top: 1px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .mark b { font-weight: 650; }
+  .new, .old { white-space: nowrap; }
+  .new { background: var(--new-bg); color: var(--new); border-radius: 4px; padding: 0 3px; font-weight: 600; }
+  .old { background: var(--old-bg); color: var(--old); border-radius: 4px; padding: 0 3px; font-weight: 600; }
+</style>
+</head>
+<body>
+  <div class="top">
+    <svg class="logo" viewBox="0 0 20 20" aria-hidden="true"><path d="M0 0H11.5V11.5H0ZM14 0H20V20H0V14H14Z" fill="currentColor"/></svg>
+    <p class="label">Recorded from <b>Genter Cloud</b> on <b>Kestrel Works</b>, a fictional team, as of 2026-10-16.</p>
+    <span class="addr">genter.ai/try</span>
+  </div>
+
+  <p class="sender"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg>Your AI</p>
+  <p class="ask">In which AWS region must the Mira booking app keep patient data?</p>
+  <p class="found">Found 10 sources for your AI. The first five, as it gets them:</p>
+
+  <div class="hit">
+    <p class="title">#mira-kestrel · where patient data is hosted</p>
+    <p class="meta">Slack · message · created 2026-09-10 · updated 2026-09-10</p>
+    <p class="text">Juris Liepins (Mira) 11:20 Hi all. Following the new procurement rule from our board, patient data must be hosted in the Nordics. Please plan for <span class="new">AWS eu-north-1 (Stockholm)</span> for everything that holds patient data, backups included. …</p>
+  </div>
+
+  <div class="hit">
+    <p class="title">Mira booking app: requirements</p>
+    <p class="meta">Notion · page · created 2026-06-03 · updated 2026-09-29</p>
+    <p class="mark"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 2.5 20h19zM12 10v4.5M12 17.2v.3"/></svg><span>Superseded by <b>#mira-kestrel · where patient data is hosted</b> on 2026-09-10: “patient data must be hosted in the Nordics. Please plan for AWS eu-north-1 (Stockholm) for everything that holds patient data, backups included.”</span></p>
+    <p class="text">Agreed with Ilze and Juris in the workshop of 2 June 2026. … Data - All patient data is stored in <span class="old">AWS, region eu-central-1</span>, encrypted at rest; backups stay in the same region. …</p>
+  </div>
+
+</body>
+</html>
