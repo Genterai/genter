@@ -1,0 +1,48 @@
+# Who must review a change. GitHub asks the owner of the last pattern that matches a file; "Require review from Code
+# Owners" in the rules for main makes that review required. GOVERNANCE.md says who the people are. An owner is a user or
+# a team: @Genterai, the organization the first-party readers name as theirs, cannot be asked for a review, so the owner
+# stands for it. A line for a file that is not in the tree yet holds from the pull request that adds it.
+
+# What decides what is read, marked and sent, and what Genter Cloud imports from npm at an exact version
+/src/memory.js                  @dangenter
+/src/readers.js                 @dangenter
+/src/net.js                     @dangenter
+/src/lexical.js                 @dangenter
+/src/local.js                   @dangenter
+/src/http.js                    @dangenter
+/readers/reader.schema.json     @dangenter
+
+# First-party readers and rules. A reader a person adds may bring a line of its own here, in the pull request that adds
+# it, naming the owner its reader.json names (test/community.test.js checks: [owner-review]); from then on its owner
+# reviews it. With no line, the maintainers review it: a reader needs no line, and no brief.
+/readers/adr/                   @dangenter
+/readers/banners/               @dangenter
+/readers/changelog/             @dangenter
+/readers/decisions/             @dangenter
+/readers/obsidian/              @dangenter
+/readers/rfc/                   @dangenter
+/rules/en.json                  @dangenter
+/rules/ru.json                  @dangenter
+
+# What clients and people run: how they start Genter, where it is listed, and what a release ships (the image the
+# release job publishes is built from the Dockerfile)
+/Dockerfile                     @dangenter
+/docker-compose.yml             @dangenter
+/server.json                    @dangenter
+/manifest.json                  @dangenter
+/glama.json                     @dangenter
+/.claude-plugin/                @dangenter
+/plugins/                       @dangenter
+/skills/                        @dangenter
+
+# What the project promises and who decides
+/STEWARDSHIP.md                 @dangenter
+/TRADEMARKS.md                  @dangenter
+/GOVERNANCE.md                  @dangenter
+/ip-boundary.md                 @dangenter
+/SECURITY.md                    @dangenter
+/LICENSE                        @dangenter
+/.github/CODEOWNERS             @dangenter
+
+# What runs in CI and on release: a pull request can change its own checks, so the owner reads those changes
+/.github/                       @dangenter
