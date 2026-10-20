@@ -23,11 +23,12 @@ description.
   word as it has them ("Ваш ИИ перестаёт цитировать старый ответ." and its sentence); `package.json`'s description
   starts with the promise and the sentence.
 * **[hero-cloud]** While the 50-repository gate does not pass (old-answer/repos-gate: the latest `bench/repos` run's
-  verdict), the first picture on both first screens is Genter Cloud's try page, labelled in the picture itself as
-  recorded from Genter Cloud on a fictional team, served light and dark (`<picture>`, `prefers-color-scheme`) with alt
-  text that says what it says, and linked to `https://genter.ai/try`; "See it on a sample team" (in Russian, "Посмотреть
-  на примере команды") is the first call to action after the promise. The text beside it says the picture is Genter
-  Cloud's, that what it marks takes a model, and what the open engine marks with no key.
+  verdict on its held-out sample), the first picture on both first screens is Genter Cloud's try page, labelled in the
+  picture itself as recorded from Genter Cloud on a fictional team, served light and dark (`<picture>`,
+  `prefers-color-scheme`) with alt text that says what it says, and linked to `https://genter.ai/try`; "See it on a
+  sample team" (in Russian, "Посмотреть на примере команды") is the first call to action after the promise. The text
+  beside it says the picture is Genter Cloud's, that what it marks takes a model, and what the open engine marks with
+  no key.
 * **[pictures]** `docs/hero.png`, `docs/hero-dark.png` (the same size, twice the 760 pixels the README shows) and
   `docs/demo.gif` are rendered by `docs/art/render.mjs` from `docs/art/hero.html` and `docs/art/terminal.html`, each
   under 1.5 MB; `docs/art/rendered.json`, written by the same run, holds each picture's SHA-256 and those of the files
@@ -44,7 +45,10 @@ description.
   its top.
 * **[numbers-named]** Every number README.md or README.ru.md states as a measurement (a percentage, "N of M", a time
   in ms) is in a paragraph, list or table that links the file in `bench/` it comes from, and the old-answer test's
-  counts and the 50-repository gate's are the latest results' of those benches. DriftBench's tables are in README.md
-  only, where its guard reads them.
+  counts and the 50-repository gate's are the latest results' of those benches (the results file each bench's
+  RESULTS.md names): the old-answer test's current answer both with its chain and as written, its losses both ways
+  and the questions the chain changed, named; the gate's verdict and counts on its held-out sample, with the first
+  sample's beside them, said to be biased. The number of readers either README states is the number of readers in
+  `readers/`. DriftBench's tables are in README.md only, where its guard reads them.
 * **[npm-name]** Both READMEs say the package is `genter-cli` and that the npm package called `genter` belongs to
   someone else.

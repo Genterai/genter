@@ -32,24 +32,30 @@ the open engine does not yet (planned: with your own key or Ollama).
 
 **The old-answer test.** 39 questions whose answer was replaced: 34 from public decision archives (Python's PEPs,
 Kubernetes' KEPs, Jaeger's RFCs and ADRs) and 5 from [DriftBench](bench/drift). An agent's plain ranking leaves the
-replaced document unmarked in its first five on 31 of 39; Genter on 0 of 39, each quoting the document's own notice.
-Genter still puts the old answer first on 7 of 39 (plain ranking: 8 of 39): PEPs whose `Superseded-By:` names a number,
-not a file, so Genter marks them but cannot bring the replacement first. Genter's first result differs from plain
-ranking's on 1 of 39 questions (DriftBench's q38) and on 0 of the 34 archive questions: there its gain is the marks, not
-the order. Every question and every loss: [bench/old-answer/RESULTS.md](bench/old-answer/RESULTS.md) (the archive
-questions wait for a person's review).
+replaced document unmarked in its first five on 31 of 39 and puts it first on 8 of 39; Genter on 0 of 39 for both,
+quoting the document's own notice each time. Genter puts the current answer first on 28 of 39 (plain ranking: 20 of 39),
+the current answer being the document the question names or a later one the archive's own replacement marks lead to;
+counted as written, the named document alone, 27 of 39 (plain ranking: 20 of 39). Genter's first result differs from
+plain ranking's on 10 of 39 questions, 9 of them among the 34 archive questions; on 11 of 39 both put another document
+first, which may state the current answer too. Every question, what each arm put first, and the losses (0 counted with
+the chain, 1 as written): [bench/old-answer/RESULTS.md](bench/old-answer/RESULTS.md) (the archive questions wait for a
+person's review).
 
 | of 39 questions ([results](bench/old-answer/RESULTS.md)) | plain ranking | Genter, no key |
 | -- | --: | --: |
 | old answer unmarked in the first five | 31 of 39 | **0 of 39** |
-| old answer first | 8 of 39 | 7 of 39 |
-| current answer first | 20 of 39 | 21 of 39 |
+| old answer first | 8 of 39 | **0 of 39** |
+| current answer first, with its chain | 20 of 39 | **28 of 39** |
+| current answer first, as written | 20 of 39 | 27 of 39 |
 
-It reads what your documents say about themselves ([readers/](readers)): ADRs, RFCs in `rfc/` and `rfcs/` folders,
-Python PEPs, Kubernetes KEPs, a CHANGELOG's versions and deprecations, a `docs/decisions.md` log, a "Superseded by" or
-"Deprecated" notice at a document's top, Obsidian front matter. Many repositories keep their records where no reader
-looks yet: of 50 popular ones, the median holds 0 records the readers read ([bench/repos/RESULTS.md](bench/repos/RESULTS.md)),
-and a reader is a JSON file anyone can add ([CONTRIBUTING.md](CONTRIBUTING.md)).
+Its 13 readers ([readers/](readers)) read what your documents say about themselves: ADRs; RFCs and RFDs (`rfc/`,
+`rfcs/` and `rfd/` folders, Rust's `text/`); the improvement proposals of Python, Ethereum, NumPy, Kubernetes and Pulsar
+(PEPs, EIPs and ERCs, NEPs, KEPs, PIPs); proposal and design folders (Swift Evolution, Go's design docs, Kotlin's
+KEEP); a CHANGELOG's versions and deprecations; a `docs/decisions.md` log; a "Superseded by" or "Deprecated" notice at a
+document's top; Obsidian front matter. Many repositories keep their records where no reader looks yet: of 46 popular
+ones the readers were not written for, the median holds 0 records the readers read
+([bench/repos/RESULTS.md](bench/repos/RESULTS.md)), and a reader is a JSON file anyone can add
+([CONTRIBUTING.md](CONTRIBUTING.md)).
 
 <p align="center"><img src="docs/demo.gif" alt="genter demo, its own output line by line, paced to be read (the command takes about a tenth of a second). Asked Can we deploy on Friday?, Genter answers from RUNBOOK.md:29-31, dated 2026-03-12: Yes, deploys go out on Fridays from the release branch. Then someone adds docs/release-process-v2.md, dated 2026-10-03, and puts Superseded by Release process v2 at the top of RUNBOOK.md; nobody tells Genter. Asked again, the new doc comes first: No deploys on Fridays. Deploys go out Monday to Thursday, before 15:00. The runbook's Friday line follows, with RUNBOOK.md says at its top: Superseded by Release process v2. Last line: Next: npx genter-cli install."></p>
 
@@ -258,16 +264,20 @@ re-indexed as the project grows.
   it is, its headings, its dates and a digest of it, never a copy of its text.
 - Every question reads the sources again. A changed file is answered from its new text, marked *changed since the last
   look*. A deleted file is *gone* and answers nothing. When a file of the project marks itself
-  `Deprecated: replaced by [v2](v2.md)` and v2 is in the project too, v2 comes first and the file right after it,
-  quoting its own notice; a mark from anywhere else shows on its place and moves nothing.
+  `Deprecated: replaced by [v2](v2.md)`, or names what replaces it by number (a PEP's `Superseded-By: 470`), and what
+  replaces it is in the project too, that comes first and the marked file right after it, quoting its own notice; a
+  mark from anywhere else shows on its place and moves nothing.
 - A decision's date is the one its document gives (an ADR's `Date:`, a CHANGELOG heading, front matter). When a
   folder's files were all written within seconds (a fresh clone), their times say when the clone was made: Genter says
   *file dates unknown (fresh clone)* instead of using them.
-- Readers in [`readers/`](readers) read what a document says about itself: an ADR's date, status and "Superseded by"
-  (in `adr/`, `adrs/`, `decisions/` and architecture-decision folders); an RFC's, a PEP's or a KEP's date and status
-  (`rfc/` and `rfcs/` folders, `peps/pep-*`, a KEP's `kep.yaml`); a CHANGELOG's dated versions and what they deprecate
-  or remove; a decision log's dated headings (`decisions.md`, `decision-log.md`); a "Superseded by" or "Deprecated"
-  banner at a document's top; Obsidian front matter. They are data, never run, and anyone can add one
+- The 13 readers in [`readers/`](readers) read what a document says about itself: an ADR's date, status and
+  "Superseded by" (in `adr/`, `adrs/`, `decisions/` and architecture-decision folders); the date, status and
+  replacement of an RFC or an RFD (`rfc/`, `rfcs/` and `rfd/` folders, Rust's `text/`, Vue's `active-rfcs/`), of an
+  improvement proposal (`peps/pep-*`, `EIPS/eip-*` and `ERCS/erc-*`, `neps/nep-*`, a KEP's `kep.yaml`, Pulsar's
+  `pip/pip-*`) and of a document in a proposal or design folder (`proposals/`, `design/`, `enhancements/` and the like:
+  Swift Evolution, Go's design docs, Kotlin's KEEP); a CHANGELOG's dated versions and what they deprecate or remove; a
+  decision log's dated headings (`decisions.md`, `decision-log.md`); a "Superseded by" or "Deprecated" banner at a
+  document's top; Obsidian front matter. They are data, never run, and anyone can add one
   ([CONTRIBUTING.md](CONTRIBUTING.md)); the phrases that mark a page as replaced are in [`rules/`](rules), English and
   Russian.
 - Genter never reads hidden files, `.gitignore`d files, lockfiles, keys, or anything that holds a private key. Taking
@@ -279,11 +289,11 @@ re-indexed as the project grows.
 npx genter-cli decisions   # in a clone: ~/.genter/pages/<project>.html
 ```
 
-One page of the project's decisions: each ADR, RFC and heading of `docs/decisions.md`, current or replaced, with where it
-is written (`path:line`) and the date the document gives itself. A replaced one quotes its own notice and names what
-replaces it; a document that says at its top or in its front matter that it is replaced is listed too, with what it
-names. Every row is what a document says about itself: no model, no key, no file dates, and no row says that two
-documents disagree (that needs a model).
+One page of the project's decisions: each decision record a reader reads (an ADR, an RFC or RFD, a PEP, a KEP or another
+proposal) and each heading of `docs/decisions.md`, current or replaced, with where it is written (`path:line`) and the
+date the document gives itself. A replaced one quotes its own notice and names what replaces it; a document that says at
+its top or in its front matter that it is replaced is listed too, with what it names. Every row is what a document says
+about itself: no model, no key, no file dates, and no row says that two documents disagree (that needs a model).
 
 ```
 Decisions in acme · generated at 3f2c1ab on 2026-10-20 · run `genter decisions` again to refresh
@@ -304,12 +314,19 @@ account. Genter Cloud's own numbers are not on this page.
 
 **[The old-answer test](bench/old-answer)** asks 39 questions whose answer a newer document replaced and counts, for an
 agent's plain ranking and for Genter over the same sections, how often the replaced document comes first or appears
-unmarked in the first five. The table at the top is its summary; [RESULTS.md](bench/old-answer/RESULTS.md) has every
-question, every loss and the plan's decision rule. `node bench/old-answer/run.mjs` rebuilds it (it fetches the three
-archives at pinned commits with `git`).
+unmarked in the first five, and how often the current answer comes first. The current answer is counted two ways: as
+written, the document the question names; and with its chain, also any later document the archive's own marks lead to
+(PEP 314 says "Superseded-By: 345", and PEP 345 "Superseded-By: 566"). The chain rule was set after a run in which it
+changed one question, peps/0241: plain ranking puts first PEP 314, the document the question names, and Genter PEP 566,
+the last of that chain, so counted as written that question is Genter's one loss. The table at the top gives both
+counts, and [RESULTS.md](bench/old-answer/RESULTS.md) has every question, the losses and the plan's decision rule.
+`node bench/old-answer/run.mjs` rebuilds it (it fetches the three archives at pinned commits with `git`).
 
-**[The 50-repository gate](bench/repos)** runs the readers on 50 popular repositories at pinned commits: the median
-holds 0 decision records the readers read, 28 of 50 hold at least one document with a mark the readers read, and the
+**[The 50-repository gate](bench/repos)** runs the readers on popular repositories at pinned commits, in two samples.
+The gate is judged on 46 held out, picked by the same written rule and committed before the readers ran on them: the
+median holds 0 decision records the readers read, 9 of 46 hold 5 or more, and 20 of 46 hold at least one document with
+a mark the readers read, so it does not pass (it needs a median of 5). On the first 50, which the readers were widened
+looking at (a biased number, shown to compare), the median holds 1, 24 of 50 hold 5 or more and 30 of 50 a mark. The
 records the readers miss are listed by repository ([RESULTS.md](bench/repos/RESULTS.md)). `node bench/repos/run.mjs`
 rebuilds it.
 

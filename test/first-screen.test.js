@@ -31,8 +31,29 @@ const plain = (s) =>
     .trim();
 // The part above the first rule (---): the first screen.
 const firstScreen = (s) => s.slice(0, s.indexOf("\n---\n"));
-// The latest dated results of a bench.
-const latest = (dir) => JSON.parse(text(join(dir, readdirSync(at(dir)).filter((f) => /^\d{4}-\d{2}-\d{2}\.json$/.test(f)).sort().at(-1))));
+// The latest results of a bench: the file its RESULTS.md names, both written by the same run (a run may name its file
+// for what it adds, results/2026-10-20-chain.json, so the newest name alone does not say which is latest).
+function latest(bench) {
+  const named = /the numbers are in \[(results\/[^\]]+\.json)\]/.exec(text(join(bench, "RESULTS.md")));
+  assert.ok(named, `${bench}/RESULTS.md names no results file`);
+  return JSON.parse(text(join(bench, named[1])));
+}
+// The 50-repository gate's verdict, judged on the held-out sample; the first 50 beside it (a run before the held-out
+// sample had one verdict, on the first 50).
+const sample = (results, id) => (results.samples ? results.samples.find((s) => s.id === id)?.verdict : id === "first" ? results.verdict : undefined);
+const gate = (results) => sample(results, "heldout") ?? sample(results, "first");
+// The readers in readers/: a folder with a manifest.
+const readerCount = () => readdirSync(at("readers"), { withFileTypes: true }).filter((d) => d.isDirectory() && existsSync(at(join("readers", d.name, "reader.json")))).length;
+// A count in Russian: 1 ридер, 2 ридера, 5 ридеров, 21 ридер.
+const ru = (n, [one, few, many]) => `${n} ${n % 10 === 1 && n % 100 !== 11 ? one : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? few : many}`;
+// A question an arm does worse on than plain ranking, the current answer counted with its chain or as written
+// (old-answer/losses-published).
+function lost(q, written) {
+  const first = written ? "written_first" : "current_first";
+  const top5 = written ? "written_top5" : "current_top5";
+  const { plain: p, genter: g } = q;
+  return g.old_first || g.old_unmarked || (p[first] && !g[first]) || (p[top5] && !g[top5]);
+}
 // The files a picture was made from, as docs/art/render.mjs recorded them; the picture and each of them unchanged since.
 function madeFrom(picture) {
   const made = JSON.parse(text("docs/art/rendered.json"))[picture];
@@ -111,7 +132,7 @@ describe("the README's first screen", () => {
     // The picture says so itself, and the gate it follows from does not pass.
     const hero = text("docs/art/hero.html");
     assert.match(plain(hero), /Recorded from Genter Cloud on Kestrel Works, a fictional team, as of \d{4}-\d{2}-\d{2}\./);
-    assert.equal(latest("bench/repos/results").verdict.passes, false);
+    assert.equal(gate(latest("bench/repos")).passes, false);
   });
 
   it("[rl:first-screen/pictures] the pictures are rendered from files in docs/art, each under 1.5 MB, with nothing installed with genter-cli", () => {
@@ -201,56 +222,81 @@ describe("the README's first screen", () => {
       }
     }
     // The old-answer test's counts, as its latest run wrote them: the table, every sentence that states one, and the
-    // Benchmarks section, in both languages.
-    const results = latest("bench/old-answer/results");
+    // Benchmarks section, in both languages. The current answer is counted with its chain and as written.
+    const results = latest("bench/old-answer");
     const { plain: p, genter: g } = results.totals;
     const n = p.n;
+    assert.ok(Number.isInteger(g.written_first), "the latest old-answer run counts the current answer both ways");
     const drift = results.sources.find((s) => s.id === "driftbench").plain.n;
     const archive = n - drift;
     // The questions whose first result is not plain ranking's, and how many of them are the archives'.
     const differ = results.questions.filter((q) => q.plain.first !== q.genter.first);
     const differArchive = differ.filter((q) => q.source !== "driftbench").length;
-    const ids = (ru) => differ.map((q) => q.id.replace(/^driftbench\/(.+)$/, ru ? "$1 из DriftBench" : "DriftBench's $1")).join(", ");
-    // The 50-repository gate's verdict.
-    const v = latest("bench/repos/results").verdict;
+    // The questions where both arms put another document first, neither the old answer nor the current one.
+    const other = results.questions.filter((q) => [q.plain, q.genter].every((a) => !a.old_first && !a.current_first)).length;
+    // Genter's losses both ways, and the questions the chain changed (named under Benchmarks).
+    const losses = results.questions.filter((q) => lost(q, false)).length;
+    const lossesWritten = results.questions.filter((q) => lost(q, true)).length;
+    const chained = results.questions.filter((q) => [q.plain, q.genter].some((a) => a.current_first !== a.written_first)).map((q) => q.id);
+    assert.ok(chained.length, "the chain changes a question, which the README names");
+    // The 50-repository gate: its verdict on the held-out sample, and the first 50 beside it.
+    const repos = latest("bench/repos");
+    const h = gate(repos);
+    const f = sample(repos, "first");
+    const readers = readerCount();
     const en = text("README.md");
-    const ru = text("README.ru.md");
+    const ru_ = text("README.ru.md");
     const said = {
       "README.md": [
         `| old answer unmarked in the first five | ${p.old_unmarked} of ${n} | **${g.old_unmarked} of ${n}** |`,
-        `| old answer first | ${p.old_first} of ${n} | ${g.old_first} of ${n} |`,
-        `| current answer first | ${p.current_first} of ${n} | ${g.current_first} of ${n} |`,
+        `| old answer first | ${p.old_first} of ${n} | **${g.old_first} of ${n}** |`,
+        `| current answer first, with its chain | ${p.current_first} of ${n} | **${g.current_first} of ${n}** |`,
+        `| current answer first, as written | ${p.written_first} of ${n} | ${g.written_first} of ${n} |`,
         `| of ${n} questions (results) | plain ranking |`,
         `${n} questions whose answer was replaced: ${archive} from public decision archives`,
         `and ${drift} from DriftBench.`,
-        `unmarked in its first five on ${p.old_unmarked} of ${n}; Genter on ${g.old_unmarked} of ${n}`,
-        `old answer first on ${g.old_first} of ${n} (plain ranking: ${p.old_first} of ${n})`,
-        `Genter's first result differs from plain ranking's on ${differ.length} of ${n} questions (${ids(false)}) and on ${differArchive} of the ${archive} archive questions`,
+        `unmarked in its first five on ${p.old_unmarked} of ${n} and puts it first on ${p.old_first} of ${n}; Genter on ${g.old_unmarked} of ${n} for both`,
+        `Genter puts the current answer first on ${g.current_first} of ${n} (plain ranking: ${p.current_first} of ${n})`,
+        `counted as written, the named document alone, ${g.written_first} of ${n} (plain ranking: ${p.written_first} of ${n})`,
+        `Genter's first result differs from plain ranking's on ${differ.length} of ${n} questions, ${differArchive} of them among the ${archive} archive questions; on ${other} of ${n} both put another document first`,
+        `the losses (${losses} counted with the chain, ${lossesWritten} as written)`,
         `asks ${n} questions whose answer a newer document replaced`,
-        `of ${v.repos} popular ones, the median holds ${v.median_records} records`,
-        `runs the readers on ${v.repos} popular repositories at pinned commits: the median holds ${v.median_records} decision records the readers read, ${v.with_marks} of ${v.repos} hold at least one document with a mark`,
+        `The chain rule was set after a run in which it changed ${chained.length === 1 ? "one question" : `${chained.length} questions`}, ${chained.join(", ")}:`,
+        `Its ${readers} readers (readers/) read`,
+        "The " + readers + " readers in `readers/` read",
+        `of ${h.repos} popular ones the readers were not written for, the median holds ${h.median_records} records the readers read`,
+        `The gate is judged on ${h.repos} held out, picked by the same written rule and committed before the readers ran on them: the median holds ${h.median_records} decision records the readers read, ${h.with_records} of ${h.repos} hold 5 or more, and ${h.with_marks} of ${h.repos} hold at least one document with a mark the readers read, so it ${h.passes ? "passes" : "does not pass"}`,
+        `On the first ${f.repos}, which the readers were widened looking at (a biased number, shown to compare), the median holds ${f.median_records}, ${f.with_records} of ${f.repos} hold 5 or more and ${f.with_marks} of ${f.repos} a mark.`,
       ],
       "README.ru.md": [
         `| старый ответ без отметки в первой пятёрке | ${p.old_unmarked} из ${n} | **${g.old_unmarked} из ${n}** |`,
-        `| старый ответ первым | ${p.old_first} из ${n} | ${g.old_first} из ${n} |`,
-        `| актуальный ответ первым | ${p.current_first} из ${n} | ${g.current_first} из ${n} |`,
+        `| старый ответ первым | ${p.old_first} из ${n} | **${g.old_first} из ${n}** |`,
+        `| актуальный ответ первым, с цепочкой замен | ${p.current_first} из ${n} | **${g.current_first} из ${n}** |`,
+        `| актуальный ответ первым, только названный в вопросе | ${p.written_first} из ${n} | ${g.written_first} из ${n} |`,
         `| из ${n} вопросов (результаты) | обычное ранжирование |`,
         `${n} вопросов, ответ на которые заменён более новым документом: ${archive} из публичных архивов решений`,
         `и ${drift} из DriftBench.`,
-        `без отметки в первой пятёрке в ${p.old_unmarked} из ${n}; Genter в ${g.old_unmarked} из ${n}`,
-        `Старый ответ первым Genter всё же ставит в ${g.old_first} из ${n} (обычное ранжирование: в ${p.old_first} из ${n})`,
-        `Первый результат у Genter и у обычного ранжирования разный в ${differ.length} из ${n} вопросов (${ids(true)}) и в ${differArchive} из ${archive} вопросов по архивам`,
-        `в медианном из ${v.repos} популярных репозиториев ${v.median_records} записей`,
-        `у медианного репозитория ${v.median_records} записей решений, которые читают ридеры; ${v.with_marks} из ${v.repos} содержат`,
+        `без отметки в первой пятёрке в ${p.old_unmarked} из ${n} и ставит его первым в ${p.old_first} из ${n};`,
+        `Genter не делает ни того, ни другого ни в одном вопросе (${g.old_unmarked} из ${n})`,
+        `Актуальный ответ Genter ставит первым в ${g.current_first} из ${n} (обычное ранжирование: в ${p.current_first} из ${n})`,
+        `Если считать только названный документ, то в ${g.written_first} из ${n} (обычное ранжирование: в ${p.written_first} из ${n})`,
+        `Первый результат у Genter и у обычного ранжирования разный в ${differ.length} из ${n} вопросов, из них ${differArchive} из ${archive} вопросов по архивам; в ${other} из ${n} оба ставят первым другой документ`,
+        `проигрыши (${losses} с цепочкой замен, ${lossesWritten} без неё)`,
+        `Правило цепочки принято после запуска, в котором оно изменило ${chained.length === 1 ? "один вопрос" : `${chained.length} вопроса`}, ${chained.join(", ")}:`,
+        `${ru(readers, ["ридер", "ридера", "ридеров"])} (readers/) читают`,
+        ru(readers, ["ридер", "ридера", "ридеров"]) + " в `readers/` читают",
+        `из ${h.repos} популярных репозиториев, которых ридеры не видели, пока их писали, у медианного ${h.median_records} записей`,
+        `Проверку судят по ${h.repos} отложенным репозиториям, которые выбраны по тому же записанному правилу и закоммичены до того, как на них запустили ридеры: у медианного репозитория ${h.median_records} записей решений, которые читают ридеры, у ${h.with_records} из ${h.repos} их 5 или больше, а ${h.with_marks} из ${h.repos} содержат хотя бы один документ с пометкой, которую ридеры читают, поэтому проверка ${h.passes ? "пройдена" : "не пройдена"}`,
+        `На первых ${f.repos}, глядя на которые ридеры расширяли (число заведомо смещённое, оно для сравнения), медианное число записей — ${f.median_records}, у ${f.with_records} из ${f.repos} их 5 или больше, у ${f.with_marks} из ${f.repos} есть пометка`,
       ],
     };
     for (const [file, sentences] of Object.entries(said)) {
-      const md = file === "README.md" ? en : ru;
+      const md = file === "README.md" ? en : ru_;
       for (const sentence of sentences) assert.ok(md.includes(sentence) || plain(md).includes(sentence), `${file}: ${sentence}`);
     }
     // DriftBench's tables are in the English README only, where its guard reads them.
     assert.match(en, /^\| \*\*genter\*\* \|/m);
-    assert.doesNotMatch(ru, /driftbench:start|\| \*\*genter\*\* \|/);
+    assert.doesNotMatch(ru_, /driftbench:start|\| \*\*genter\*\* \|/);
   });
 
   it("[rl:first-screen/npm-name] both say the package is genter-cli, and that npm's genter is someone else's", () => {

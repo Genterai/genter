@@ -25,14 +25,26 @@ entry does genter install write for Cursor and VS Code, command and args?"`: `ha
 `src/install/{cursor,vscode}.js` (`{ type: "stdio", command: "npx", args: ["-y", "genter-cli", "mcp"] }`). Then the
 commands run on main (`node bin/genter.js demo`, `install --dry-run` in a temp home, `decisions` in a two-ADR repository)
 and as published (`npx genter-cli@0.3.0 demo` prints the old demo; `install` and `decisions` are "Unknown command").
+After #93 and #94 merged, from a scratch folder with this worktree's `bench/` and `readers/` added: `ask "which results
+file holds the old-answer test's current counts, and how is the current answer counted with its chain?"`
+(`bench/old-answer/run.mjs`'s header and `bench/old-answer/README.md` "What is counted": the current answer with its
+chain, the count as written beside it) and `ask "on which sample is the 50-repository gate judged, and what does the
+held-out sample give?"` (`bench/repos/README.md`: "the gate is judged on the held-out sample", the first 50 shown
+beside it, biased; `bench/repos/RESULTS.md`, 46 held out).
 Sources: `README.md` (rewritten), `README.ru.md` (new), `package.json` (`description`, `keywords`), `docs/art/` (new:
 `hero.html`, `terminal.html`, `render.mjs`, `demo.txt`), `docs/hero.png`, `docs/hero-dark.png`, `docs/demo.gif` (new);
-`bench/old-answer/RESULTS.md` and `results/2026-10-20.json` (39 questions; old answer unmarked in the first five 31 and 0,
-first 8 and 7, current first 20 and 21; the 7 losses), `bench/repos/RESULTS.md` and `results/2026-10-20.json` (the gate
-does not pass: median 0 records read, 28 of 50 with a mark), `bench/drift/results/2026-10-10.md` (DriftBench, the
+`bench/old-answer/{README,RESULTS}.md` and `results/2026-10-20-chain.json`, the file RESULTS.md names (39 questions;
+plain ranking against Genter: old answer unmarked in the first five 31 and 0, old answer first 8 and 0, current answer
+first with its chain 20 and 28, as written 20 and 27; first results differ on 10 of 39, 9 of them on the 34 archive
+questions; another document first in both arms on 11; losses none with the chain, one as written, peps/0241, the one
+question the chain changed), `bench/repos/{README,RESULTS}.md` and `results/2026-10-20-heldout.json`, the file RESULTS.md
+names (the gate, judged on 46 held out, does not pass: median 0 decision records read, 9 of 46 with 5 or more, 20 of 46
+with a mark; the first 50, biased: median 1, 24 and 30 of 50), `bench/drift/results/2026-10-10.md` (DriftBench, the
 crosslingual row: 1 of 6 by words, 5 of 6 by meaning; cold start 184 ms; median search 3 ms), `bench/convo/results/
-2026-10-09.md`; `readers/*/reader.json` (what the first screen names: ADR folders, `rfc/` and `rfcs/`, `peps/pep-*`, a
-KEP's `kep.yaml`, CHANGELOG, `decisions.md`, banners, Obsidian), `rules/ru.json` ("заменён"); `src/demo.js` and
+2026-10-09.md`; `readers/*/reader.json` (the 13 readers the first screen names: adr; rfc (`rfc/`, `rfcs/`, Rust's `text/`, Vue's
+`active-rfcs/`) and rfd; pep, eip (EIPs and ERCs), nep, kep (`kep.yaml`), pip (Pulsar's `pip/pip-*`); proposals
+(proposal and design folders: Swift Evolution, Go's design docs, Kotlin's KEEP); changelog, decisions, banners,
+obsidian; the by-id marks of `harden/redlines/readers.md` [by-id]), `rules/ru.json` ("заменён"); `src/demo.js` and
 `bin/local.js` (the demo, `install`, `decisions` as they print); `src/install/{cursor,vscode}.js`;
 `harden/redlines/{driftbench,community,cli,plugin,serve}.md` ([readme-generated], [stewardship], [mcpb-starts],
 the plugin's and serve's README lines); `test/{local,plugin,serve,driftbench,packaging}.test.js` (what they hold the
@@ -52,26 +64,38 @@ README.ru.md is part of what npm ships, so the bundle holds it: the test's list 
 and serve/team-reads-all stay true (their README lines kept); zero runtime dependencies stays true (the pictures render
 through `npx playwright@1.56.1` and ffmpeg, from `docs/art/`, nothing in `src/`).
 Decided:
-* **The hero is Genter Cloud's try page.** The 50-repository gate does not pass (the median repository has 0 decision
-  records the readers read, under 5), so by the plan the hero leads with the hosted try page. The picture draws what
-  the try page is built to show for one of its preset questions, the plan's own cloud picture (a Slack thread of
-  2026-09-10 replaced a Notion page nobody marked). genter.ai does not serve the try page yet (Open), so its words were
-  not taken from a live page: they are the try page's recorded answer as Genter Cloud prepared it for the page, its
-  label ("Recorded from Genter Cloud on Kestrel Works, a fictional team, as of 2026-10-16."), the question, "Found 10
-  sources for your AI. The first five, as it gets them:", the first two results with their meta lines and the mark, and
-  passages from them (an ellipsis where a passage is cut). The address chip ("genter.ai/try") and the two highlights
-  on the regions are this step's. The words beside the picture are the README's, and they say it is Genter Cloud's and
-  that what it marks takes a model. Once genter.ai serves the page, its words are checked against the picture's and the
-  picture is made again where they differ.
+* **The hero is Genter Cloud's try page.** The 50-repository gate does not pass on its held-out sample (the median of
+  the 46 repositories has 0 decision records the readers read, under 5), so by the plan the hero leads with the hosted
+  try page. The picture draws what the try page is built to show for one of its preset questions, the plan's own cloud
+  picture (a Slack thread of 2026-09-10 replaced a Notion page nobody marked). genter.ai does not serve the try page yet
+  (Open), so its words were not taken from a live page: they are the try page's recorded answer as Genter Cloud prepared
+  it for the page, its label ("Recorded from Genter Cloud on Kestrel Works, a fictional team, as of 2026-10-16."), the
+  question, "Found 10 sources for your AI. The first five, as it gets them:", the first two results with their meta
+  lines and the mark, and passages from them (an ellipsis where a passage is cut). The address chip ("genter.ai/try")
+  and the two highlights on the regions are this step's. The words beside the picture are the README's, and they say it
+  is Genter Cloud's and that what it marks takes a model. Once genter.ai serves the page, its words are checked against
+  the picture's and the picture is made again where they differ.
 * **What each picture was made from is recorded.** `docs/art/render.mjs` writes `docs/art/rendered.json`: each
   picture's SHA-256 and those of the files it was made from (`hero.html` for both PNGs; `demo.txt` and `terminal.html`
   for the GIF). A test fails when a picture or one of its sources changes without a new render, so a `demo.txt`
   refreshed by hand with a stale GIF, or a `hero.html` edited without new PNGs, does not pass.
-* **The local part leads with the old-answer test,** plain ranking against Genter with the losses in the same sentence
-  (Genter's 7 "old answer first" are PEPs whose mark names a number), and says beside it that the archive questions
-  wait for a person's review, as `bench/old-answer/README.md` does. Then what the readers read, named from
-  `readers/*/reader.json`, and the gate's count beside it (most repositories keep their records where no reader looks
-  yet), so the first screen does not promise more than the readers deliver.
+* **The local part leads with the old-answer test,** plain ranking against Genter, the current answer counted both
+  ways (with its chain, and as written: the document the question names alone) and the losses both ways in the same
+  paragraph (none with the chain, one as written), and says beside it that the archive questions wait for a person's
+  review, as `bench/old-answer/README.md` does, and that on 11 of 39 both arms put another document first. Under
+  Benchmarks it says the chain rule was set after a run in which it changed one question, and names it (peps/0241:
+  plain ranking puts first the PEP the question names, Genter the PEP that replaced it, so as written it is Genter's one
+  loss), as RESULTS.md does. Then what the 13 readers read, named from `readers/*/reader.json`, and the held-out
+  gate's count beside it (most repositories keep their records where no reader looks yet), so the first screen does
+  not promise more than the readers deliver.
+* **Refreshed after #93 and #94.** #93 (wider readers, replacements named by number, the held-out gate, the chain rule)
+  changed every count both READMEs quote and what the readers read; #94 (`/health` while searches run) changes nothing
+  they say (`docs/team.md` is serve's). Main was merged and every count rewritten from the files on main. #93's runs
+  name their results for what they add (`results/2026-10-20-chain.json`, `results/2026-10-20-heldout.json`), so the
+  test no longer takes the newest `<date>.json` (it would have kept reading the files before #93 and passed on stale
+  counts): it reads the file each bench's RESULTS.md names, both written by the same run, judges the gate on the
+  held-out sample, checks the current answer both ways, the losses both ways and the question the chain changed, and
+  ties the number of readers either README states to `readers/`.
 * **The GIF is the local picture.** The plan's local hero (two answers to "Can we deploy on Friday?") would put words in
   a picture that no command prints ("No. Since Oct 3 there are no Friday deploys"); the GIF shows the same story in the
   words `genter demo` prints. Its frames show the demo's lines as printed, cut where the output turns (a command, a
@@ -103,18 +127,15 @@ Decided:
 Open:
 * **`https://genter.ai/try` answers 404 today.** The try page is not live yet: genter.ai serves its earlier signed-out
   page ("One agent for everything in your apps."), and `/try` answers 404. The README's first link, and the picture's,
-  lead there, and the picture's words are the page's prepared answer, public on this branch before the page is. →
-  Nothing in this repository changes for it: the pull request stays a draft until genter.ai serves `/try`, and the lead
-  deploys Genter Cloud or decides, with the owner, whether the fictional answer may be public before the page; once it
-  is served, its words are checked against the picture's and the picture made again where they differ
-  [non-blocking for this brief; it blocks marking the pull request ready]
+  lead there, and the picture's words are the page's prepared answer, public on this branch before the page is (checked
+  again on the refresh: `/try` 404). → Decided (the lead, 2026-10-20): the try page's team is fictional and made to be
+  shown (decision D8), so its prepared answer may be public on this branch before genter.ai serves the page; the pull
+  request still waits for genter.ai to serve /try before it is marked ready, and the picture's words are checked
+  against the served page then [non-blocking, answered]
 * The archive questions of the old-answer test wait for the owner's review (`bench/old-answer/RESULTS.md`, "reviewed:
   pending owner"), and the first screen quotes their counts. → Quote them now with that said beside them, as step 1.9
   asks to lead the local part with them; a review that changes a count changes the README in the same pull request,
   and the test holds them equal [non-blocking]
-* Pull request #93 (wider readers and a held-out gate) may change both benches' counts and what the readers read. →
-  If it merges first, merge main and refresh: the tests read the latest results and fail on any count left behind
-  [non-blocking]
 * The repository's GitHub description still says "Resolver for AI agents…". → The owner changes it to the promise in
   the repository's settings [non-blocking]
 * The 20-stranger test (15 of 20 say what Genter is and why after 5 seconds on the first screen) is the launch gate and
@@ -123,7 +144,8 @@ Proof: `test/first-screen.test.js`: "[rl:first-screen/promise]" the name, the pr
 both first screens, before any section, and `package.json`'s description starting with them /
 "[rl:first-screen/hero-cloud]" the `<picture>` (dark source, light image, alt text naming Genter Cloud, Kestrel Works
 and a fictional team) before the heading, linked to the try page, "See it on a sample team" the first link after the
-promise, the words beside it, the picture's own label, and the gate's verdict still "does not pass" /
+promise, the words beside it, the picture's own label, and the gate's verdict on its held-out sample still "does not
+pass" /
 "[rl:first-screen/pictures]" both PNGs the same size, 1520 pixels wide, the GIF a GIF, each under 1.5 MB, their sources
 in `docs/art/`, both PNGs and `hero.html` the files `docs/art/rendered.json` records them as, no dependency, nothing of
 `docs/` shipped / "[rl:first-screen/gif-real]" `docs/art/demo.txt` equal to what `genter demo` prints now, the GIF,
@@ -133,13 +155,19 @@ here and every anchor a heading (GitHub's anchors, Cyrillic included), every out
 the Cursor and VS Code links decoding to `src/install`'s own entries, the two Genter Cloud links to their steps, each
 README naming the other at its top / "[rl:first-screen/numbers-named]" every percentage, "N of M" and time in ms in a
 block that links its file in `bench/`, and in both languages the old-answer rows and sentences (the questions, the
-split between the archives and DriftBench, the questions whose first result differs) and the gate's sentences, in the
-first screen and under Benchmarks, equal to the latest results, DriftBench's table only in README.md / "[rl:first-screen/npm-name]". Each fails when its part is undone
-(checked by hand: an anchor misspelt in either README, a link to a file that is not here, a "99%" with no file beside
-it, a Russian or English count changed by one, a byte of the GIF or of `demo.txt` changed without a new render). Outside links checked on 2026-10-20: Cursor's page 200 and opening its install link in Chromium, vscode.dev 302 to
-`vscode:mcp/install?{…"args":["-y","genter-cli","mcp"],"name":"genter"}`, Claude's and OpenAI's guides 200, GitHub
-200; claude.ai, chatgpt.com and npmjs.com answer an automated client with a challenge page (403), as they do any
-script; genter.ai/try 404 (Open). Checks that nothing else broke: `npm test`, `npm run lint`, `harden check`,
+split between the archives and DriftBench, the current answer with its chain and as written, the questions whose first
+result differs, those where both arms put another document first, the losses both ways, the question the chain
+changed) and the gate's sentences (held out and first 50), in the first screen and under Benchmarks, equal to the
+results file each bench's RESULTS.md names, the number of readers equal to `readers/`'s, DriftBench's table only in
+README.md / "[rl:first-screen/npm-name]". Each fails when its part is undone (checked by hand: an anchor misspelt in
+either README, a link to a file that is not here, a "99%" with no file beside it, a byte of the GIF or of `demo.txt`
+changed without a new render; on the refresh, 18 counts changed one at a time, each restored before the next, 9 English
+and 9 Russian, each `# fail 1`: the chain and as-written rows, the differing questions, the losses, the held-out and
+first-50 gate counts, the chained question's id, the readers' number, the archive split, the other-document count).
+Outside links checked on 2026-10-20: Cursor's page 200 and opening its install link in Chromium, vscode.dev 302 to
+`vscode:mcp/install?{…"args":["-y","genter-cli","mcp"],"name":"genter"}`, Claude's and OpenAI's guides 200, GitHub 200;
+claude.ai, chatgpt.com and npmjs.com answer an automated client with a challenge page (403), as they do any script;
+genter.ai/try 404 (Open). Checks that nothing else broke: `npm test`, `npm run lint`, `harden check`,
 `node bin/genter.js reader check`, `node bench/drift/run.mjs --no-takes --guard README.md`.
 
 ## Red lines after
