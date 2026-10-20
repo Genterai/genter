@@ -5,7 +5,7 @@ import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "nod
 import { classifyFailure, contentHash, recipeId, splitMarkdown } from "./anchor.js";
 import { cloneWindow, driftFacts, HEAD_LINES, noticeWords, supersededOf } from "./drift.js";
 import { bm25, prepare, terms, topTerms } from "./lexical.js";
-import { readDocument } from "./readers.js";
+import { LIMITS as READER_LIMITS, readDocument } from "./readers.js";
 import { cipher } from "./seal.js";
 import { crawl, forgetPage, readPage, siteUrl } from "./web.js";
 
@@ -633,6 +633,18 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
         });
     },
 
+    // What the readers read in the files of this project's folder, for the decisions page (page.js): the folder as the
+    // first search would add it (its genter.json narrows it, the person's off list holds; never the home folder or the
+    // root), not the notes, not a website. { documents: [{ path (from the project's root), title, read }] as
+    // documentsOf gives them, complete: false when the listing stopped at LIMITS.files, the files past it unread }.
+    // The store is not opened: nothing is kept.
+    documents() {
+      const { skip } = scope();
+      if (homes().includes(root) || root === resolve("/")) return { documents: [], complete: true };
+      const { files, complete } = listFolder(root, { skip });
+      return { documents: documentsOf(files, readerPath), complete };
+    },
+
     // Stops searching a source in this project, by its id, its path or its address; once no project searches it, its
     // Anchors are dropped, but for those another source still holds (they become that source's). A website kept from
     // 0.3 is in every project, so it is forgotten in all. { source, removed, elsewhere }: elsewhere counts the
@@ -923,13 +935,13 @@ export function shown(path, cwd = process.cwd()) {
 const shownSource = (src, cwd) => src && { id: src.id, kind: src.kind, place: src.url ?? shown(src.path, cwd), added_at: src.added_at };
 
 // Whether a path is one of the places given or inside one.
-function under(path, places = []) {
+export function under(path, places = []) {
   return places.some((p) => path === p || path.startsWith(p.endsWith(sep) ? p : p + sep));
 }
 // Whether a file or folder source holds a path.
 const covers = (src, path) => (src.kind === "folder" ? under(path, [src.path]) : path === src.path);
 // Where a path is once its links are followed (for one that is not there, where its nearest folder that is leads).
-function realOf(path) {
+export function realOf(path) {
   try {
     return realpathSync.native(path);
   } catch {
@@ -1316,4 +1328,84 @@ async function pool(items, n, fn) {
     }),
   );
   return out;
+}
+
+// ---- the decisions page ----
+
+// What the readers read in each of a project's files (readers.js), for the decisions page: the files they read
+// something in, then the files those marks name that they read nothing in (read: null), each { path (rel(file)),
+// title, read }. A mark's link to another of these files is resolved, as search resolves it, to that file's path (to);
+// a link to a file that is not one of them (not there, switched off, left out) resolves to nothing. Each mark's quote,
+// and each status's, is its whole line as written, trimmed (the reader's quote stops at its notice length).
+function documentsOf(files, rel) {
+  const pathOf = new Map(files.map((file) => [file, rel(file)]));
+  const fileOf = new Map(files.map((file) => [rel(file), file]));
+  const textAt = (file) => {
+    try {
+      return statSync(file).size <= LIMITS.fileBytes ? readText(file) : null;
+    } catch {
+      return null;
+    }
+  };
+  const marksOf = (read) => [...(read.marks ?? []), ...(read.entries ?? []).flatMap((e) => e.marks ?? [])];
+  const out = new Map();
+  for (const file of files) {
+    const text = textAt(file);
+    const read = text == null ? null : readDocument(pathOf.get(file), text);
+    if (!read) continue;
+    const lines = text.split("\n", READER_LIMITS.lines);
+    const lineAt = (n) => lines[n - 1]?.replace(/\r$/, "").trim().slice(0, READER_LIMITS.lineChars);
+    for (const st of [read.status, ...(read.entries ?? []).map((e) => e.status)]) if (st && lineAt(st.line)) st.quote = lineAt(st.line);
+    for (const m of marksOf(read)) {
+      m.quote = lineAt(m.line) || m.quote;
+      if (!m.by || /^https?:/i.test(m.by)) continue;
+      const to = localLink(file, m.by);
+      if (to && to !== file && pathOf.has(to)) m.to = pathOf.get(to);
+    }
+    out.set(pathOf.get(file), { path: pathOf.get(file), title: titleOf(text, file), read });
+  }
+  for (const d of [...out.values()]) {
+    for (const m of marksOf(d.read)) {
+      if (m.to && !out.has(m.to)) out.set(m.to, { path: m.to, title: titleOf(textAt(fileOf.get(m.to)) ?? "", m.to), read: null });
+    }
+  }
+  return [...out.values()];
+}
+
+// A document's title as a person reads it: in Markdown, its first "# " heading (not in front matter or code); else a
+// "title:" line among its first 30 (front matter, a PEP's or a KEP's header); else, in reStructuredText, the first line
+// over a line of = - ~ and the like; else its file's name; { text, line? }. A "#" line elsewhere is a comment (YAML) or
+// code (a PEP's indented block), never a title.
+function titleOf(text, path) {
+  const lines = text.split("\n", 400).map((l) => l.replace(/\r$/, ""));
+  const words = (s) => s.replace(/\*\*|__|`/g, "").replace(/\s+/g, " ").trim().slice(0, 200);
+  if (/\.(md|mdx|markdown)$/i.test(path)) {
+    let k = 0;
+    if (lines[0]?.trim() === "---") {
+      const end = lines.findIndex((l, i) => i > 0 && (l.trim() === "---" || l.trim() === "..."));
+      if (end > 0) k = end + 1;
+    }
+    for (let fence = null; k < lines.length; k++) {
+      const f = /^ {0,3}(`{3,}|~{3,})/.exec(lines[k])?.[1];
+      if (fence ? f && f[0] === fence[0] && f.length >= fence.length : f) {
+        fence = fence ? null : f;
+        continue;
+      }
+      const h = !fence && /^ {0,3}#[ \t]+(.+?)(?:[ \t]+#+)?[ \t]*$/.exec(lines[k]);
+      if (h && words(h[1])) return { text: words(h[1]), line: k + 1 };
+    }
+  }
+  for (let i = 0; i < Math.min(lines.length, 30); i++) {
+    const t = /^title: {0,3}["']?(.+?)["']?\s*$/i.exec(lines[i]);
+    if (t && words(t[1])) return { text: words(t[1]), line: i + 1 };
+  }
+  if (/\.rst$/i.test(path)) {
+    const rule = /^([=\-~^"'`#*+:.])\1{2,}$/;
+    for (let i = 0; i + 1 < lines.length; i++) {
+      const t = lines[i].trim();
+      const under = lines[i + 1].trim();
+      if (t && !rule.test(t) && rule.test(under) && under.length >= t.length && words(t)) return { text: words(t), line: i + 1 };
+    }
+  }
+  return { text: basename(path).replace(/\.(md|mdx|markdown|rst|txt|adoc|ya?ml)$/i, "") };
 }
