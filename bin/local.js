@@ -1,10 +1,10 @@
 // The genter command, with no keys and no packages: folders, files, websites and notes (src/local.js), and the same as
-// an MCP server over stdio (src/mcp-server.js).
+// an MCP server over stdio (src/mcp-server.js). Each searches the project of the folder it runs in.
 import { readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { runDemo } from "../src/demo.js";
 import { createLocal, embedderFor, embeddingProvider, findText, genterHome } from "../src/local.js";
-import { serveMcp } from "../src/mcp-server.js";
+import { serveMcp, sourcesText } from "../src/mcp-server.js";
 
 const version = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")).version;
 
@@ -18,13 +18,17 @@ const HELP = `genter ${version}: resolver for AI agents. A question resolves to 
 reads it there again, so the answer is what your docs say now.
 
   genter demo                        see it in a second, on a temp folder
-  genter ask <question>              the passages that answer, read now, with path:lines (the current folder at first)
-  genter add <folder|file|url> ...   search these from now on
-  genter remember <text>             keep a note (~/.genter/notes.md); ask finds it with its date
-  genter sources                     what ask searches
-  genter forget <folder|file|url>    stop searching it
+  genter ask <question>              the passages that answer, read now, with path:lines (this project's folder at first)
+  genter add <folder|file|url> ...   search these from now on, in this project
+  genter remember <text>             keep a note (~/.genter/notes.md); ask finds it with its date, in every project
+  genter sources                     what ask searches here
+  genter forget <folder|file|url>    stop searching it here
   genter mcp [folder|url ...]        all of it for your agent (MCP over stdio):
                                      claude mcp add genter -- npx -y genter-cli mcp
+
+  A project is the nearest folder up from here with a genter.json or a .git, else this folder; ask reads only its
+  sources and your notes. Its genter.json can only narrow that: {"include": [...], "exclude": [...], "off": [...]},
+  paths inside it. "off" in ~/.genter/config.json switches places off in every project.
 
   --json             JSON
   --limit N          passages (default 5)
@@ -101,13 +105,15 @@ export async function local(argv) {
       if (!words.length) throw new Error("genter add <folder|file|url> ...");
       for (const target of words) {
         const out = await g.add(target, { depth: flags.depth });
+        if (out.refused) console.error(`genter: ${out.refused}`);
         say(flags, out, `${out.new ? "Added" : "Read again"} ${out.source.place}: ${out.places} ${out.source.kind === "website" ? "pages" : "files"} (${out.created} new, ${out.changed} changed, ${out.gone} gone)${out.complete === false ? ", the listing stopped at its limit" : ""}`);
       }
     } else if (command === "ask") {
       const question = words.join(" ");
       if (!question.trim()) throw new Error('genter ask "<question>"');
       const out = await g.find(question, { limit: flags.limit });
-      if (out.added) console.error(`(searching ${out.added.source.place}, added as a source: genter forget ${out.added.source.place} to stop)`);
+      if (out.project.refused) console.error(`genter: ${out.project.refused}`);
+      if (out.added) console.error(`(searching ${out.added.source.place}, this project's folder, added as a source: genter forget ${out.added.source.place} to stop)`);
       if (semantic && out.semantic !== true) console.error(`(ranking by meaning ${out.semantic || "off"})`);
       say(flags, out, findText(out));
     } else if (command === "remember") {
@@ -116,15 +122,19 @@ export async function local(argv) {
     } else if (command === "forget") {
       if (!words[0]) throw new Error("genter forget <folder|file|url>");
       const out = g.forget(words[0]);
-      say(flags, out, `Forgot ${out.source.place} (${out.removed} anchors)`);
+      say(flags, out, out.elsewhere ? `Forgot ${out.source.place} here; ${out.elsewhere === 1 ? "another project still searches" : `${out.elsewhere} other projects still search`} it` : `Forgot ${out.source.place} (${out.removed} anchors)`);
     } else if (command === "sources") {
       const list = g.sources();
-      say(flags, list, list.length ? list.map((s) => `${s.kind.padEnd(8)} ${s.place}  ${s.places} places${s.gone ? `, ${s.gone} gone` : ""}`).join("\n") : "Nothing yet: genter add <folder|file|url>");
+      const project = g.project();
+      say(flags, list, sourcesText(project, list));
     } else if (command === "mcp") {
       for (const target of words) {
         const out = await g.add(target, { depth: flags.depth });
         console.error(`genter: ${out.source.place}, ${out.places} places`);
       }
+      const { place, refused } = g.project();
+      console.error(`genter: searching the project ${place} and your notes`);
+      if (refused) console.error(`genter: ${refused}`);
       await serveMcp(g, { version });
     }
   } catch (error) {

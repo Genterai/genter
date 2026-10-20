@@ -43,7 +43,7 @@ export async function callTool(local, name, args = {}) {
   switch (name) {
     case "genter_find": {
       const out = await local.find(args.question, { limit: args.limit });
-      return { text: findText(out) };
+      return { text: [out.project?.refused, findText(out)].filter(Boolean).join("\n\n") };
     }
     case "genter_remember": {
       const out = local.remember(args.text);
@@ -53,13 +53,21 @@ export async function callTool(local, name, args = {}) {
       const out = await local.add(args.source, { depth: args.depth });
       return { text: `${out.new ? "Added" : "Read again"} ${out.source.place}: ${out.places} places (${out.created} new, ${out.changed} changed, ${out.gone} gone)${out.complete === false ? "; the listing stopped at its limit" : ""}.` };
     }
-    case "genter_sources": {
-      const list = local.sources();
-      return { text: list.length ? list.map((s) => `${s.kind} ${s.place}: ${s.places} places${s.gone ? `, ${s.gone} gone` : ""}`).join("\n") : "Nothing yet: genter_add a folder, a file or a website." };
-    }
+    case "genter_sources":
+      return { text: sourcesText(local.project(), local.sources()) };
     default:
       throw Object.assign(new Error(`Unknown tool: ${name}`), { code: -32602 });
   }
+}
+
+// What a project searches, as text: the project, then each source (the command's `sources` prints the same).
+export function sourcesText(project, list) {
+  const why = { "genter.json": "its genter.json", ".git": "its .git", folder: "no genter.json or .git above: the folder itself" }[project.by];
+  const lines = [`project  ${project.place} (${why})`];
+  if (project.refused) lines.push(project.refused);
+  for (const s of list) lines.push(`${s.kind.padEnd(8)} ${s.place}  ${s.places} places${s.gone ? `, ${s.gone} gone` : ""}${s.everywhere ? ", in every project" : ""}${s.off ? ", switched off" : ""}`);
+  if (!list.some((s) => s.kind !== "notes")) lines.push("Nothing added in this project yet: add a folder, a file or a website, or ask, and the project's folder is added");
+  return lines.join("\n");
 }
 
 // Answers one JSON-RPC message; null for a notification.
