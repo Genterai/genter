@@ -4,21 +4,25 @@ Written by `node bench/old-answer/run.mjs` on 2026-10-20 with genter-cli 0.3.1; 
 
 | arm | old answer first | old answer unmarked in the first five | current answer first | current answer in the first five |
 | -- | --: | --: | --: | --: |
-| plain ranking (BM25 over the same sections, no marks, no reordering) | 8 of 39 (21%) | 31 of 39 (79%) | 19 of 39 (49%) | 32 of 39 (82%) |
-| **Genter** (the local engine as shipped, no key) | **7 of 39 (18%)** | **0 of 39 (0%)** | **20 of 39 (51%)** | **32 of 39 (82%)** |
+| plain ranking (BM25 over the same sections, no marks, no reordering) | 8 of 39 (21%) | 31 of 39 (79%) | 20 of 39 (51%) | 32 of 39 (82%) |
+| **Genter** (the local engine as shipped, no key) | **7 of 39 (18%)** | **0 of 39 (0%)** | **21 of 39 (54%)** | **32 of 39 (82%)** |
 
 ## The plan's decision rule
 
-Plain ranking puts the current answer first on 49% of the questions, under 90%: an agent's own ranking does quote the old answer, so the local picture (the old answer and the new one, the new one first) can lead.
+Plain ranking puts the current answer first on 51% of the questions, under 90%: by the plan's rule the local picture can lead. That is the rule applied as written; what it rests on:
+
+* What each arm puts first, of 39: plain ranking the old answer on 8, the current one on 20, another document (or nothing) on 11; Genter the old answer on 7, the current one on 21, another document (or nothing) on 11. Where plain ranking does not put the current answer first, the old answer is first on 8 and another document on 11. Another document ranks first in both arms on peps/0005, peps/0248, peps/0314, peps/0409, peps/0426, peps/0554, peps/0563, peps/0601, peps/0622, peps/0631, peps/3153: a review of the questions starts there (that document may state the current answer too).
+* Genter's first result differs from plain ranking's on 1 of 39 questions (driftbench/q38), 0 of them among the 34 questions of the public archives.
+* On the public archives Genter's gain is the marks, not the order: the old answer unmarked in the first five goes from 26 (plain ranking) to 0, while the current answer comes first on 16 of 34 in both arms (old answer first: 7 in both). The current answer brought first, the other half of the local picture, changes a first result only outside the archives (driftbench/q38); on the archives it waits for marks that link a replacing file (README.md, Limits).
 
 ## Per source
 
-| source | questions | plain: old first | plain: old unmarked in five | Genter: old first | Genter: old unmarked in five | plain: current first | Genter: current first |
-| -- | --: | --: | --: | --: | --: | --: | --: |
-| [DriftBench, deprecated kind](https://github.com/Genterai/genter/tree/main/bench/drift) | 5 | 1 | 5 | 0 | 0 | 4 | 5 |
-| [Python Enhancement Proposals](https://github.com/python/peps/tree/1317769c334c658db28aa5336d910f58443049eb) at 1317769 (2026-10-20) | 31 | 7 | 24 | 7 | 0 | 13 | 13 |
-| [Kubernetes Enhancement Proposals](https://github.com/kubernetes/enhancements/tree/5b503a75369bdfdd494a2c2c72107a41bf6dd1a8) at 5b503a7 (2026-10-17) | 1 | 0 | 1 | 0 | 0 | 1 | 1 |
-| [Jaeger's RFCs and ADRs](https://github.com/jaegertracing/jaeger/tree/ca047c72f34cf413c16d1118e19c7419de04bbab) at ca047c7 (2026-10-19) | 2 | 0 | 1 | 0 | 0 | 1 | 1 |
+| source | questions | sections (both arms) | plain: old first | plain: old unmarked in five | Genter: old first | Genter: old unmarked in five | plain: current first | Genter: current first |
+| -- | --: | --: | --: | --: | --: | --: | --: | --: |
+| [DriftBench, deprecated kind](https://github.com/Genterai/genter/tree/main/bench/drift) | 5 | 341 | 1 | 5 | 0 | 0 | 4 | 5 |
+| [Python Enhancement Proposals](https://github.com/python/peps/tree/1317769c334c658db28aa5336d910f58443049eb) at 1317769 (2026-10-20) | 31 | 11228 | 7 | 24 | 7 | 0 | 13 | 13 |
+| [Kubernetes Enhancement Proposals](https://github.com/kubernetes/enhancements/tree/5b503a75369bdfdd494a2c2c72107a41bf6dd1a8) at 5b503a7 (2026-10-17) | 1 | 17666 | 0 | 1 | 0 | 0 | 1 | 1 |
+| [Jaeger's RFCs and ADRs](https://github.com/jaegertracing/jaeger/tree/ca047c72f34cf413c16d1118e19c7419de04bbab) at ca047c7 (2026-10-19) | 2 | 1337 | 0 | 1 | 0 | 0 | 2 | 2 |
 
 ## Losses
 
@@ -74,6 +78,6 @@ Plain ranking puts the current answer first on 49% of the questions, under 90%: 
 | peps/3153: Which standard library module provides an event loop for asynchronous IO? | [peps/pep-3153.rst](https://github.com/python/peps/blob/1317769c334c658db28aa5336d910f58443049eb/peps/pep-3153.rst) | [peps/pep-3156.rst](https://github.com/python/peps/blob/1317769c334c658db28aa5336d910f58443049eb/peps/pep-3156.rst) | peps/pep-0492.rst | peps/pep-0492.rst | pending owner |
 | keps/2451: What file permissions does a projected service account token file get in a pod? | [keps/sig-storage/2451-service-account-token-volumes/README.md](https://github.com/kubernetes/enhancements/blob/5b503a75369bdfdd494a2c2c72107a41bf6dd1a8/keps/sig-storage/2451-service-account-token-volumes/README.md) | [keps/sig-auth/1205-bound-service-account-tokens/README.md](https://github.com/kubernetes/enhancements/blob/5b503a75369bdfdd494a2c2c72107a41bf6dd1a8/keps/sig-auth/1205-bound-service-account-tokens/README.md) | current | current | pending owner |
 | jaeger/rfc-0002: How are the browser's UI tools delivered to the agent sidecar and called by it in Jaeger's AI chat? | [docs/rfc/0002-ai-gateway-contextual-tools.md](https://github.com/jaegertracing/jaeger/blob/ca047c72f34cf413c16d1118e19c7419de04bbab/docs/rfc/0002-ai-gateway-contextual-tools.md) | [docs/rfc/0008-ai-gateway-mcp-tool-routing.md](https://github.com/jaegertracing/jaeger/blob/ca047c72f34cf413c16d1118e19c7419de04bbab/docs/rfc/0008-ai-gateway-mcp-tool-routing.md) | current | current | pending owner |
-| jaeger/rfc-0012: Which address does an external MCP client such as Cursor use to reach Jaeger's MCP tools? | [docs/rfc/0012-mcp-server-extension.md](https://github.com/jaegertracing/jaeger/blob/ca047c72f34cf413c16d1118e19c7419de04bbab/docs/rfc/0012-mcp-server-extension.md) | [docs/rfc/0008-ai-gateway-mcp-tool-routing.md](https://github.com/jaegertracing/jaeger/blob/ca047c72f34cf413c16d1118e19c7419de04bbab/docs/rfc/0008-ai-gateway-mcp-tool-routing.md) | cmd/jaeger/internal/extension/jaegerquery/internal/mcptools/README.md | cmd/jaeger/internal/extension/jaegerquery/internal/mcptools/README.md | pending owner |
+| jaeger/rfc-0012: Which address does an external MCP client such as Cursor use to reach Jaeger's MCP tools? | [docs/rfc/0012-mcp-server-extension.md](https://github.com/jaegertracing/jaeger/blob/ca047c72f34cf413c16d1118e19c7419de04bbab/docs/rfc/0012-mcp-server-extension.md) | [docs/rfc/0008-ai-gateway-mcp-tool-routing.md](https://github.com/jaegertracing/jaeger/blob/ca047c72f34cf413c16d1118e19c7419de04bbab/docs/rfc/0008-ai-gateway-mcp-tool-routing.md), [cmd/jaeger/internal/extension/jaegerquery/internal/mcptools/README.md](https://github.com/jaegertracing/jaeger/blob/ca047c72f34cf413c16d1118e19c7419de04bbab/cmd/jaeger/internal/extension/jaegerquery/internal/mcptools/README.md) | current | current | pending owner |
 
 Out of scope here: memory layers (mem0 and others) and a real agent with its own grep are arms of step 3.5 of the plan, each in its own recommended configuration.

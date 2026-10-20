@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
-import { cpSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
@@ -39,17 +40,32 @@ describe("the old-answer test", () => {
   it("[rl:old-answer/same-sections] [rl:old-answer/counts] on a replaced ADR, plain ranking puts the old answer first and leaves it unmarked; Genter, over the same sections, puts the current one first and marks the old one", async () => {
     await inCopy(async (dir) => {
       const [plain] = plainArm(dir, [question]);
-      const [genter] = await genterArm(dir, [question]);
+      const { results: [genter], sections: ranked } = await genterArm(dir, [question]);
       assert.deepEqual(score(plain, question), { old_first: true, old_unmarked: true, current_first: false, current_top5: true });
       assert.deepEqual(score(genter, question), { old_first: false, old_unmarked: false, current_first: true, current_top5: true });
       assert.equal(genter[0].place, NEW);
       assert.ok(genter.some((r) => r.place === OLD && r.marked), "the replaced ADR follows, marked");
       assert.ok(plain.every((r) => !r.marked), "plain ranking marks nothing");
-      // The same sections: every passage Genter returns lies inside a section the plain arm ranks, of the same file.
+      // The same sections: the engine ranked as many as the plain arm, and every passage Genter returns lies inside a
+      // section the plain arm ranks, of the same file.
       const sections = sectionsOf(dir);
+      assert.equal(ranked, sections.length);
       for (const r of genter) assert.ok(sections.some((s) => s.place === r.place && s.from <= r.lines[0] && r.lines[1] <= s.to), `${r.place}:${r.lines}`);
-      // The same ranking: without the replaced mark the two arms return the same places in the same order.
-      assert.deepEqual(new Set(genter.map((r) => r.place)), new Set(plain.map((r) => r.place)));
+    });
+  });
+
+  it("[rl:old-answer/same-sections] with the replaced mark taken out, the two arms rank the same number of sections and return the same places in the same order", async () => {
+    await inCopy(async (dir) => {
+      const old = join(dir, OLD);
+      const text = readFileSync(old, "utf8");
+      writeFileSync(old, text.replace(/^Superseded by .*\n/m, ""));
+      assert.notEqual(readFileSync(old, "utf8"), text, "the Status line is gone");
+      const [plain] = plainArm(dir, [question]);
+      const { results: [genter], sections: ranked } = await genterArm(dir, [question]);
+      assert.equal(ranked, sectionsOf(dir).length);
+      assert.ok(genter.every((r) => !r.marked), "nothing is marked");
+      assert.ok(plain.length > 1);
+      assert.deepEqual(genter.map((r) => r.place), plain.map((r) => r.place));
     });
   });
 
@@ -78,6 +94,19 @@ describe("the old-answer test", () => {
     const notLead = results(Array.from({ length: 10 }, (_, i) => row(`q${i}`, i < 9 ? won : lost, won)));
     assert.match(resultsMd(notLead), /already puts the current answer first on 90% of the questions, 90% or more: \*\*the local picture is not the lead\*\*/);
     assert.match(resultsMd(notLead), /None: Genter never puts the old answer first/);
+  });
+
+  it("[rl:old-answer/one-command] [rl:old-answer/losses-published] the published RESULTS.md is what the published results give, and --offline leaves both alone", () => {
+    const md = join(bench, "old-answer", "RESULTS.md");
+    const before = readFileSync(md, "utf8");
+    const file = before.match(/\((results\/[\d-]+\.json)\)/)[1];
+    const published = readFileSync(join(bench, "old-answer", file), "utf8");
+    assert.equal(before, resultsMd(JSON.parse(published), file));
+    const offline = spawnSync(process.execPath, [join(bench, "old-answer", "run.mjs"), "--offline"], { encoding: "utf8" });
+    assert.equal(offline.status, 0, offline.stderr);
+    assert.match(offline.stdout, /^5 questions/);
+    assert.equal(readFileSync(md, "utf8"), before, "RESULTS.md untouched");
+    assert.equal(readFileSync(join(bench, "old-answer", file), "utf8"), published, `${file} untouched`);
   });
 
   it("[rl:old-answer/never-worse] the guard fails a run where Genter leaves the old answer unmarked in its first five or does worse than plain ranking", () => {
@@ -118,10 +147,15 @@ describe("the old-answer test", () => {
     assert.equal(counts.marked, 1);
     assert.equal(counts.placed, 1);
     assert.deepEqual(counts.pairs.map((p) => [p.replaced, p.by, p.reader]), [[OLD, NEW, "adr"]]);
+    assert.deepEqual(counts.by_kind, { superseded: 1 });
+    assert.deepEqual([...new Set(counts.marks.map((m) => `${m.doc} ${m.kind}`))], [`${OLD} superseded`]);
+    assert.ok(counts.marks.some((m) => m.reader === "adr"), "the adr reader reads its status");
     const base = { group: "archives", files: 1, records: 0, marked: 0, named: 0, placed: 0, stars: 1, present: 10 };
     const rows = Array.from({ length: 50 }, (_, i) => ({ ...base, repo: `o/r${i}`, records: i < 25 ? 0 : 6, marked: i < 15 ? 1 : 0 }));
     assert.equal(verdict(rows).median_records, 3);
     assert.equal(verdict(rows).passes, false);
+    const kinds = verdict(rows.map((r, i) => ({ ...r, by_kind: i < 3 ? { superseded: 1 } : i < 5 ? { moved: 1, deprecated: 1 } : i < 15 ? { deprecated: 1 } : {} })));
+    assert.deepEqual([kinds.with_kind.superseded, kinds.with_kind.moved, kinds.with_kind.deprecated, kinds.with_replaced], [3, 2, 12, 5]);
     const passing = rows.map((r, i) => ({ ...r, records: i < 24 ? 0 : 6 }));
     assert.equal(verdict(passing).passes, true);
     assert.equal(verdict(passing.map((r, i) => ({ ...r, marked: i < 14 ? 1 : 0 }))).passes, false, `${GATE.marked} with a mark`);

@@ -40,13 +40,15 @@ most 5,000 files) and gives each file's text, with its path from the repository'
 | -- | -- |
 | decision records | documents the `adr` or `rfc` reader reads a date, a status or a mark in, plus each entry of a decision log (`decisions`) |
 | in the tree | the files that match the group's own pattern for the repository's records (candidates.json), read or not: whether the records are there, whatever their format |
-| replaced | documents with a mark of their own (superseded, deprecated, obsolete, archived, moved, removed, unmaintained), from any reader, the fallback ones included |
+| replaced | documents that carry a mark the readers read (superseded, deprecated, obsolete, archived, moved, removed, unmaintained), from any reader, the fallback ones included: a heading or a sentence the banners reader takes for a document's own mark counts too |
 | named | of those, the mark names what replaces it (a name or a link) |
 | there | of those, the link resolves to a file in the repository, as the engine resolves it: where Genter puts the current answer first |
 | dated | documents a reader reads a date in (a changelog is dated by its latest entry) |
 | changelog deprecations | deprecated and removed items in changelog entries: notices about an API, not marks of a document |
 
-The gate uses "decision records" and "replaced". The three archives: among the repositories with 5 or more decision
+The gate uses "decision records" and "replaced", every kind of mark counted; RESULTS.md gives beside it how many
+repositories have a mark of each kind, and how many a superseded or moved one (a mark that names a replacement or a new
+place), so the verdict can be read under a stricter definition. The three archives: among the repositories with 5 or more decision
 records, the most documents whose mark names a replacing document that is there, then the most that name what replaces
 them, then the most marked, then the most stars.
 
@@ -69,5 +71,8 @@ Only public repositories are read, nothing in them is run, and the bench uses No
   without a brief, and this run measures it again.
 - **The 5,000-file cap.** On a whole clone, code files count toward the engine's cap; the sparse checkout holds only
   documents. A repository whose tree holds more than 5,000 files the engine reads is marked ¹ in RESULTS.md.
+- **Marks are per document.** Genter applies a mark to its whole document, so a status line that supersedes only a
+  part of one marks all of it. RESULTS.md quotes each mark a picked archive ranks on that a fallback reader read; a
+  launch page built on them waits for the owner's review.
 - **Hand-named candidates.** "Every repository we could name" is a person's list, not a crawl; it is published so
   anyone can add to it and run the gate again.

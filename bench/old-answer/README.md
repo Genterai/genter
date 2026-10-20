@@ -49,13 +49,15 @@ answer first, leaves it unmarked in its first five, or does worse than plain ran
 
 **The plan's decision rule.** If plain ranking already puts the current answer first on 90% or more of the questions,
 the local picture (the old answer and the new one, the new one first) is not the lead of the README; RESULTS.md says
-which way it went.
+which way it went, and beside it what the rule rests on: what each arm puts first (the old answer, the current one or
+another document), on how many questions Genter's first result differs from plain ranking's, in all and on the public
+archives, and whether Genter's gain there is the order or the marks.
 
 ## Running it
 
 ```bash
 node bench/old-answer/run.mjs              # results/<date>.json and RESULTS.md (~15 s once the archives are fetched)
-node bench/old-answer/run.mjs --offline    # DriftBench's deprecated kind only, no network
+node bench/old-answer/run.mjs --offline    # DriftBench's deprecated kind only, no network; prints the counts, writes only --out / --md
 node bench/old-answer/run.mjs --guard      # fails if Genter leaves the old answer unmarked or does worse than plain ranking
 node bench/old-answer/run.mjs --from bench/old-answer/results/2026-10-20.json   # RESULTS.md again, no run
 ```
@@ -68,7 +70,10 @@ no key and no clock in the ranking, so the same commits give the same numbers. T
 ## Limits
 
 - **Marks are per document.** Jaeger's RFC 0002 says only its §5 is superseded; Genter's mark, quoted as written, is on
-  the whole document, and RFC 0008 comes first for any question that finds RFC 0002.
+  the whole document, and RFC 0008 comes first for any question that finds RFC 0002. All three of Jaeger's marks, the
+  ones it was picked on included, are such partial status lines (ADR-002 among them, the current home of its MCP
+  decision); [the gate's RESULTS.md](../repos/RESULTS.md) quotes them, and a Jaeger launch page waits for the owner's
+  review.
 - **A mark that names a number.** A PEP's `Superseded-By: 470` names PEP 470, not its file. Genter shows the mark,
   quoted, but cannot bring PEP 470 first; those are its "old answer first" losses.
 - **One agent wrote the questions.** Until they are reviewed, read the numbers with that in mind; the pairs come from the

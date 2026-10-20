@@ -358,10 +358,13 @@
       "source": "jaegertracing/jaeger",
       "question": "Which address does an external MCP client such as Cursor use to reach Jaeger's MCP tools?",
       "replaced": "docs/rfc/0012-mcp-server-extension.md",
-      "current": "docs/rfc/0008-ai-gateway-mcp-tool-routing.md",
+      "current": [
+        "docs/rfc/0008-ai-gateway-mcp-tool-routing.md",
+        "cmd/jaeger/internal/extension/jaegerquery/internal/mcptools/README.md"
+      ],
       "pair": "docs/rfc/0012-mcp-server-extension.md says in its Status line \"tool routing superseded by [RFC 0008](./0008-ai-gateway-mcp-tool-routing.md)\" (the banners reader's mark links the replacing RFC)",
-      "current_says": "The shared /api/ai/mcp/ path on the query port; RFC 0012 proposed a standalone extension on :16687.",
-      "note": "RFC 0012 says only its tool routing is superseded; Genter's mark is on the whole document, as quoted.",
+      "current_says": "The shared /api/ai/mcp/ path on the query port; RFC 0012 proposed a standalone extension on :16687. The mcptools README says the same (\"It serves at `<basePath>/api/ai/mcp/` on the query port\").",
+      "note": "RFC 0012 says only its tool routing is superseded; Genter's mark is on the whole document, as quoted. docs/adr/002-mcp-server.md states the current answer too (\"served under `<base_path>/api/ai/mcp/` on the query port\") but carries a superseded mark of its own (its Status line: \"Decisions 2 and 3 are superseded\"); whether it counts as a current document is the owner's call.",
       "reviewed": "pending owner"
     }
   ]

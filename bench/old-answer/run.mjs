@@ -10,9 +10,10 @@
 // questions.json, each at the commit it names (fetched once with git into --cache, the same checkout as bench/repos).
 // Usage: node bench/old-answer/run.mjs [--offline] [--cache dir] [--out results.json] [--md report.md] [--from results.json]
 //          [--guard]
-// With no --out and no --md it writes results/<date>.json and RESULTS.md beside this file. --guard fails the run when
-// Genter leaves the old answer unmarked in its first five or does worse than plain ranking on any question.
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+// With no --out and no --md it writes results/<date>.json and RESULTS.md beside this file; with --offline it writes only
+// what --out and --md name (the published files hold the archives too). --guard fails the run when Genter leaves the old
+// answer unmarked in its first five or does worse than plain ranking on any question.
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, dirname, join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -20,28 +21,14 @@ import { pieces } from "../../src/anchor.js";
 import { bm25, prepare } from "../../src/lexical.js";
 import { createLocal, LIMITS, listFolder } from "../../src/local.js";
 import { applyChanges } from "../drift/check.mjs";
-import { checkout } from "../repos/run.mjs";
+import { checkout, textOf } from "../repos/run.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const drift = join(here, "..", "drift");
 const version = JSON.parse(readFileSync(join(here, "..", "..", "package.json"), "utf8")).version;
 export const K = 5;
 export const LEAD = 0.9; // plain ranking puts the current answer first on this share or more: the local picture is not the lead
-const PRIVATE_KEY = /-----BEGIN (?:RSA |EC |DSA |OPENSSH |ENCRYPTED |PGP )?PRIVATE KEY/;
 const rel = (dir, path) => relative(dir, path).split(sep).join("/");
-
-// A file's text as the engine reads it (local.js readText): none over its size limit, binary or holding a private key.
-function textOf(path) {
-  try {
-    if (statSync(path).size > LIMITS.fileBytes) return null;
-    const buf = readFileSync(path);
-    if (buf.subarray(0, 8000).includes(0)) return null;
-    const text = buf.toString("utf8");
-    return PRIVATE_KEY.test(text) ? null : text;
-  } catch {
-    return null;
-  }
-}
 
 // ---- the arms ----
 
@@ -63,8 +50,7 @@ export function sectionsOf(dir) {
   return sections;
 }
 
-export function plainArm(dir, questions) {
-  const sections = sectionsOf(dir);
+export function plainArm(dir, questions, sections = sectionsOf(dir)) {
   return questions.map((q) => {
     const scores = bm25(q.question, sections.map((s) => s.doc));
     const order = sections.map((s, i) => [s, scores[i]]).filter(([, x]) => x > 0).sort((a, b) => b[1] - a[1]);
@@ -82,17 +68,20 @@ export function plainArm(dir, questions) {
 }
 
 // Genter: the folder added to a fresh store (no key, no notes, nothing switched off), then each question searched.
+// { results: per question [{ place, marked, lines }], sections: how many sections the engine ranked (find's searched) }.
 export async function genterArm(dir, questions) {
   const home = mkdtempSync(join(tmpdir(), "old-answer-home-"));
   try {
     const local = createLocal({ home, secret: "bench", cwd: dir });
     await local.add(dir);
-    const out = [];
+    const results = [];
+    let sections = 0;
     for (const q of questions) {
       const found = await local.find(q.question, { limit: K });
-      out.push(found.results.map((r) => ({ place: rel(dir, r.path ?? ""), marked: Boolean(r.superseded), lines: r.lines })));
+      sections = Math.max(sections, found.searched.sections);
+      results.push(found.results.map((r) => ({ place: rel(dir, r.path ?? ""), marked: Boolean(r.superseded), lines: r.lines })));
     }
-    return out;
+    return { results, sections };
   } finally {
     rmSync(home, { recursive: true, force: true });
   }
@@ -131,10 +120,14 @@ function driftSource(base) {
   return { id: "driftbench", title: "DriftBench, deprecated kind", url: "https://github.com/Genterai/genter/tree/main/bench/drift", dir, questions };
 }
 
-// Both arms over one source: per question, its counts in each arm and what each arm put first.
+// Both arms over one source: per question, its counts in each arm and what each arm put first. The run stops when the
+// engine ranked another number of sections than the plain arm (the arms would not see the same text).
 export async function runSource(src) {
-  const plain = plainArm(src.dir, src.questions);
-  const genter = await genterArm(src.dir, src.questions);
+  const sections = sectionsOf(src.dir);
+  const plain = plainArm(src.dir, src.questions, sections);
+  const { results: genter, sections: ranked } = await genterArm(src.dir, src.questions);
+  if (src.questions.length && ranked !== sections.length) throw new Error(`${src.id}: Genter ranked ${ranked} sections, plain ranking ${sections.length}`);
+  src.sections = sections.length;
   return src.questions.map((q, i) => ({ ...q, plain: { ...score(plain[i], q), first: plain[i][0]?.place ?? null }, genter: { ...score(genter[i], q), first: genter[i][0]?.place ?? null, first_marked: Boolean(genter[i][0]?.marked), top: genter[i].map((r) => `${r.place}${r.marked ? " (marked)" : ""}`) } }));
 }
 
@@ -157,7 +150,7 @@ export async function run({ offline = false, cache = join(tmpdir(), "genter-benc
     for (const src of sources) rows.push(...(await runSource(src)));
     const bySource = sources.map((s) => {
       const rs = rows.filter((r) => r.source === s.id);
-      return { id: s.id, title: s.title, url: s.url, ...(s.commit && { commit: s.commit, committed: s.committed }), plain: tally(rs.map((r) => r.plain)), genter: tally(rs.map((r) => r.genter)) };
+      return { id: s.id, title: s.title, url: s.url, ...(s.commit && { commit: s.commit, committed: s.committed }), sections: s.sections, plain: tally(rs.map((r) => r.plain)), genter: tally(rs.map((r) => r.genter)) };
     });
     const plain = tally(rows.map((r) => r.plain));
     const genter = tally(rows.map((r) => r.genter));
@@ -173,6 +166,37 @@ const pct = (x, n) => (n ? `${Math.round((100 * x) / n)}%` : "–");
 const cell = (t, k) => `${t[k]} of ${t.n} (${pct(t[k], t.n)})`;
 const link = (src, place) => [].concat(place).map((p) => (src?.commit ? `[${p}](https://github.com/${src.id}/blob/${src.commit}/${p})` : `\`${p}\``)).join(", ");
 const firstOf = (q, arm) => (arm.first === q.replaced ? "old" : currents(q).includes(arm.first) ? "current" : (arm.first ?? "nothing"));
+
+// What the decision rule rests on, as bullets: what each arm puts first (the old answer, the current one, another
+// document), on how many questions Genter's first result differs from plain ranking's, in all and on the public archives,
+// and whether Genter's gain there is the order or the marks.
+function rests(results) {
+  const qs = results.questions;
+  const archived = new Set(results.sources.filter((s) => s.commit).map((s) => s.id));
+  const kind = (q, arm) => (q[arm].first === q.replaced ? "old" : currents(q).includes(q[arm].first) ? "current" : "other");
+  const c = (arm) => {
+    const out = { old: 0, current: 0, other: 0 };
+    for (const q of qs) out[kind(q, arm)]++;
+    return out;
+  };
+  const firsts = (arm) => `the old answer on ${c(arm).old}, the current one on ${c(arm).current}, another document (or nothing) on ${c(arm).other}`;
+  const others = qs.filter((q) => kind(q, "plain") === "other" && kind(q, "genter") === "other").map((q) => q.id);
+  const moved = qs.filter((q) => q.genter.first !== q.plain.first);
+  const arch = qs.filter((q) => archived.has(q.source));
+  const archMoved = moved.filter((q) => archived.has(q.source));
+  const a = { plain: tally(arch.map((q) => q.plain)), genter: tally(arch.map((q) => q.genter)) };
+  const out = [
+    `* What each arm puts first, of ${qs.length}: plain ranking ${firsts("plain")}; Genter ${firsts("genter")}. Where plain ranking does not put the current answer first, the old answer is first on ${c("plain").old} and another document on ${c("plain").other}.${others.length ? ` Another document ranks first in both arms on ${others.join(", ")}: a review of the questions starts there (that document may state the current answer too).` : ""}`,
+    `* Genter's first result differs from plain ranking's on ${moved.length} of ${qs.length} questions${moved.length ? ` (${moved.map((q) => q.id).join(", ")})` : ""}${arch.length ? `, ${archMoved.length} of them among the ${arch.length} questions of the public archives` : ""}.`,
+  ];
+  if (arch.length)
+    out.push(
+      archMoved.length
+        ? `* On the public archives: current answer first, plain ranking ${a.plain.current_first} and Genter ${a.genter.current_first}; old answer unmarked in the first five, plain ranking ${a.plain.old_unmarked} and Genter ${a.genter.old_unmarked}.`
+        : `* On the public archives Genter's gain is the marks, not the order: the old answer unmarked in the first five goes from ${a.plain.old_unmarked} (plain ranking) to ${a.genter.old_unmarked}, while the current answer comes first on ${a.genter.current_first} of ${arch.length} in both arms (old answer first: ${a.plain.old_first} in both). The current answer brought first, the other half of the local picture, ${moved.length ? `changes a first result only outside the archives (${moved.map((q) => q.id).join(", ")})` : "changes no first result here"}; on the archives it waits for marks that link a replacing file (README.md, Limits).`,
+    );
+  return out;
+}
 
 // The losses: every question where Genter puts the old answer first or leaves it unmarked in the first five, and every
 // question where Genter does worse than plain ranking on any count.
@@ -217,14 +241,15 @@ export function resultsMd(results, file) {
     results.lead.local_picture_leads === null
       ? "No question ran."
       : results.lead.local_picture_leads
-        ? `Plain ranking puts the current answer first on ${share}% of the questions, under 90%: an agent's own ranking does quote the old answer, so the local picture (the old answer and the new one, the new one first) can lead.`
-        : `Plain ranking already puts the current answer first on ${share}% of the questions, 90% or more: **the local picture is not the lead**; the hero leads with the hosted try page (step 1.10 of the plan).`,
+        ? `Plain ranking puts the current answer first on ${share}% of the questions, under 90%: by the plan's rule the local picture can lead. That is the rule applied as written; what it rests on:`
+        : `Plain ranking already puts the current answer first on ${share}% of the questions, 90% or more: **the local picture is not the lead**; the hero leads with the hosted try page (step 1.10 of the plan). What that rests on:`,
+    ...(results.questions.length ? ["", ...rests(results)] : []),
     "",
     "## Per source",
     "",
-    "| source | questions | plain: old first | plain: old unmarked in five | Genter: old first | Genter: old unmarked in five | plain: current first | Genter: current first |",
-    "| -- | --: | --: | --: | --: | --: | --: | --: |",
-    ...results.sources.map((s) => `| [${s.title}](${s.url})${s.commit ? ` at ${s.commit.slice(0, 7)} (${s.committed.slice(0, 10)})` : ""} | ${s.plain.n} | ${s.plain.old_first} | ${s.plain.old_unmarked} | ${s.genter.old_first} | ${s.genter.old_unmarked} | ${s.plain.current_first} | ${s.genter.current_first} |`),
+    "| source | questions | sections (both arms) | plain: old first | plain: old unmarked in five | Genter: old first | Genter: old unmarked in five | plain: current first | Genter: current first |",
+    "| -- | --: | --: | --: | --: | --: | --: | --: | --: |",
+    ...results.sources.map((s) => `| [${s.title}](${s.url})${s.commit ? ` at ${s.commit.slice(0, 7)} (${s.committed.slice(0, 10)})` : ""} | ${s.plain.n} | ${s.sections ?? "–"} | ${s.plain.old_first} | ${s.plain.old_unmarked} | ${s.genter.old_first} | ${s.genter.old_unmarked} | ${s.plain.current_first} | ${s.genter.current_first} |`),
     "",
     "## Losses",
     "",
@@ -250,7 +275,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const option = (name) => (args.includes(name) ? args[args.indexOf(name) + 1] : null);
   const from = option("--from");
   const results = from ? JSON.parse(readFileSync(from, "utf8")) : await run({ offline: args.includes("--offline"), ...(option("--cache") && { cache: option("--cache") }) });
-  const defaults = !option("--out") && !option("--md") && !from;
+  const defaults = !option("--out") && !option("--md") && !from && !results.offline;
   const out = option("--out") ?? (defaults ? join(here, "results", `${results.date}.json`) : null);
   const md = option("--md") ?? (defaults || from ? join(here, "RESULTS.md") : null);
   if (out && !from) {

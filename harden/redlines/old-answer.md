@@ -15,7 +15,8 @@ left out, proves nothing.
 * **[same-sections]** Two arms read the same files and rank the same sections: the engine's own listing
   (`listFolder`), its own cut (`pieces`, `src/anchor.js`) and its own BM25 with two sections per file, the first five.
   Plain ranking marks nothing and moves nothing; Genter is the local engine as shipped (`createLocal`, `add`, `find`,
-  no key). They differ only in Genter's marks and in the current answer coming first.
+  no key). They differ only in Genter's marks and in the current answer coming first. A run stops when the engine
+  ranked another number of sections than the plain arm; RESULTS.md gives the number per source.
 * **[counts]** Each arm is counted per question by the place a result comes from: "old answer first" (the first result
   is the replaced document) and "old answer unmarked in the first five" (a result among the first five comes from it
   and carries no replaced mark), with "current answer first" and "in the first five" beside them, in all and per source.
@@ -23,13 +24,17 @@ left out, proves nothing.
   its first five, or does worse than plain ranking on any count, each with its two documents, Genter's first five and
   why.
 * **[decision-rule]** RESULTS.md states the plan's decision rule: when plain ranking already puts the current answer
-  first on 90% or more of the questions, the local picture is not the lead.
+  first on 90% or more of the questions, the local picture is not the lead. Beside it, what the rule rests on: what each
+  arm puts first (the old answer, the current one, another document), on how many questions Genter's first result
+  differs from plain ranking's, in all and on the public archives, and whether Genter's gain there is the order or the
+  marks.
 * **[questions-reviewed]** Each archive question names its public archive at a pinned commit (the commit the readers
   read it at), its replaced and its replacing document, the mark that pairs them, what the replacing document says, and
   who reviewed it ("pending owner" until a person does); DriftBench's deprecated kind is taken as DriftBench has it.
   Memory layers and a real agent are not arms here (step 3.5 of the plan), and RESULTS.md says so.
 * **[one-command]** `node bench/old-answer/run.mjs` writes RESULTS.md and results/<date>.json from the sources alone; the
-  same commits give the same numbers (no model, no key, no clock in the ranking). Only public repositories are fetched,
+  same commits give the same numbers (no model, no key, no clock in the ranking); `--offline` writes only the files it
+  is given (`--out`, `--md`), never the published ones. Only public repositories are fetched,
   from github.com with git, nothing fetched is run, and the bench uses Node's built-ins only.
 * **[never-worse]** Genter never leaves the old answer unmarked in its first five and is worse than plain ranking on no
   question; with `--guard`, the weekly run (`bench.yml`) fails otherwise.
@@ -37,5 +42,7 @@ left out, proves nothing.
   `bench/repos/candidates.json`, written before any count and checked only for whether the records named are in the
   tree, each pinned at a commit (`repos.json`); its RESULTS.md gives, per repository, the decision records read, the
   records in the tree, the replaced, named and linked marks and the dated documents, the gate's verdict (the median
-  repository has 5 or more decision records, and 15 of the 50 an explicit replaced mark), what the readers miss, and
-  the three archives picked by the stated rule.
+  repository has 5 or more decision records, and 15 of the 50 an explicit replaced mark), the repositories with a mark
+  of each kind (the gate counts every kind, from every reader, as the readers read it), what the readers miss, and the
+  three archives picked by the stated rule, with each picked archive's documents that a fallback reader alone marked,
+  quoted.

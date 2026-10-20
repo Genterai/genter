@@ -15,7 +15,7 @@ import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "no
 import { tmpdir } from "node:os";
 import { basename, dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
-import { listFolder, readable } from "../../src/local.js";
+import { LIMITS, listFolder, readable } from "../../src/local.js";
 import { loadReaders, readDocument } from "../../src/readers.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -24,6 +24,9 @@ export const GATE = { records: 5, marked: 15 }; // the median repository's decis
 // The readers that read a decision record: an ADR, an RFC, PEP or KEP (their files), and each entry of a decision log.
 const RECORD_READERS = new Set(["adr", "rfc"]);
 const LOG_READERS = new Set(["decisions"]);
+// The kinds of mark a reader gives a document; superseded and moved name a replacement or a new place.
+const KINDS = ["superseded", "moved", "deprecated", "obsolete", "archived", "removed", "unmaintained"];
+const REPLACED = new Set(["superseded", "moved"]);
 const SPARSE = ["/.gitignore", "*.md", "*.mdx", "*.markdown", "*.txt", "*.rst", "*.adoc", "kep.yaml", ...["CHANGELOG", "Changelog", "changelog", "CHANGES", "Changes", "changes", "HISTORY", "History", "history", "RELEASES", "Releases", "releases"].map((n) => `${n}*`)];
 const CHANGELOG = /(^|\/)(changelog|changes|history|releases)(\.[a-z0-9]+)?$/i;
 
@@ -56,12 +59,16 @@ export function checkout(cache, repo, commit) {
   return { dir, commit: want, committed: git(dir, ["show", "-s", "--format=%cI", want]).trim(), tree };
 }
 
-// A file's text as the engine reads it: none over 1 MB and none that holds a NUL (binary).
-function textOf(path) {
+// A file's text as the engine reads it (local.js readText): none over its size limit, binary or holding a private key.
+// The old-answer test reads its files with this too.
+const PRIVATE_KEY = /-----BEGIN (?:RSA |EC |DSA |OPENSSH |ENCRYPTED |PGP )?PRIVATE KEY/;
+export function textOf(path) {
   try {
-    if (statSync(path).size > 1_000_000) return null;
+    if (statSync(path).size > LIMITS.fileBytes) return null;
     const buf = readFileSync(path);
-    return buf.subarray(0, 8000).includes(0) ? null : buf.toString("utf8");
+    if (buf.subarray(0, 8000).includes(0)) return null;
+    const text = buf.toString("utf8");
+    return PRIVATE_KEY.test(text) ? null : text;
   } catch {
     return null;
   }
@@ -95,11 +102,12 @@ function placeOf(dir, rel, by) {
   }
 }
 
-// What the readers read in a folder (a repository's checkout): the counts the gate is made of, and the pairs of a
-// replaced document and the document its mark names as what replaces it.
+// What the readers read in a folder (a repository's checkout): the counts the gate is made of, the documents per kind of
+// mark, every mark read (its document, kind, reader, line and quote), and the pairs of a replaced document and the
+// document its mark names as what replaces it.
 export function countFolder(dir, { readers = loadReaders().readers } = {}) {
   const { files, complete } = listFolder(dir);
-  const out = { files: files.length, complete, records: 0, dated: 0, marked: 0, superseded: 0, named: 0, placed: 0, changelog_deprecations: 0, by_reader: {}, pairs: [] };
+  const out = { files: files.length, complete, records: 0, dated: 0, marked: 0, superseded: 0, named: 0, placed: 0, changelog_deprecations: 0, by_reader: {}, by_kind: {}, marks: [], pairs: [] };
   for (const path of files) {
     const rel = relative(dir, path).split(sep).join("/");
     const text = textOf(path);
@@ -115,6 +123,8 @@ export function countFolder(dir, { readers = loadReaders().readers } = {}) {
     if (!marks.length) continue;
     out.marked++;
     if (marks.some((m) => m.kind === "superseded")) out.superseded++;
+    for (const k of new Set(marks.map((m) => m.kind))) out.by_kind[k] = (out.by_kind[k] ?? 0) + 1;
+    for (const m of marks) out.marks.push({ doc: rel, kind: m.kind, reader: m.reader, line: m.line, quote: m.quote });
     if (marks.some((m) => m.by || m.name)) out.named++;
     const placed = marks.map((m) => ({ m, place: placeOf(dir, rel, m.by) })).find((x) => x.place && x.place !== rel);
     if (placed) {
@@ -139,6 +149,7 @@ export function verdict(rows) {
   const marked = ran.filter((r) => r.marked > 0).length;
   const placed = ran.filter((r) => r.placed > 0).length;
   const present = median(ran.map((r) => r.present ?? 0));
+  const withKind = (r, kinds) => Object.keys(r.by_kind ?? {}).some((k) => kinds.has(k));
   const picks = ran
     .filter((r) => r.records >= GATE.records)
     .sort((a, b) => b.placed - a.placed || b.named - a.named || b.marked - a.marked || b.stars - a.stars)
@@ -152,6 +163,8 @@ export function verdict(rows) {
     median_records: records,
     median_present: present,
     with_marks: marked,
+    with_kind: Object.fromEntries(KINDS.map((k) => [k, ran.filter((r) => withKind(r, new Set([k]))).length])),
+    with_replaced: ran.filter((r) => withKind(r, REPLACED)).length,
     with_placed_marks: placed,
     passes: ran.length === rows.length && records >= GATE.records && marked >= GATE.marked,
     records_ok: records >= GATE.records,
@@ -162,6 +175,22 @@ export function verdict(rows) {
 }
 
 const n = (x) => (x == null ? "–" : String(x));
+
+// The marked documents of a picked archive that only a fallback reader marked (a status line or a banner, no record's
+// own status field), each with its first mark quoted: Genter applies a mark to its whole document, so a line that
+// supersedes a part of one marks all of it.
+function picksRead(results) {
+  const out = [];
+  for (const repo of results.verdict.picks) {
+    const r = results.repos.find((x) => x.repo === repo);
+    const byDoc = new Map();
+    for (const m of r?.marks ?? []) byDoc.set(m.doc, [...(byDoc.get(m.doc) ?? []), m]);
+    const loose = [...byDoc.values()].filter((ms) => !ms.some((m) => RECORD_READERS.has(m.reader) || LOG_READERS.has(m.reader))).map((ms) => ms[0]);
+    if (!loose.length) continue;
+    out.push(`* **${repo}**: ${loose.length} of its ${byDoc.size} marked documents were marked by a fallback reader alone, not by a record's own status: ${loose.map((m) => `[${m.doc}](https://github.com/${repo}/blob/${r.commit}/${m.doc}#L${m.line}) (${m.reader}, ${m.kind}) "${m.quote}"`).join("; ")}. Genter applies each mark to its whole document, so a line that supersedes only a part of one marks all of it; a launch page built on these marks waits for the owner's review of each.`);
+  }
+  return out.length ? [...out, ""] : [];
+}
 export function resultsMd(results) {
   const v = results.verdict;
   const groups = Object.fromEntries(results.groups.map((g) => [g.id, g]));
@@ -175,7 +204,12 @@ export function resultsMd(results) {
     `**${v.passes ? "Passes" : "Does not pass"}.** The gate (step 1.10 of Genter's open-source plan) passes when the median repository has ${GATE.records} or more decision records and ${GATE.marked} of the 50 have an explicit replaced mark.`,
     "",
     `* The median repository has **${n(v.median_records)}** decision records the readers read (${v.records_ok ? "at least" : "below"} ${GATE.records}). The records are there: by each group's own pattern for its records (candidates.json), whatever their format, the median repository holds ${n(v.median_present)} (the changelog group holds none by definition); the readers as shipped take few of their formats (below).`,
-    `* **${v.with_marks} of ${v.repos}** have at least one document that says of itself that it is replaced, deprecated or obsolete (${v.marks_ok ? "at least" : "below"} ${GATE.marked}); in ${v.with_placed_marks} of them a mark names a replacing document that is in the repository (where Genter puts the current answer first).`,
+    `* **${v.with_marks} of ${v.repos}** have at least one document that carries a mark the readers read (${v.marks_ok ? "at least" : "below"} ${GATE.marked}); in ${v.with_placed_marks} of them a mark names a replacing document that is in the repository (where Genter puts the current answer first).`,
+    ...(v.with_kind
+      ? [
+          `* The gate counts a mark of any kind, from any reader, the fallback ones (banners, front matter) included, as the readers read it: a heading or a sentence a fallback reader takes for a document's own mark counts too. By kind, the repositories with a mark: ${KINDS.filter((k) => v.with_kind[k]).map((k) => `${k} ${v.with_kind[k]}`).join(", ")}; with a superseded or moved mark (one that names a replacement or a new place) ${v.with_replaced}, ${v.with_replaced >= GATE.marked ? "at least" : "below"} ${GATE.marked}; with a superseded mark alone ${v.with_kind.superseded}, ${v.with_kind.superseded >= GATE.marked ? "at least" : "below"} ${GATE.marked}.`,
+        ]
+      : []),
     ...(v.ran < v.repos ? [`* ${v.repos - v.ran} repositories could not be read: ${results.repos.filter((r) => r.error).map((r) => `${r.repo} (${r.error})`).join("; ")}.`] : []),
     "",
     "| group | repositories | median decision records read | median records in the tree | with a replaced mark | with a mark naming a document there |",
@@ -184,9 +218,10 @@ export function resultsMd(results) {
     "",
     `**The three archives** for the launch pages and the old-answer test (bench/old-answer): ${v.picks.map((r) => `[${r}](https://github.com/${r})`).join(", ")}: among the repositories with ${GATE.records} or more decision records, the most documents whose mark names a replacing document that is there, then the most that name what replaces them, then the most marked.`,
     "",
+    ...picksRead(results),
     "## Per repository",
     "",
-    "Decision records: documents the adr or rfc reader reads a date, a status or a mark in, and entries of a decision log; in the tree: the files that match the group's own pattern for the repository's records (candidates.json), read or not. Replaced: documents with a mark of their own (superseded, deprecated, obsolete, archived, moved, removed, unmaintained), from any reader; named: the mark names what replaces it; there: the replacing document it links is in the repository. Dated: documents a reader reads a date in. Changelog deprecations: entries' deprecated and removed items, not marks of a document.",
+    "Decision records: documents the adr or rfc reader reads a date, a status or a mark in, and entries of a decision log; in the tree: the files that match the group's own pattern for the repository's records (candidates.json), read or not. Replaced: documents that carry a mark the readers read (superseded, deprecated, obsolete, archived, moved, removed, unmaintained), from any reader; named: the mark names what replaces it; there: the replacing document it links is in the repository. Dated: documents a reader reads a date in. Changelog deprecations: entries' deprecated and removed items, not marks of a document.",
     "",
     "| repository | stars | commit | files read | decision records | in the tree | replaced | named | there | dated | changelog deprecations | readers that read something |",
     "| -- | --: | -- | --: | --: | --: | --: | --: | --: | --: | --: | -- |",

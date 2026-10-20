@@ -9,19 +9,19 @@
       "n": 39,
       "old_first": 8,
       "old_unmarked": 31,
-      "current_first": 19,
+      "current_first": 20,
       "current_top5": 32
     },
     "genter": {
       "n": 39,
       "old_first": 7,
       "old_unmarked": 0,
-      "current_first": 20,
+      "current_first": 21,
       "current_top5": 32
     }
   },
   "lead": {
-    "plain_current_first": 0.48717948717948717,
+    "plain_current_first": 0.5128205128205128,
     "local_picture_leads": true
   },
   "sources": [
@@ -29,6 +29,7 @@
       "id": "driftbench",
       "title": "DriftBench, deprecated kind",
       "url": "https://github.com/Genterai/genter/tree/main/bench/drift",
+      "sections": 341,
       "plain": {
         "n": 5,
         "old_first": 1,
@@ -50,6 +51,7 @@
       "url": "https://github.com/python/peps/tree/1317769c334c658db28aa5336d910f58443049eb",
       "commit": "1317769c334c658db28aa5336d910f58443049eb",
       "committed": "2026-10-20T11:02:49-07:00",
+      "sections": 11228,
       "plain": {
         "n": 31,
         "old_first": 7,
@@ -71,6 +73,7 @@
       "url": "https://github.com/kubernetes/enhancements/tree/5b503a75369bdfdd494a2c2c72107a41bf6dd1a8",
       "commit": "5b503a75369bdfdd494a2c2c72107a41bf6dd1a8",
       "committed": "2026-10-17T20:21:36+00:00",
+      "sections": 17666,
       "plain": {
         "n": 1,
         "old_first": 0,
@@ -92,18 +95,19 @@
       "url": "https://github.com/jaegertracing/jaeger/tree/ca047c72f34cf413c16d1118e19c7419de04bbab",
       "commit": "ca047c72f34cf413c16d1118e19c7419de04bbab",
       "committed": "2026-10-19T20:11:12-04:00",
+      "sections": 1337,
       "plain": {
         "n": 2,
         "old_first": 0,
         "old_unmarked": 1,
-        "current_first": 1,
+        "current_first": 2,
         "current_top5": 2
       },
       "genter": {
         "n": 2,
         "old_first": 0,
         "old_unmarked": 0,
-        "current_first": 1,
+        "current_first": 2,
         "current_top5": 2
       }
     }
@@ -1324,22 +1328,25 @@
       "source": "jaegertracing/jaeger",
       "question": "Which address does an external MCP client such as Cursor use to reach Jaeger's MCP tools?",
       "replaced": "docs/rfc/0012-mcp-server-extension.md",
-      "current": "docs/rfc/0008-ai-gateway-mcp-tool-routing.md",
+      "current": [
+        "docs/rfc/0008-ai-gateway-mcp-tool-routing.md",
+        "cmd/jaeger/internal/extension/jaegerquery/internal/mcptools/README.md"
+      ],
       "pair": "docs/rfc/0012-mcp-server-extension.md says in its Status line \"tool routing superseded by [RFC 0008](./0008-ai-gateway-mcp-tool-routing.md)\" (the banners reader's mark links the replacing RFC)",
-      "current_says": "The shared /api/ai/mcp/ path on the query port; RFC 0012 proposed a standalone extension on :16687.",
-      "note": "RFC 0012 says only its tool routing is superseded; Genter's mark is on the whole document, as quoted.",
+      "current_says": "The shared /api/ai/mcp/ path on the query port; RFC 0012 proposed a standalone extension on :16687. The mcptools README says the same (\"It serves at `<basePath>/api/ai/mcp/` on the query port\").",
+      "note": "RFC 0012 says only its tool routing is superseded; Genter's mark is on the whole document, as quoted. docs/adr/002-mcp-server.md states the current answer too (\"served under `<base_path>/api/ai/mcp/` on the query port\") but carries a superseded mark of its own (its Status line: \"Decisions 2 and 3 are superseded\"); whether it counts as a current document is the owner's call.",
       "reviewed": "pending owner",
       "plain": {
         "old_first": false,
         "old_unmarked": false,
-        "current_first": false,
+        "current_first": true,
         "current_top5": true,
         "first": "cmd/jaeger/internal/extension/jaegerquery/internal/mcptools/README.md"
       },
       "genter": {
         "old_first": false,
         "old_unmarked": false,
-        "current_first": false,
+        "current_first": true,
         "current_top5": true,
         "first": "cmd/jaeger/internal/extension/jaegerquery/internal/mcptools/README.md",
         "first_marked": false,

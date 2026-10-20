@@ -170,13 +170,15 @@ export const MARKDOWN_FILE = /\.(md|mdx|markdown)$/i;
 // The pieces local search ranks a text by, the same for every caller (the engine, and a benchmark's plain ranking over
 // the same sections): [[start, end, headings]]. Markdown (by its name, or a web page) is cut by its headings
 // (splitMarkdown; the text before the first heading has none); any other text into blocks of about `chunk` characters.
-export function pieces(where, text, { markdown = MARKDOWN_FILE.test(where), chunk = 1500 } = {}) {
+// chunk has no default: every caller passes the engine's own, LIMITS.chunkChars (local.js), so the two cannot drift.
+export function pieces(where, text, { markdown = MARKDOWN_FILE.test(where), chunk }) {
   if (markdown) return splitMarkdown(where, text).map((p) => [p.start, p.end, p.headings[0] === "Introduction" && p.headings.length === 1 ? [] : p.headings]);
   return blocks(text, chunk).map(([a, b]) => [a, b, []]);
 }
 
 // Text that is not Markdown, cut at blank lines into blocks of about `chunk` characters: [[start, end]].
-export function blocks(text, chunk = 1500) {
+export function blocks(text, chunk) {
+  if (!(chunk > 0)) throw new Error("blocks: chunk is the engine's LIMITS.chunkChars");
   const out = [];
   let start = 0;
   let last = 0;
