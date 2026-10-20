@@ -27,7 +27,9 @@ open-source plan, steps 1.5 (this), 1.2 (the readers) and 3.10 (git dates, which
 run); git's own layout of `.git` (HEAD, `refs/heads/<branch>`, `packed-refs`, a worktree's `gitdir:` file and
 `commondir`): https://git-scm.com/docs/gitrepository-layout; Content-Security-Policy hashes for inline style:
 https://developer.mozilla.org/docs/Web/HTTP/Headers/Content-Security-Policy/style-src
-Red lines: security/never-run (git is read, never run), cli/no-packages (one more command), cli/config-private,
+Red lines: security/never-run (git is read, never run), contract/two-tools (unchanged: the page is a command, not an
+MCP tool; `documents()` is an addition to the library's local object that neither tool calls), cli/no-packages (one
+more command), cli/config-private,
 readers/off-honoured, local-search/person-off-wins, local-search/repo-config-narrows, local-search/no-text-stored (the
 page is an export the person asks for, written outside the store; nothing is added to the store); new:
 decisions-page/explicit-only, decisions-page/outside-repo, decisions-page/escaped, decisions-page/offline,
