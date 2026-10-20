@@ -12,8 +12,9 @@
 /src/http.js                    @dangenter
 /readers/reader.schema.json     @dangenter
 
-# First-party readers and rules. A reader whose reader.json names another owner gets a line of its own here, in the
-# pull request that adds it (test/community.test.js checks: [owner-review]), and from then on its owner reviews it.
+# First-party readers and rules. A reader a person adds may bring a line of its own here, in the pull request that adds
+# it, naming the owner its reader.json names (test/community.test.js checks: [owner-review]); from then on its owner
+# reviews it. With no line, the maintainers review it: a reader needs no line, and no brief.
 /readers/adr/                   @dangenter
 /readers/banners/               @dangenter
 /readers/changelog/             @dangenter

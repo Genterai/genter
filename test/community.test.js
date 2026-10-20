@@ -162,15 +162,44 @@ describe("who reviews", () => {
     }
   });
 
-  it("[rl:community/owner-review] each reader has the owner its reader.json names, or the owner of the repository when that is the organization", () => {
+  it("[rl:community/owner-review] the first-party readers and language files have the owner's line; a line for a reader names the owner its reader.json names, and a reader with no line is allowed", () => {
     const readers = readdirSync(at("readers"), { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name);
     assert.ok(readers.length >= 6);
     for (const name of readers) {
       const named = json(`readers/${name}/reader.json`).owner;
-      const expected = named.toLowerCase() === `@${org}`.toLowerCase() ? OWNER : named;
-      assert.deepEqual(owned(`/readers/${name}/`).map((l) => l.owners), [[expected]], `readers/${name}: ${named}`);
+      const firstParty = named.toLowerCase() === `@${org}`.toLowerCase();
+      const got = owned(`/readers/${name}/`).map((l) => l.owners);
+      // A reader that names the organization is a first-party one: the owner's line. Another owner's reader may have no
+      // line (the maintainers review it); a line it has names that owner.
+      if (firstParty) assert.deepEqual(got, [[OWNER]], `readers/${name}: ${named}`);
+      else assert.ok(got.length === 0 || (got.length === 1 && got[0].length === 1 && got[0][0] === named), `readers/${name}: ${named} is the owner its line names, if it has one`);
     }
-    for (const lang of readdirSync(at("rules")).filter((f) => f.endsWith(".json"))) assert.deepEqual(owned(`/rules/${lang}`).map((l) => l.owners), [[OWNER]], `rules/${lang}`);
+    // The six that ship, and the two languages, are the owner's.
+    for (const name of ["adr", "banners", "changelog", "decisions", "obsidian", "rfc"]) assert.deepEqual(owned(`/readers/${name}/`).map((l) => l.owners), [[OWNER]], `readers/${name}`);
+    for (const lang of ["en", "ru"]) assert.deepEqual(owned(`/rules/${lang}.json`).map((l) => l.owners), [[OWNER]], `rules/${lang}`);
+    // A line is for a reader or a language file that is there.
+    for (const { pattern } of lines) {
+      const reader = /^\/readers\/([^/]+)\/$/.exec(pattern)?.[1];
+      if (reader) assert.ok(readers.includes(reader), `${pattern} is a reader in the tree`);
+    }
+  });
+
+  it("[rl:community/manifests-no-brief] a reader, a language file and a CODEOWNERS line for them are in no area's Sources, so harden asks their pull request for no Brief line", () => {
+    // The code every area names under Sources, read the way harden reads it: the backticked paths of its Sources field.
+    const sources = readdirSync(at("harden/redlines")).filter((f) => f.endsWith(".md")).flatMap((f) => {
+      const field = /^Sources:[^\n]*(?:\n(?!\n)[^\n]*)*/m.exec(text(`harden/redlines/${f}`))?.[0] ?? "";
+      assert.ok(field, `${f} has a Sources: field`);
+      return [...field.matchAll(/`([^`\s]+)`/g)].map((m) => m[1]).filter((p) => /[/.]/.test(p)).map((p) => ({ area: f, path: p }));
+    });
+    assert.ok(sources.length > 20, `the areas name their code: ${sources.length}`);
+    // A path covers a file when it is that file or a folder holding it, or a glob that matches it.
+    const glob = (p) => new RegExp(`^${p.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*\*/g, "\0").replace(/\*/g, "[^/]*").replace(/\0/g, ".*")}$`);
+    const covers = (file, p) => (/[*?]/.test(p) ? glob(p).test(file) : file === p || file.startsWith(p.endsWith("/") ? p : `${p}/`));
+    // What a pull request that adds a reader (or a language) and its CODEOWNERS line changes.
+    const added = ["readers/my-format/reader.json", "readers/my-format/expected.json", "readers/my-format/fixtures/a.md", "rules/es.json", ".github/CODEOWNERS"];
+    for (const file of added) assert.deepEqual(sources.filter(({ path }) => covers(file, path)), [], `${file} is in no area's Sources`);
+    // The same reading does catch code an area owns, so the check above can fail.
+    assert.deepEqual(sources.filter(({ path }) => covers("src/readers.js", path)).map((s) => s.area), ["readers.md"]);
   });
 });
 

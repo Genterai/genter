@@ -57,7 +57,7 @@ Red lines: `cli`: new [registry-entry], [versions-agree], [listings], [mcpb-mani
 (the extension's tools are the contract's two, and its server passes the conformance function); `install/desktop-folder`
 and `install/no-secrets` stay true (the extension asks for a folder and writes no secret); `security`: new
 [text-is-data]; a new area `community` (this brief writes it): [stewardship], [no-phone-home], [community-files], [dco],
-[owner-review], [works-with-genter], [ac-dco]; `readers` and `plugin` are not touched.
+[owner-review], [manifests-no-brief], [works-with-genter], [ac-dco]; `readers` and `plugin` are not touched.
 Decided:
 * The registry name is `io.github.Genterai/genter`, with the capital: the plan's suggestion of `io.github.genterai/...`
   would be refused. The organization's login is `Genterai` (the GitHub API says so), a GitHub sign-in or an OIDC run is
@@ -86,8 +86,10 @@ Decided:
   jobs" tries it again. It uses nothing from the release job's `outputs` (another step edits them), runs only when the
   version's tag is at this commit and the release has no `genter.mcpb` yet (simulated for the five cases: attach,
   already attached, no release, a commit past the tag, no tag), checks out without persisting credentials, runs the
-  pinned `@anthropic-ai/mcpb` with `--ignore-scripts` in a step that names no token, checks that the unpacked bundle
-  starts and is this version, and only the last step has the token (plan step 1.8)
+  pinned `@anthropic-ai/mcpb` with `--ignore-scripts` in a step that names no token, compares the unpacked bundle with the
+  staged folder byte for byte (`diff -r`: the packer's own nine dependencies are pulled by range, with no lockfile, so
+  the pin does not fix what it ran; the comparison does) and checks that it starts and is this version, and only the
+  last step has the token (plan step 1.8)
 * CODEOWNERS is `.github/CODEOWNERS` and names `@dangenter`, the repository's only collaborator, who has the admin role:
   an organization (`@Genterai`, which the first-party readers name as their owner) cannot be asked for a review, and a
   line with an owner GitHub does not know is silently ignored. It lists the files the plan's D7 names
@@ -95,16 +97,26 @@ Decided:
   the first-party readers and rules, what clients run (`server.json`, `manifest.json`, `glama.json`, the plugin and the
   skill, and the `Dockerfile` and compose file that the release job's image is built from), the files that state the
   promises, and `.github/`, because a pull request can change its own checks. `src/memory.js` is not in the tree yet; its
-  line holds from the pull request that adds it. A reader with another owner
-  in its `reader.json` gets its own line in the pull request that adds it, which a test checks and the owner approves
+  line holds from the pull request that adds it. The six first-party readers and `rules/en.json` and `rules/ru.json` have the
+  owner's line. A reader a person adds may bring a line of its own, naming the owner its `reader.json` names (a test
+  checks that, and that a reader naming the organization has the owner's line); with none, the maintainers review it.
+  `.github/CODEOWNERS` is not a Source of `community`, like `readers/` and `rules/`: a pull request that adds a reader and
+  its line must need no `Brief:` line, as CONTRIBUTING says (found in review: with the file a Source, `harden check`
+  asked for one, and the test asked every reader and language file for a line, which none of the first issues mention)
 * The DCO check is one script and plain git, on `pull_request`, with read-only rights and no third-party action or app.
   A sign-off must be the commit author's or committer's own address; a merge commit (the "update branch" button) is not
   checked; Dependabot is exempt by who opened the pull request, never by a commit's author line, which anyone can write.
   It reads each commit from its raw object, because the first version parsed `git log` with separator bytes and a
   subject holding one made a commit look like a merge (found while writing the test; the test now has such a subject)
+* SECURITY.md's section "Source text is data, never instructions" says what holds. In `search` a passage is four spaces
+  in, so a file that prints `[1] Deploy · read now` and a `  ⚠` line shows neither as a place or a mark (a test builds
+  such a file and parses the answer with the conformance `places()`). `read` gives the text as it is, after an empty line,
+  as the contract's `read` says, so there a file can print a block that reads as another place with a mark (found in
+  review, reproduced: it ends `read`'s answer as a third place); SECURITY.md and `security/text-is-data` say that as a
+  known limit, not as a promise, and the test pins the limit, so whoever changes `read` changes the page with it
 * STEWARDSHIP.md has D1's six promises and its seventh, the server's license, in the words of the plan; it says the
   default for a server is Apache-2.0 and does not name the fallback. It states the license history (Apache-2.0 since
-  b91be02, PolyForm before) and not who wrote which commit. A test pins each promise's title, so a promise leaves the
+  b91be02, PolyForm before). A test pins each promise's title, so a promise leaves the
   file only with a failing test and the owner's review. [no-phone-home] is a tripwire for the fourth promise: only
   `src/net.js`, the embeddings call in `src/local.js` and the listening server of `genter serve` (`src/http.js`, which
   imports `createServer` and nothing that makes a request) name a network primitive
@@ -119,12 +131,21 @@ Decided:
 * `.claude/AGENTS.md` is not edited (agent sessions do not edit it): its map lacks `community`, `server.json`,
   `manifest.json` and the scripts
 Open:
-* Authorship of commit 653c40e (2026-10-08, by a second author identity, before the Apache-2.0 switch at b91be02 on
-  2026-10-09): the owner confirms the identity is theirs, or gives written consent → asked here, in the step that adds
-  STEWARDSHIP.md; nothing is relicensed and the file says only when the license changed [non-blocking]
 * The owner's GitHub settings, which no file can show: the checks `test`, `harden`, `readers`, `secrets` and `dco` required
   on `main`; "Require review from Code Owners"; sign-off required for web-based commits; secret scanning with push
-  protection (plan step 0.8) → the owner switches them on when this merges [non-blocking]
+  protection (plan step 0.8) → the owner switches them on when this merges. With the owner as the only code owner,
+  GitHub does not count the author's own approval, so a pull request opened from the owner's account cannot satisfy
+  "Require review from Code Owners": the owner chooses between "Allow specified actors to bypass" for themself and
+  another account for such pull requests (GOVERNANCE.md says so) [non-blocking]
+* Who certifies the DCO for a commit an agent wrote: every commit of this branch is signed off by the identity that wrote
+  it, which `dco.mjs` accepts because the address matches the commit's own. The check proves a sign-off exists, not that
+  a person certified it. Proposal: CONTRIBUTING says the human who submits an agent's commit adds their own
+  `Signed-off-by`, and the check refuses a sign-off whose only address is a `noreply` or known agent one → part of the
+  contribution terms the owner decides; nothing is built for it here [non-blocking for this change]
+* `read` does not set a file's text apart as `search` does (see Decided). Proposal: indent it four spaces like `search`
+  (or give each text a fenced mark the conformance function can parse), which changes the contract's `read` output and
+  its fixture, so it is a brief of its own and the owner's decision → this change only states the limit
+  [non-blocking for this change; blocking for the one that changes `read`]
 * `genter mcp` still serves 0.3's deprecated `genter_add` and `genter_remember` for one more minor release (contract
   decision D3; `cli/local-mcp-tools`), so an AI connected through the extension can ask to add another source or keep a
   note, which the person approves in Claude Desktop call by call; the manifest lists only `search` and `read`. They leave
@@ -160,9 +181,9 @@ that is not empty, another version, and a missing entry file / "[rl:cli/mcpb-rel
 version in a step without a token, checks the bundle, uploads with the token; the `release` job has no `mcpb` in it and
 still publishes and tags. `test/community.test.js` "[rl:community/dco]" (a table of commits; merge commits and
 Dependabot; a real git repository with a hostile subject, `-s`, a merge of main; the workflow) and
-"[rl:community/ac-dco]", "[rl:community/owner-review]", "[rl:community/works-with-genter]" (a server that answers every
+"[rl:community/ac-dco]", "[rl:community/owner-review]" (the first-party readers and languages have the owner's line; a line names the reader's owner; a reader with no line passes; an organization-owned reader without one fails), "[rl:community/manifests-no-brief]" (no area's Sources covers a new reader, a language file or `.github/CODEOWNERS`; checked in a scratch clone with `harden check --base`: a reader, a language and their lines, 0 errors with no `Brief:` line), "[rl:community/works-with-genter]" (a server that answers every
 request with an error does not pass), "[rl:community/stewardship]", "[rl:community/no-phone-home]",
-"[rl:community/community-files]"; `test/security.test.js` "[rl:security/text-is-data]". Each test fails when its part is
+"[rl:community/community-files]"; `test/security.test.js` "[rl:security/text-is-data]" (the wording, and a file that forges a place and a mark: none in `search`, a third place in `read`, the limit SECURITY.md states). Each test fails when its part is
 undone (checked by hand, 35 mutations: server name lowercased, a header added, versions drifted, the folder argument
 dropped, a default folder, an env key, a missing entry file, `needs` dropped, a token in the pack step, an unpinned
 `mcpb`, `mcpb` in the npm job, a sign-off of anyone's address, the exemption by commit author, every commit skipped, the
@@ -183,15 +204,21 @@ stub `gh`; `release.yml` parses with the new job after `release` and the old job
 * cli/listings: new, `docs/listings.md` and `glama.json` agree with the entry and with CODEOWNERS
 * cli/mcpb-manifest: new, the Claude Desktop extension asks for one folder and starts `genter mcp` on it, with no key
 * cli/mcpb-starts: new, the bundle is npm's files plus the manifest, and its command passes conformance on the chosen folder
-* cli/mcpb-release: new, a job of its own attaches `genter.mcpb` to a release without touching the npm job
-* security/text-is-data: new, source text is data, never instructions: SECURITY.md, the server's instructions and the skill
+* cli/mcpb-release: new, a job of its own attaches `genter.mcpb` to a release without touching the npm job, after
+  comparing what the packer wrote with what was staged, byte for byte
+* security/text-is-data: new, source text is data, never instructions: SECURITY.md, the server's instructions and the
+  skill; in `search` a file's lines cannot read as a place or a mark, and `read` giving the text as it is is a stated limit
 * community/stewardship: new, STEWARDSHIP.md's seven promises, and the Apache-2.0, dependency-free package they rest on
-* community/no-phone-home: new, only the website fetch and the embeddings call name a network primitive
+* community/no-phone-home: new, only the website fetch, the embeddings call and `genter serve`'s listening server
+  (`src/http.js`) name a network primitive
 * community/community-files: new, the project's own files link only to files that are there and say the two kinds of
   contribution, the owner as the one who decides, and what Genter Cloud keeps private
 * community/dco: new, every commit of a pull request is signed off with its own address; Dependabot's pull requests and
   merge commits are not checked
 * community/owner-review: new, the owner reviews the code Genter Cloud imports, the reader schema, what clients run, the
-  promises and the CI itself, and each reader and rules file has an owner
+  promises and the CI itself; the first-party readers and languages have the owner's line, and a reader a person adds
+  may bring its own
+* community/manifests-no-brief: new, a pull request that adds a reader or a language file, and its CODEOWNERS line,
+  changes no area's Sources and needs no `Brief:` line
 * community/works-with-genter: new, "works with Genter" requires passing `genter-cli/conformance`; forks rename
 * community/ac-dco: new, the check names only the unsigned commit and how to fix it, and passes once signed off

@@ -88,7 +88,8 @@ git push --force-with-lease
 ## Readers and language rules
 
 A reader for a text format, or the phrases of a language, is data, so it needs no brief and no `Brief:` line: CI is its
-brief. `readers/` and `rules/` are outside every area's `Sources:` on purpose.
+brief. `readers/`, `rules/` and `.github/CODEOWNERS` (where a reader may add its line) are outside every area's
+`Sources:` on purpose.
 
 - **A reader:** `genter reader new <name>` makes `readers/<name>/`: `reader.json`, `fixtures/` and `expected.json`.
   Set its `owner` to your GitHub handle, say which files it takes, and read their date, status and marks with the
@@ -98,9 +99,11 @@ brief. `readers/` and `rules/` are outside every area's `Sources:` on purpose.
   repeats, with no `*`, `+`, backreference or lookaround. A manifest holds no address, no code and no free text.
 - **A language:** `rules/<lang>.json`, each phrase with lines it marks (`hits`) and lines it must not (`misses`). A
   native speaker reviews it.
-- **Its owner:** the handle in `reader.json` keeps the reader. Add a line for `/readers/<name>/` with that handle to
-  [`.github/CODEOWNERS`](.github/CODEOWNERS) in the same pull request; the owner approves it, and from then on you review
-  changes to your reader. A reader with no owner of record there is reviewed by the maintainers.
+- **Its owner:** the handle in `reader.json` keeps the reader. If you want to review changes to it, add a line for
+  `/readers/<name>/` with that handle to [`.github/CODEOWNERS`](.github/CODEOWNERS) in the same pull request (it needs no
+  brief either); the owner approves it, and from then on you are asked for a review. A reader with no line there is
+  reviewed by the maintainers. Do not name `@Genterai` as an owner: that is for the first-party readers, which the owner
+  reviews.
 - **CI** (`.github/workflows/readers.yml`) lints every manifest and runs every reader's contract: its fixtures, a
   fixture edited, the person's `off` list, and secret-looking files, which a reader never reads.
 

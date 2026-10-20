@@ -85,7 +85,9 @@ Where clients and directories find Genter and how they start it. The release job
   another version than the package, and a file the manifest starts from that the package does not ship.
 * **[mcpb-release]** `genter.mcpb` is attached to the GitHub release by a job of its own after the release job, only when
   the version's tag is at that commit and the release has none; it packs with `@anthropic-ai/mcpb` at an exact version
-  that sees no token, and the npm release job does not know about it.
+  (the packages that version asks for float, as it has no lockfile) in a step that sees no token, and what it packed is
+  compared with what was staged, byte for byte, before the bundle is started or uploaded; the npm release job does not
+  know about it.
 
 ## Proof
 

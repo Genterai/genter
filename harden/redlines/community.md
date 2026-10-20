@@ -4,12 +4,16 @@ Intent: people who use and extend Genter can see how the project is run and what
 is held — success: a pull request with a commit that is not signed off fails the `dco` check and says how to fix it, a
 change to the code Genter Cloud imports needs the owner's review, and a promise cannot leave STEWARDSHIP.md without a
 test failing.
-Sources: `STEWARDSHIP.md`, `TRADEMARKS.md`, `GOVERNANCE.md`, `ip-boundary.md`, `.github/CODEOWNERS`,
-`.github/scripts/dco.mjs`; steps 1.9 of Genter's open-source plan and its decision D1.
+Sources: `STEWARDSHIP.md`, `TRADEMARKS.md`, `GOVERNANCE.md`, `ip-boundary.md`, `.github/scripts/dco.mjs`; steps 1.9 of
+Genter's open-source plan and its decision D1.
 
 Most weight: [stewardship] (what people build on the open code rely on), [dco] (the terms every contribution comes in
 under), and [owner-review] (the code that decides what is read, marked and sent is imported by Genter Cloud at an exact
 version, so a person reads each change to it).
+
+`.github/CODEOWNERS` is outside Sources on purpose, like `readers/` and `rules/` (readers/declarative): a person who adds
+a reader may add its line there, and a reader needs no brief. The file's own line makes the owner review every change to
+it, and a test reads it.
 
 ## Red lines
 
@@ -44,9 +48,15 @@ version, so a person reads each change to it).
 * **[owner-review]** `.github/CODEOWNERS` asks the owner (a user GitHub can ask, never the organization alone) to review
   every change to `src/memory.js` (it may not be in the tree yet, and is owned from the pull request that adds it),
   `src/readers.js`, `src/net.js`, `src/lexical.js`, `src/local.js`, `src/http.js`, `readers/reader.schema.json`, the
-  `Dockerfile` and `docker-compose.yml`, `server.json`, `manifest.json`, the files that state the promises, and
-  `.github/` (a pull request can change its own checks). Each reader in `readers/` has a line with the owner its
-  `reader.json` names, or the owner of the repository when that is the organization, and each file of `rules/` has one.
+  `Dockerfile` and `docker-compose.yml`, `server.json`, `manifest.json`, the files that state the promises, `.github/`
+  (a pull request can change its own checks) and the file itself. The first-party readers and the two first-party
+  language files have a line for the owner of the repository. A reader a person adds may bring a line of its own, and
+  that line names the owner its `reader.json` names; a reader or a language file with no line is reviewed by the
+  maintainers. A `reader.json` that names the organization as its owner is a first-party reader, so it has the
+  owner's line.
+* **[manifests-no-brief]** A pull request that adds or changes only a reader (`readers/<name>/`), a language file
+  (`rules/<lang>.json`) and, if it wants one, its line in `.github/CODEOWNERS`, changes no code an area names under
+  `Sources:`, so `harden check` asks it for no `Brief:` line: CI (`readers`) is its brief.
 * **[works-with-genter]** TRADEMARKS.md asks "works with Genter" to be claimed only by a server or client that passes
   `genter-cli/conformance`, shows the call (`conformance(send, { query, mark: true })`), and says forks rename;
   `genter-cli/conformance` is an export of the package, and a server that answers every request with an error does not

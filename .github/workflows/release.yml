@@ -25,8 +25,9 @@ jobs:
     # genter.mcpb, the Claude Desktop extension (manifest.json and the files npm publish ships; docs/listings.md), on the
     # release this run made: v<version> is tagged at this very commit and has no genter.mcpb yet, else the job does
     # nothing. A job of its own, after the release job, so that packing cannot fail the npm publish and "Re-run failed
-    # jobs" tries it again. Outside code is only @anthropic-ai/mcpb at the version pinned below, and the token is in
-    # reach of the two steps that name it, not of that.
+    # jobs" tries it again. Outside code is @anthropic-ai/mcpb at the version pinned below and the packages it asks for by
+    # range (it has no lockfile, so they float), and the token is in reach of the two steps that name it, not of that.
+    # What it packed is checked against what was staged, byte for byte, before anything is uploaded.
     needs: release
     runs-on: ubuntu-latest
     permissions:
@@ -62,12 +63,13 @@ jobs:
       - name: Pack genter.mcpb
         if: steps.gate.outputs.attach == 'true'
         run: npx --yes --ignore-scripts @anthropic-ai/mcpb@2.1.2 pack "$RUNNER_TEMP/genter" genter.mcpb
-      - name: The bundle starts, and is this version
+      - name: The bundle is what was staged, byte for byte, and is this version
         if: steps.gate.outputs.attach == 'true'
         env:
           TAG: ${{ steps.gate.outputs.tag }}
         run: |
           unzip -q genter.mcpb -d "$RUNNER_TEMP/unpacked"
+          diff -r "$RUNNER_TEMP/genter" "$RUNNER_TEMP/unpacked"
           test "$(node "$RUNNER_TEMP/unpacked/bin/genter.js" --version)" = "${TAG#v}"
       - name: Attach it to the release
         if: steps.gate.outputs.attach == 'true'

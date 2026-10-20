@@ -259,6 +259,9 @@ describe("the release attaches genter.mcpb", () => {
     assert.match(later[1], /npx --yes --ignore-scripts @anthropic-ai\/mcpb@\d+\.\d+\.\d+ pack "\$RUNNER_TEMP\/genter" genter\.mcpb/);
     assert.doesNotMatch(later[1], /token|GH_TOKEN|secrets\./i);
     assert.match(job, /persist-credentials: false/);
+    // What the packer wrote, with the packages it pulls by range, is checked against what was staged, byte for byte,
+    // before the bundle is started and before it is uploaded.
+    assert.match(later[2], /unzip -q genter\.mcpb -d "\$RUNNER_TEMP\/unpacked"\n\s+diff -r "\$RUNNER_TEMP\/genter" "\$RUNNER_TEMP\/unpacked"\n\s+test /);
     assert.match(later[2], /node "\$RUNNER_TEMP\/unpacked\/bin\/genter\.js" --version/);
     assert.match(later[3], /gh release upload "\$TAG" genter\.mcpb/);
     assert.match(later[3], /GH_TOKEN: \$\{\{ github\.token \}\}/);

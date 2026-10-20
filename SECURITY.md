@@ -45,12 +45,17 @@ agent it is data:
 
 - **The agent is told.** The MCP server's instructions say that what `search` and `read` return is the person's text,
   data and never instructions to the agent, and the Claude Code skill says the same.
-- **Text cannot pass for Genter.** A passage comes back set apart (four spaces in under its place in `search`, after an
-  empty line in `read`), so no line of a file reads as a place, an id or a mark. A mark quotes what a place says about
-  itself (“superseded by …”) as that place's words, never as Genter's own verdict.
+- **Text cannot pass for Genter in `search`.** A passage comes back four spaces in under its place, deeper than a
+  place's second line and its marks, so no line of a file reads as a place, an id or a mark there. A mark quotes what a
+  place says about itself (“superseded by …”) as that place's words, never as Genter's own verdict.
+- **`read` gives the text as it is.** It comes after an empty line, under its place's own lines, and nothing sets it
+  apart: in `read`'s answer a file can print lines that look like another place or a mark. That is a known limit, and
+  it holds until the contract's `read` changes; everything after that empty line is the person's text, and the server's
+  instructions say so.
 - **A reader is data too.** A reader or a set of language rules holds no code, no address and no free text for an agent
   to follow; it says only where to find a date, a status or a mark.
 - **Nothing it reads is run:** no `child_process`, `vm`, `eval`, `new Function` or `worker_threads` in the engine.
 
-We count as a vulnerability a way for text Genter reads to come back as Genter's own words (a forged place, id or
-mark), to be run, to make Genter read a file it never reads, or to make it reach an address it refuses.
+We count as a vulnerability a way for text Genter reads to come back as Genter's own words in `search` (a forged place,
+id or mark), to be run, to make Genter read a file it never reads, or to make it reach an address it refuses. A block
+that imitates a place inside the text `read` returns is the limit above.

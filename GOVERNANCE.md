@@ -40,7 +40,10 @@ the same way. Someone who is gone for a long time is thanked and removed.
 
 By machine: the `test`, `harden`, `readers`, `secrets` and `dco` checks. By a person: CODEOWNERS, for the files it lists.
 Making those checks required on `main`, and turning on "Require review from Code Owners" for it, are settings of the
-repository that the owner switches on; the files here cannot show them.
+repository that the owner switches on; the files here cannot show them. While the owner is the only code owner, GitHub
+does not count a pull request author's own approval, so a pull request opened from the owner's account (by the owner, or
+by an agent working for them) cannot satisfy that rule: it needs "Allow specified actors to bypass" for the owner, or
+such pull requests are opened from another account. The owner decides which.
 
 ## No foundation, for now
 
