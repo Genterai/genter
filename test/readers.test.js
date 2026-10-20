@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { describe, it } from "node:test";
@@ -8,7 +8,8 @@ import { fileURLToPath } from "node:url";
 import { checkReader, checkRules } from "../bin/reader.js";
 import { supersededOf } from "../src/drift.js";
 import { createLocal } from "../src/local.js";
-import { compileReader, isoDate, KINDS, LIMITS, lintPattern, lintReader, loadReaders, loadRules, pattern, phrases, readDocument, readerSchema, readWith, secretLooking } from "../src/readers.js";
+import { decisionReaders } from "../src/page.js";
+import { compileReader, findPlace, isoDate, KINDS, LIMITS, lintPattern, lintReader, loadReaders, loadRules, pattern, phrases, readDocument, readerSchema, readWith, secretLooking } from "../src/readers.js";
 import { cipher } from "../src/seal.js";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
@@ -114,11 +115,11 @@ describe("the pattern language", () => {
 
 describe("manifests", () => {
   it("[rl:readers/declarative] every reader in readers/ passes lint, named as its folder, format readers before fallback ones", () => {
-    assert.deepEqual(NAMES, ["adr", "banners", "changelog", "decisions", "obsidian", "rfc"]);
+    assert.deepEqual(NAMES, ["adr", "banners", "changelog", "decisions", "eip", "kep", "nep", "obsidian", "pep", "pip", "proposals", "rfc", "rfd"]);
     for (const name of NAMES) assert.deepEqual(lintReader(manifestOf(name), { folder: name }), [], name);
     const { readers, problems } = loadReaders();
     assert.deepEqual(problems, []);
-    assert.deepEqual(readers.map((r) => r.name), ["adr", "changelog", "decisions", "rfc", "banners", "obsidian"]);
+    assert.deepEqual(readers.map((r) => r.name), ["adr", "changelog", "decisions", "eip", "kep", "nep", "pep", "pip", "proposals", "rfc", "rfd", "banners", "obsidian"]);
     assert.deepEqual(lintReader(manifestOf("adr"), { folder: "madr" }), ['name: "adr" is not the name of its folder, "madr"']);
   });
 
@@ -178,6 +179,147 @@ describe("manifests", () => {
       assert.equal(readWith(all, path, text), null, path);
     }
     assert.equal(readWith(all, "docs/runbook.md", text).marks[0].by, "v2.md");
+  });
+});
+
+describe("replacements named by an id", () => {
+  const PEP = { $schema: "../reader.schema.json", dsl: 1, name: "pep", owner: "@Genterai", records: true, matches: { files: ["**/peps/pep-*.rst"] }, fields: { marks: [{ kind: "superseded", in: "top", pattern: "^superseded-by: {0,3}(\\d{1,5})\\b", name: 1, id: 1, place: "pep-{id:04}.*" }] } };
+  const withPlace = (place, extra = {}) => ({ ...PEP, fields: { marks: [{ ...PEP.fields.marks[0], place, ...extra }] } });
+
+  it("[rl:readers/by-id] a mark's id becomes a place by its manifest's template, and a template that could leave the project, reach an address, a hidden or a secret-looking file is refused, saying why", () => {
+    assert.deepEqual(lintReader(PEP), []);
+    const pep = compileReader(PEP);
+    const mark = (text) => readWith(pep, "peps/pep-0438.rst", `PEP: 438\n${text}\n`)?.marks?.[0];
+    assert.deepEqual(mark("Superseded-By: 470"), { kind: "superseded", line: 2, quote: "Superseded-By: 470", name: "470", place: "pep-0470.*" });
+    assert.equal(mark("Superseded-By: 12345").place, "pep-12345.*", "wider than its width, as written");
+    assert.equal(mark("Superseded-By: 0007").place, "pep-0007.*");
+    // {id} as written; an id is letters, digits and -, at most 32; {id:0N} takes digits only.
+    const named = compileReader({ ...PEP, fields: { marks: [{ kind: "superseded", in: "top", pattern: "^replaced by ([a-z0-9-]{1,40}|\\S{1,40})$", id: 1, place: "../notes/{id}.md" }] } });
+    const placeOf = (word) => readWith(named, "peps/pep-0001.rst", `replaced by ${word}\n`)?.marks?.[0];
+    assert.equal(placeOf("release-v2").place, "../notes/release-v2.md");
+    assert.equal(placeOf("../../etc").place, undefined, "a / or a . is no id");
+    assert.equal(placeOf("a".repeat(33)).place, undefined, "an id of more than 32");
+    assert.equal(placeOf("x%2F..").place, undefined);
+    assert.equal(placeOf("release-v2").name, "release-v2", "the id names it when nothing else does");
+    const padded = compileReader(withPlace("pep-{id:04}.*", { pattern: "^superseded-by: {0,3}([a-z0-9]{1,8})\\b" }));
+    assert.equal(readWith(padded, "peps/pep-0001.rst", "Superseded-By: abc\n").marks[0].place, undefined, "{id:0N} takes digits only");
+    const refused = [
+      ["/etc/{id}", /a path from the document's folder/],
+      ["~/{id}.md", /a path from the document's folder/],
+      ["C:/{id}.md", /a path from the document's folder/],
+      ["a\\{id}.md", /a path from the document's folder/],
+      ["{id}.pem", /secret-looking file \(server\.pem\)/],
+      ["{id}*", /secret-looking file \(id_rsa\)/],
+      ["x/{id}/../y.md", /climbs \(\.\.\) only at its start/],
+      ["../../../../{id}.md", /at most 3 folders/],
+      [".hidden/{id}.md", /no empty or hidden folder or name/],
+      ["x//{id}.md", /a path from the document's folder/],
+      ["a*/{id}.md", /a \* only in the file's name/],
+      ["*{id}*x*.md", /at most two \*/],
+      ["{id}-{id}.md", /holds \{id\} or \{id:0N\}/],
+      ["notes.md", /holds \{id\} or \{id:0N\}/],
+      ["{id:00}.md", /holds \{id\} or \{id:0N\}/],
+      ["{id}.{md,rst}", /no \{ or \} but its \{id\}/],
+      ["{id}?.md", /a path from the document's folder/],
+      ["https://example.com/{id}", /an address/],
+    ];
+    // {id} in a folder's name (an archive of one folder per document) is a place too, as the red line says.
+    assert.deepEqual(lintReader(withPlace("../{id:04}/README.adoc")), []);
+    for (const [place, why] of refused) {
+      const found = lintReader(withPlace(place));
+      assert.ok(found.some((p) => why.test(p)), `${place}: ${found.join(" | ")}`);
+    }
+    const { place: _, ...noPlace } = PEP.fields.marks[0];
+    assert.deepEqual(lintReader({ ...PEP, fields: { marks: [noPlace] } }), ["fields.marks[0].place: an id and its place go together"]);
+    assert.deepEqual(lintReader(withPlace("pep-{id}.rst", { id: 2 })), ["fields.marks[0].id: group 2, but the pattern has 1"]);
+    assert.ok(lintReader({ ...PEP, fields: { marks: [{ in: "top", phrases: true, id: 1, place: "x-{id}.md" }] } }).some((p) => /id: not with phrases/.test(p)));
+  });
+
+  it("[rl:readers/by-id] a place names one file of the folder it leads to, never above the project, never the document itself, a hidden or a secret-looking one; none or two, and it names nothing", () => {
+    const files = { peps: ["pep-0438.rst", "pep-0470.rst", "PEP-0471.RST", "pep-0480.rst", "pep-0480.txt", ".pep-0490.rst", "pep-0500.pem"], "": ["README.md"], notes: ["release-v2.md"] };
+    const list = (folder) => files[folder] ?? [];
+    assert.equal(findPlace("peps/pep-0438.rst", "pep-0470.*", list), "peps/pep-0470.rst");
+    assert.equal(findPlace("peps/pep-0438.rst", "pep-0471.*", list), "peps/PEP-0471.RST", "without case");
+    assert.equal(findPlace("peps/pep-0438.rst", "pep-0480.*", list), null, "two files: none");
+    assert.equal(findPlace("peps/pep-0438.rst", "pep-0438.*", list), null, "never the document itself");
+    assert.equal(findPlace("peps/pep-0438.rst", "pep-0490.*", list), null, "never a hidden file");
+    assert.equal(findPlace("peps/pep-0438.rst", "pep-0500.*", list), null, "never a secret-looking file");
+    assert.equal(findPlace("peps/pep-0438.rst", "pep-9999.*", list), null);
+    assert.equal(findPlace("peps/pep-0438.rst", "../notes/release-v2.md", list), "notes/release-v2.md");
+    assert.equal(findPlace("peps/pep-0438.rst", "../README.md", list), "README.md");
+    assert.equal(findPlace("peps/pep-0438.rst", "../../README.md", list), null, "above the project's root");
+    for (const bad of ["/etc/passwd", "https://example.com/x", "..\\x", "a/../b.md", ".git/config", "x/.env"]) assert.equal(findPlace("peps/pep-0438.rst", bad, () => ["passwd", "x", "b.md", "config", ".env"]), null, bad);
+    assert.equal(findPlace("peps/pep-0438.rst", "pep-0470.*", () => {
+      throw new Error("no folder");
+    }), null);
+  });
+
+  it("[rl:readers/by-id] [rl:local-search/reader-marks] [rl:local-search/current-first] a PEP superseded by a number: the replacing PEP comes first, its notice quoted; a number that names no file, one switched off, a link out of the project or a file genter.json leaves out brings nothing and the mark stays", async () => {
+    const base = mkdtempSync(join(tmpdir(), "genter-by-id-"));
+    const dir = join(base, "project");
+    const pep = (n, status, extra, body) => `PEP: ${n}\nTitle: Exporting invoices\nStatus: ${status}\nCreated: 05-Jul-2021\n${extra}\nAbstract\n========\n\n${body}\n`;
+    const files = {
+      "peps/pep-0042.rst": pep(42, "Superseded", "Superseded-By: 57\n", "Invoices are exported as one file per month, in CSV."),
+      "peps/pep-0057.rst": pep(57, "Final", "Replaces: 42\n", "Invoices are exported as one file per customer, in Parquet."),
+      "peps/pep-0060.rst": pep(60, "Superseded", "Superseded-By: 61\n", "Refunds are exported as one file per month, in CSV."),
+      "peps/pep-0070.rst": pep(70, "Superseded", "Superseded-By: 71\n", "Credits are exported as one file per month, in CSV."),
+      "peps/pep-0071.rst": pep(71, "Final", "", "Credits are exported per customer."),
+    };
+    for (const [path, text] of Object.entries(files)) {
+      mkdirSync(dirname(join(dir, path)), { recursive: true });
+      writeFileSync(join(dir, path), text);
+    }
+    const home = join(base, "home");
+    mkdirSync(home, { recursive: true });
+    try {
+      const g = createLocal({ home, secret: "s", cwd: dir });
+      const out = await g.find("invoices exported one file per month CSV", { limit: 4 });
+      const old = out.results.find((r) => r.path === join(dir, "peps/pep-0042.rst"));
+      assert.deepEqual(old.anchor.superseded, { marker: "superseded", line: 5, reader: "pep", by: join(dir, "peps/pep-0057.rst") });
+      const before = out.results[out.results.indexOf(old) - 1];
+      assert.equal(before.path, join(dir, "peps/pep-0057.rst"), "the replacing PEP comes right before it");
+      assert.equal(before.replaces, old.ref);
+      assert.ok(old.facts.some((f) => f.includes('says at line 5: "Superseded-By: 57"')), old.facts.join(" | "));
+      // PEP 61 is not there: the mark shows, names no place, and nothing moves.
+      const refunds = await g.find("refunds exported one file per month CSV", { limit: 2 });
+      assert.equal(refunds.results[0].path, join(dir, "peps/pep-0060.rst"));
+      assert.deepEqual(refunds.results[0].anchor.superseded, { marker: "superseded", line: 5, reader: "pep" });
+      // PEP 71 switched off: never named, never brought.
+      writeFileSync(join(home, "config.json"), JSON.stringify({ secret: "s", off: [join(dir, "peps/pep-0071.rst")] }));
+      const credits = await createLocal({ home, secret: "s", cwd: dir }).find("credits exported one file per month CSV", { limit: 3 });
+      assert.equal(credits.results[0].path, join(dir, "peps/pep-0070.rst"));
+      assert.deepEqual(credits.results[0].anchor.superseded, { marker: "superseded", line: 5, reader: "pep" });
+      assert.ok(!credits.results.some((r) => r.path === join(dir, "peps/pep-0071.rst")));
+      // In a project of its own: PEP 81 is a link to a file outside the project, PEP 91 is left out by the project's
+      // genter.json. Neither is named or brought, and each mark stays.
+      const other = join(base, "other");
+      const outside = join(base, "outside");
+      for (const d of [join(other, "peps"), outside, join(base, "home2")]) mkdirSync(d, { recursive: true });
+      writeFileSync(join(other, "peps/pep-0080.rst"), pep(80, "Superseded", "Superseded-By: 81\n", "Payouts are exported as one file per month, in CSV."));
+      writeFileSync(join(outside, "notes.rst"), pep(81, "Final", "", "Payouts are exported as one file per customer."));
+      symlinkSync(join(outside, "notes.rst"), join(other, "peps/pep-0081.rst"));
+      writeFileSync(join(other, "peps/pep-0090.rst"), pep(90, "Superseded", "Superseded-By: 91\n", "Taxes are exported as one file per month, in CSV."));
+      writeFileSync(join(other, "peps/pep-0091.rst"), pep(91, "Final", "", "Taxes are exported as one file per customer."));
+      writeFileSync(join(other, "genter.json"), JSON.stringify({ exclude: ["peps/pep-0091.rst"] }));
+      const g2 = createLocal({ home: join(base, "home2"), secret: "s", cwd: other });
+      for (const [q, n] of [["payouts exported one file per month CSV", 80], ["taxes exported one file per month CSV", 90]]) {
+        const got = await g2.find(q, { limit: 3 });
+        assert.equal(got.results[0].path, join(other, `peps/pep-00${n}.rst`), q);
+        assert.deepEqual(got.results[0].anchor.superseded, { marker: "superseded", line: 5, reader: "pep" }, q);
+        assert.ok(!got.results.some((r) => r.path === join(other, `peps/pep-00${n + 1}.rst`)), q);
+      }
+    } finally {
+      rmSync(base, { recursive: true, force: true });
+    }
+  });
+
+  it("[rl:readers/records] a manifest says whether its documents are decision records, never with fallback, and no reader's name is written in the engine", () => {
+    assert.deepEqual(decisionReaders(), ["adr", "decisions", "eip", "kep", "nep", "pep", "pip", "proposals", "rfc", "rfd"]);
+    for (const name of NAMES) assert.equal(manifestOf(name).records === true, decisionReaders().includes(name), name);
+    assert.deepEqual(lintReader({ ...manifestOf("banners"), records: true }), ["records: not with fallback (a reader of any document of a kind reads no decision records)"]);
+    assert.deepEqual(lintReader({ ...manifestOf("adr"), records: "yes" }), ["records: must be a boolean"]);
+    const page = readFileSync(join(root, "src/page.js"), "utf8");
+    for (const name of NAMES) assert.ok(!new RegExp(`["']${name}["']`).test(page), `src/page.js names the ${name} reader`);
   });
 });
 

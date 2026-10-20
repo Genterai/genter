@@ -1,0 +1,12 @@
+PEP: 57
+Title: Exporting invoices as one file per customer
+Author: Omar <omar@example.com>
+Status: Final
+Type: Standards Track
+Created: 12-Mar-2024
+Replaces: 42
+
+Abstract
+========
+
+Invoices are exported as one file per customer, each month in its own section.

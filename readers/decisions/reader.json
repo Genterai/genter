@@ -3,6 +3,7 @@
   "dsl": 1,
   "name": "decisions",
   "owner": "@Genterai",
+  "records": true,
   "matches": {
     "files": ["**/decisions.md", "**/decision-log.md", "**/decision_log.md", "**/decisionlog.md"]
   },

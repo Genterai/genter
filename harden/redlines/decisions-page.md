@@ -14,8 +14,8 @@ page people pass around runs nothing a document holds and reaches nothing).
 
 * **[explicit-only]** `genter decisions` lists the project's decisions from what its documents say about themselves, as
   the readers read them (readers.js), over the files the project's first search would read (its genter.json narrows
-  them, the person's off list holds): every document an ADR or an RFC reader reads, and every entry of a decision log,
-  is a decision, CURRENT unless it carries a mark that it is replaced (or gives itself a status of a replaced kind:
+  them, the person's off list holds): every document a reader of decision records reads (readers/records: an ADR, an
+  RFC, a PEP, a proposal), and every entry of a decision log, is a decision, CURRENT unless it carries a mark that it is replaced (or gives itself a status of a replaced kind:
   superseded, deprecated, replaced, obsoleted and the rest); any other document is a row only when a reader read such a
   mark at its top or in its front matter (REPLACED), or when a replaced row's mark names it as what replaces it
   (CURRENT). A mark under the first entry of a log or a CHANGELOG is that entry's, and a CHANGELOG's versions are no

@@ -1,0 +1,72 @@
+{
+  "oxide/rfd/0007/README.adoc": {
+    "status": {
+      "value": "published",
+      "line": 5
+    }
+  },
+  "oxide/rfd/0012/README.adoc": {
+    "status": {
+      "value": "abandoned",
+      "line": 3
+    }
+  },
+  "rfd/0003-session-recording.md": {
+    "status": {
+      "value": "implemented",
+      "line": 3
+    },
+    "marks": [
+      {
+        "kind": "superseded",
+        "line": 12,
+        "quote": "> This RFD is superseded by RFD 21, which records sessions to object storage.",
+        "name": "RFD 21",
+        "place": "0021-*.md"
+      }
+    ]
+  },
+  "rfd/0009-access-requests.md": {
+    "status": {
+      "value": "deprecated",
+      "line": 3
+    },
+    "marks": [
+      {
+        "kind": "deprecated",
+        "line": 3,
+        "quote": "state: deprecated (see RFD 21 instead)",
+        "name": "RFD 21",
+        "place": "0021-*.md"
+      }
+    ]
+  },
+  "rfd/0011-audit-to-syslog.md": {
+    "status": {
+      "value": "deprecated",
+      "line": 3
+    },
+    "marks": [
+      {
+        "kind": "deprecated",
+        "line": 3,
+        "quote": "state: deprecated"
+      }
+    ]
+  },
+  "rfd/0021-recording-to-object-storage.md": {
+    "status": {
+      "value": "draft",
+      "line": 3
+    },
+    "marks": [
+      {
+        "kind": "superseded",
+        "line": 8,
+        "quote": "> This RFD is superseded by RFD 34.",
+        "name": "RFD 34",
+        "place": "0034-*.md"
+      }
+    ]
+  }
+}

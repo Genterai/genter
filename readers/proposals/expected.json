@@ -1,0 +1,105 @@
+{
+  "doc/specs/drafts/1234-tab-colors.md": {
+    "date": {
+      "value": "2025-11-20",
+      "line": 3
+    }
+  },
+  "doc/specs/drafts/1300-old-tab-colors.md": {
+    "status": {
+      "value": "deprecated",
+      "line": 3
+    },
+    "marks": [
+      {
+        "kind": "deprecated",
+        "line": 3,
+        "quote": "* Status: Deprecated"
+      }
+    ]
+  },
+  "docs/lids/0002-rule-evaluation.md": {
+    "status": {
+      "value": "accepted",
+      "line": 13
+    }
+  },
+  "docs/proposals/namespaced-apps.md": {
+    "date": {
+      "value": "2025-06-05",
+      "line": 7
+    }
+  },
+  "docs/proposals-done/20240310-remote-write.md": {
+    "status": {
+      "value": "complete",
+      "line": 4
+    }
+  },
+  "evolution/proposals/0012-implicit-returns.md": {
+    "status": {
+      "value": "implemented",
+      "line": 6
+    },
+    "marks": [
+      {
+        "kind": "superseded",
+        "line": 7,
+        "quote": "* Superseded by: [SE-0030](0030-implicit-returns-everywhere.md)",
+        "name": "SE-0030",
+        "by": "0030-implicit-returns-everywhere.md",
+        "place": "0030-*.md"
+      }
+    ]
+  },
+  "evolution/proposals/0030-implicit-returns-everywhere.md": {
+    "status": {
+      "value": "accepted",
+      "line": 5
+    }
+  },
+  "evolution/proposals/0031-trailing-commas.md": {
+    "status": {
+      "value": "superseded",
+      "line": 5
+    },
+    "marks": [
+      {
+        "kind": "superseded",
+        "line": 5,
+        "quote": "* Status: **Superseded by SE-0044**",
+        "name": "SE-0044",
+        "place": "0044-*.md"
+      }
+    ]
+  },
+  "go/design/40213-module-mirrors.md": {
+    "date": {
+      "value": "2025-09-02",
+      "line": 5
+    }
+  },
+  "go/design/README.md": {},
+  "keep/proposals/KEEP-0101-context-receivers.md": {
+    "status": {
+      "value": "superseded",
+      "line": 5
+    },
+    "marks": [
+      {
+        "kind": "superseded",
+        "line": 5,
+        "quote": "* **Status**: Superseded by [KEEP-0120](./KEEP-0120-context-parameters.md)",
+        "name": "KEEP-0120",
+        "by": "./KEEP-0120-context-parameters.md",
+        "place": "KEEP-0120-*.md"
+      }
+    ]
+  },
+  "keep/proposals/KEEP-0120-context-parameters.md": {
+    "status": {
+      "value": "stable",
+      "line": 5
+    }
+  }
+}

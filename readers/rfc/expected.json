@@ -1,31 +1,9 @@
 {
-  "keps/sig-billing/1234-usage-meters/kep.yaml": {
+  "active-rfcs/0004-slot-syntax.md": {
     "date": {
-      "value": "2026-04-07",
-      "line": 7
-    },
-    "status": {
-      "value": "implementable",
-      "line": 6
+      "value": "2025-01-14",
+      "line": 1
     }
-  },
-  "peps/pep-0042.rst": {
-    "date": {
-      "value": "2021-07-05",
-      "line": 6
-    },
-    "status": {
-      "value": "superseded",
-      "line": 4
-    },
-    "marks": [
-      {
-        "kind": "superseded",
-        "line": 7,
-        "quote": "Superseded-By: 57",
-        "name": "57"
-      }
-    ]
   },
   "rfcs/0007-config-format.md": {
     "date": {
@@ -60,7 +38,8 @@
         "kind": "superseded",
         "line": 2,
         "quote": "- Status: Replaced by RFC-14",
-        "name": "RFC-14"
+        "name": "RFC-14",
+        "place": "0014-*.md"
       }
     ]
   },
@@ -74,10 +53,57 @@
       "line": 2
     }
   },
+  "rfcs/2025-06-01-0042-log-sampling.md": {
+    "date": {
+      "value": "2025-06-01",
+      "line": 1
+    }
+  },
+  "rfcs/20250310-metrics-export.md": {
+    "date": {
+      "value": "2025-03-10",
+      "line": 7
+    },
+    "status": {
+      "value": "accepted",
+      "line": 3
+    }
+  },
   "rfcs/README.md": {},
   "rfcs/text/0003-retries.md": {
     "date": {
       "value": "2025-04-01",
+      "line": 2
+    }
+  },
+  "text/0101-sync-scheduler.md": {
+    "date": {
+      "value": "2024-02-19",
+      "line": 2
+    },
+    "marks": [
+      {
+        "kind": "superseded",
+        "line": 7,
+        "quote": "In short this RFC was superseded by RFC 140.",
+        "name": "RFC 140",
+        "place": "0140-*.md"
+      }
+    ]
+  },
+  "text/0140-async-scheduler.md": {
+    "date": {
+      "value": "2025-09-03",
+      "line": 2
+    }
+  },
+  "text/0202-strict-mode.md": {
+    "date": {
+      "value": "2025-05-12",
+      "line": 3
+    },
+    "status": {
+      "value": "recommended",
       "line": 2
     }
   }

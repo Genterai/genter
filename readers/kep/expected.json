@@ -1,0 +1,40 @@
+{
+  "keps/sig-billing/1100-invoice-batches/README.md": null,
+  "keps/sig-billing/1100-invoice-batches/kep.yaml": {
+    "date": {
+      "value": "2025-02-11",
+      "line": 8
+    },
+    "status": {
+      "value": "replaced",
+      "line": 7
+    },
+    "marks": [
+      {
+        "kind": "superseded",
+        "line": 7,
+        "quote": "status: replaced # replaced by keps/sig-billing/1234-usage-meters"
+      }
+    ]
+  },
+  "keps/sig-billing/1234-usage-meters/kep.yaml": {
+    "date": {
+      "value": "2026-04-07",
+      "line": 7
+    },
+    "status": {
+      "value": "implementable",
+      "line": 6
+    }
+  },
+  "keps/sig-billing/1300-usage-export/kep.yaml": {
+    "date": {
+      "value": "2026-08-30",
+      "line": 7
+    },
+    "status": {
+      "value": "provisional",
+      "line": 6
+    }
+  }
+}

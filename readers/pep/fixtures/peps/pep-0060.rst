@@ -1,0 +1,13 @@
+PEP: 60
+Title: Signing exported invoices
+Author: Dana <dana@example.com>
+Status: Withdrawn
+Type: Standards Track
+Created: 2024-06-01
+Superseded-By: 61
+
+Abstract
+========
+
+Exported invoices carry a detached signature. (PEP 61 is not in this folder: the mark names it, and Genter brings
+nothing first.)
