@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { PassThrough } from "node:stream";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
-import { editJson, editToml, editYaml, parseJsonc } from "../src/install/edit.js";
+import { editJson, editToml, editYaml, parseJsonc, removeJson, removeRun } from "../src/install/edit.js";
 import { CLOUD, install, plan, terminalAsk } from "../src/install/index.js";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
@@ -198,6 +198,8 @@ describe("genter install", () => {
       const before = tree(pc.base);
       assert.equal(await pc.run({}, { cloud: false, write: true }), 0, pc.output());
       assert.match(pc.output(), /Found: Claude Code, Claude Desktop, Cursor, VS Code, Codex, Gemini CLI, Zed and goose\./);
+      // What Genter searches from each tool, said only where the tool's docs (or its terminal) settle the folder.
+      assert.match(pc.output(), /\nClaude Code, VS Code, Codex and Gemini CLI start npx -y genter-cli mcp in the folder you open or run them in, and Genter searches that project and your notes\.\nCursor, Zed and goose do not say which folder they start Genter in: Genter searches the project there, or only your notes when that is your home folder\.\nClaude Desktop opens no project: there Genter searches your notes \(or a folder you name with --folder\)\.\n/);
       for (const [file, text] of Object.entries(AFTER)) assert.equal(pc.read(file), text, file);
       for (const file of Object.keys(BEFORE)) assert.notEqual(added(BEFORE[file], pc.read(file)), null, `${file}: one insertion`);
       // Comments in JSONC stay byte for byte, beside the entry.
@@ -379,7 +381,7 @@ describe("genter install", () => {
     }
   });
 
-  it("[rl:install/idempotent] a second run changes nothing, and Genter already there (the same, differently or by another name) is left", async () => {
+  it("[rl:install/idempotent] [rl:install/one-insertion] a second run changes nothing (Windows line ends too), and Genter already there (the same, differently or by another name) is left", async () => {
     const pc = computer();
     try {
       await pc.run({}, { cloud: false, write: true });
@@ -423,6 +425,22 @@ describe("genter install", () => {
     } finally {
       theirs.done();
     }
+    // Windows line ends: what is added has them too, and the second run sees Genter's own entries as the same.
+    const crlf = computer({ ".codex/config.toml": 'model = "o3"\r\n', ".config/goose/config.yaml": "extensions:\r\n  developer:\r\n    type: builtin\r\n" });
+    try {
+      await crlf.run({ only: ["codex", "goose"] }, { cloud: false, write: true });
+      assert.equal(crlf.read(".codex/config.toml"), 'model = "o3"\r\n\r\n[mcp_servers.genter]\r\ncommand = "npx"\r\nargs = ["-y", "genter-cli", "mcp"]\r\n');
+      const goose = /\n( {2}genter:\n[\s\S]*? {4}timeout: 300\n)/.exec(AFTER[".config/goose/config.yaml"])[1];
+      assert.equal(crlf.read(".config/goose/config.yaml"), `extensions:\n  developer:\n    type: builtin\n${goose}`.replace(/\n/g, "\r\n"));
+      const once = tree(crlf.base);
+      crlf.lines.length = 0;
+      assert.equal(await crlf.run({ only: ["codex", "goose"] }, { cloud: false, write: true }), 0);
+      assert.deepEqual(tree(crlf.base), once);
+      assert.match(crlf.output(), /Codex · ~\/\.codex\/config\.toml: "genter" is already there\n\ngoose · ~\/\.config\/goose\/config\.yaml: "genter" is already there\n/);
+      assert.match(crlf.output(), /Nothing to change: Genter is in every tool found\.$/);
+    } finally {
+      crlf.done();
+    }
   });
 
   it("[rl:install/undo] [rl:install/asks-first] --undo puts every file back byte for byte, and leaves a file changed by hand since", async () => {
@@ -451,33 +469,86 @@ describe("genter install", () => {
     } finally {
       pc.done();
     }
-    // A file changed by hand after genter install wrote it is never overwritten.
+    // Changed by hand after genter install wrote it: never overwritten; Genter's entry alone is taken out.
     const edited = computer();
     try {
       await edited.run({}, { cloud: false, write: true });
-      const handEdit = edited.read(".cursor/mcp.json").replace('"github"', '"gh"');
-      writeFileSync(join(edited.home, ".cursor/mcp.json"), handEdit);
+      writeFileSync(join(edited.home, ".cursor/mcp.json"), edited.read(".cursor/mcp.json").replace('"github"', '"gh"'));
       await edited.run({ cloud: true, only: ["gemini"] }, { write: true });
-      assert.equal(await edited.run({ undo: true }, { back: true }), 1);
-      assert.equal(edited.read(".cursor/mcp.json"), handEdit);
-      assert.match(edited.output(), /~\/\.cursor\/mcp\.json: changed since genter install wrote it, so it is left as it is \(as it was before: ~\/\.genter\/install\/[0-9a-f]{16}-0\.bak\)/);
+      assert.equal(await edited.run({ undo: true }, { back: true }), 0, edited.output());
+      assert.equal(edited.read(".cursor/mcp.json"), BEFORE[".cursor/mcp.json"].replace('"github"', '"gh"'));
+      assert.match(edited.output(), /~\/\.cursor\/mcp\.json: saved since genter install wrote it, so Genter's entries are taken out of it as it is now\n/);
+      assert.match(edited.output(), /\nTook Genter out of ~\/\.cursor\/mcp\.json\n/);
       assert.equal(edited.read(".gemini/settings.json"), BEFORE[".gemini/settings.json"]);
       assert.equal(edited.read(".codex/config.toml"), BEFORE[".codex/config.toml"]);
+      assert.deepEqual(readdirSync(join(edited.home, ".genter/install")).filter((n) => n.endsWith(".bak")), []);
     } finally {
       edited.done();
     }
-    // Changed by hand between two runs: the last run goes, the person's edit and the first run's entry stay.
+    // The person changed Genter's entry: it is theirs now, and the file is left as it is.
+    const theirs = computer();
+    try {
+      await theirs.run({ only: ["cursor"] }, { cloud: false, write: true });
+      const handEdit = theirs.read(".cursor/mcp.json").replace('"genter-cli", "mcp"]', '"genter-cli", "mcp", "."]');
+      writeFileSync(join(theirs.home, ".cursor/mcp.json"), handEdit);
+      assert.equal(await theirs.run({ undo: true }, { back: true }), 1);
+      assert.equal(theirs.read(".cursor/mcp.json"), handEdit);
+      assert.match(theirs.output(), /~\/\.cursor\/mcp\.json: changed since genter install wrote it, and "genter" in it is not as genter install wrote it, so it is left as it is \(as it was before: ~\/\.genter\/install\/[0-9a-f]{16}-0\.bak\)/);
+      await assert.rejects(theirs.run({ undo: true, only: ["cursor"] }, { back: true }), /--undo puts back every file genter install changed: it takes no tool name/);
+    } finally {
+      theirs.done();
+    }
+    // Changed by hand between two runs: the last run goes back byte for byte, then the first run's entry is taken out.
     const between = computer();
     try {
       await between.run({ only: ["cursor"] }, { cloud: false, write: true });
-      const handEdit = between.read(".cursor/mcp.json").replace('"github"', '"gh"');
-      writeFileSync(join(between.home, ".cursor/mcp.json"), handEdit);
+      writeFileSync(join(between.home, ".cursor/mcp.json"), between.read(".cursor/mcp.json").replace('"github"', '"gh"'));
       await between.run({ only: ["cursor"], cloud: true }, { write: true });
-      assert.equal(await between.run({ undo: true }, { back: true }), 1);
-      assert.equal(between.read(".cursor/mcp.json"), handEdit);
-      assert.match(between.output(), /put back as it was before genter install wrote it on \d{4}-\d\d-\d\d \(it was changed by hand before that, so Genter's earlier entry stays\)/);
+      assert.equal(await between.run({ undo: true }, { back: true }), 0, between.output());
+      assert.equal(between.read(".cursor/mcp.json"), BEFORE[".cursor/mcp.json"].replace('"github"', '"gh"'));
+      assert.match(between.output(), /put back as it was before genter install wrote it on \d{4}-\d\d-\d\d, then Genter's earlier entries taken out \(it was changed before that\)/);
     } finally {
       between.done();
+    }
+  });
+
+  it("[rl:install/undo] --undo after the tool saved its own file takes out Genter's entries alone; what it cannot find as written is left", async () => {
+    const pc = computer();
+    try {
+      await pc.run({}, { cloud: true, write: true });
+      // Claude Code restarts, as genter install tells the person, and saves ~/.claude.json its own way.
+      const c = JSON.parse(pc.read(".claude.json"));
+      c.numStartups++;
+      const saved = JSON.stringify(c, null, 2);
+      writeFileSync(join(pc.home, ".claude.json"), saved);
+      // The person adds a line to Codex's file and a key to goose's.
+      writeFileSync(join(pc.home, ".codex/config.toml"), `${pc.read(".codex/config.toml")}\n[profiles.fast]\nmodel = "o4-mini"\n`);
+      writeFileSync(join(pc.home, ".config/goose/config.yaml"), pc.read(".config/goose/config.yaml").replace("GOOSE_MODE: smart_approve\n", "GOOSE_MODE: auto\n"));
+      pc.lines.length = 0;
+      assert.equal(await pc.run({ undo: true }, { back: true }), 0, pc.output());
+      assert.match(pc.output(), /~\/\.claude\.json: saved since genter install wrote it, so Genter's entries are taken out of it as it is now/);
+      // Claude Code's own file is what it saved, without "genter" and "genter-cloud": one run of text taken out.
+      const { genter, "genter-cloud": cloud, ...rest } = c.mcpServers;
+      assert.ok(genter && cloud);
+      assert.deepEqual(JSON.parse(pc.read(".claude.json")), { ...c, mcpServers: rest });
+      assert.match(added(pc.read(".claude.json"), saved), /^\s*"genter": \{[^}]*\},\s*"genter-cloud": \{[^}]*\}\s*$/);
+      assert.equal(pc.read(".codex/config.toml"), `${BEFORE[".codex/config.toml"]}\n[profiles.fast]\nmodel = "o4-mini"\n`);
+      assert.equal(pc.read(".config/goose/config.yaml"), BEFORE[".config/goose/config.yaml"].replace("GOOSE_MODE: smart_approve\n", "GOOSE_MODE: auto\n"));
+      // Every other file went back byte for byte.
+      assert.equal(pc.read(".cursor/mcp.json"), BEFORE[".cursor/mcp.json"]);
+      assert.equal(existsSync(join(pc.home, DESKTOP)), false);
+    } finally {
+      pc.done();
+    }
+    // goose saved its file its own way: Genter's lines are not there as written, so the file is left, with its copy.
+    const rewritten = computer();
+    try {
+      await rewritten.run({ only: ["goose"] }, { cloud: false, write: true });
+      writeFileSync(join(rewritten.home, ".config/goose/config.yaml"), rewritten.read(".config/goose/config.yaml").replace('args: ["-y", "genter-cli", "mcp"]', "args:\n    - -y\n    - genter-cli\n    - mcp"));
+      assert.equal(await rewritten.run({ undo: true }, { back: true }), 1);
+      assert.match(rewritten.output(), /~\/\.config\/goose\/config\.yaml: changed since genter install wrote it, and Genter's lines in it are not as genter install wrote them, so it is left as it is \(as it was before: /);
+    } finally {
+      rewritten.done();
     }
   });
 
@@ -520,7 +591,7 @@ describe("genter install", () => {
     }
   });
 
-  it("[rl:install/desktop-folder] --folder is for Claude Desktop alone, a folder that is there, never the home folder or the root", async () => {
+  it("[rl:install/desktop-folder] [rl:install/asks-first] --folder is for Claude Desktop alone, a folder that is there, never the home folder or the root; install's flags elsewhere exit 1", async () => {
     const pc = computer();
     try {
       const notes = join(pc.base, "notes");
@@ -537,6 +608,15 @@ describe("genter install", () => {
       const bad = spawnSync(process.execPath, [join(root, "bin/genter.js"), "install", "--folder", pc.home], { env, encoding: "utf8" });
       assert.equal(bad.status, 1);
       assert.match(bad.stderr, /not your home folder/);
+      const none = spawnSync(process.execPath, [join(root, "bin/genter.js"), "install", "--folder"], { env, encoding: "utf8" });
+      assert.equal(none.status, 1);
+      assert.match(none.stderr, /--folder <dir>: name the folder Claude Desktop is to search/);
+      // install's own flags on another command: said and refused, never dropped.
+      for (const flag of [["--folder", notes], ["--undo"], ["--dry-run"]]) {
+        const other = spawnSync(process.execPath, [join(root, "bin/genter.js"), "mcp", ...flag], { env, encoding: "utf8" });
+        assert.equal(other.status, 1, flag[0]);
+        assert.match(other.stderr, new RegExp(`^${flag[0]} is for genter install`), flag[0]);
+      }
     } finally {
       pc.done();
     }
@@ -557,6 +637,11 @@ describe("one insertion, format by format", () => {
     assert.match(editJson("[1, 2]", "mcpServers", want()).snippet, /top level is not an object/);
     assert.match(editJson('{ "a": 1 } trailing', "mcpServers", want()).snippet, /does not read as JSON/);
     assert.deepEqual(editJson('{ "mcpServers": { "genter": { "command": "npx", "args": ["-y", "genter-cli", "mcp"] } } }', "mcpServers", want()), { kept: [{ name: "genter", how: "same" }] });
+    // A file holding only a byte-order mark keeps it first.
+    const bom = editJson("\uFEFF", "mcpServers", want());
+    assert.equal(bom.at, 1);
+    assert.equal(bom.text.charCodeAt(0), 0xfeff);
+    assert.deepEqual(parseJsonc(bom.text).value, { mcpServers: { genter: local } });
   });
 
   it("[rl:install/one-insertion] TOML: appended as tables, with Genter already there seen in every form", () => {
@@ -576,6 +661,15 @@ describe("one insertion, format by format", () => {
     assert.deepEqual(editToml('a = """x # y"""\n[mcp_servers.genter]\ncommand = "x"\n', "mcp_servers", want()).kept, [{ name: "genter", how: "differs" }]);
     assert.deepEqual(editToml('url = "https://x.test/#a" # """\n[mcp_servers."genter"] # here\n', "mcp_servers", want()).kept, [{ name: "genter", how: "differs" }]);
     assert.equal(editToml('note = "say \\"hi\\" # not a comment"\n', "mcp_servers", want()).text, `note = "say \\"hi\\" # not a comment"\n\n${block}`);
+    // A line inside a multi-line array (of arrays too) is no header and no key: the inline table after it is seen.
+    assert.match(editToml('notify = [\n  ["a", "b"]\n]\nmcp_servers = { x = { command = "y" } }\n', "mcp_servers", want()).snippet, /form Genter does not extend/);
+    assert.equal(editToml('notify = [\n  ["a", "b"],\n]\n', "mcp_servers", want()).text, `notify = [\n  ["a", "b"],\n]\n\n${block}`);
+    assert.match(editToml('notify = [\n  "a",\n', "mcp_servers", want()).snippet, /never closes/);
+    // Genter under another name, inline or dotted in [mcp_servers], its value over several lines too.
+    assert.deepEqual(editToml('[mcp_servers]\nsearch = { command = "npx", args = ["genter-cli", "mcp"] }\n', "mcp_servers", want()).kept, [{ name: "genter", how: "as search" }]);
+    assert.deepEqual(editToml('[mcp_servers]\nsearch.command = "npx"\nsearch.args = [\n  "genter-cli",\n  "mcp",\n]\n', "mcp_servers", want()).kept, [{ name: "genter", how: "as search" }]);
+    // Windows line ends: Genter's own table is the same.
+    assert.deepEqual(editToml(block.replace(/\n/g, "\r\n"), "mcp_servers", want()).kept, [{ name: "genter", how: "same" }]);
   });
 
   it("[rl:install/one-insertion] YAML: a child of the block, in its indentation, before what follows it", () => {
@@ -593,5 +687,34 @@ describe("one insertion, format by format", () => {
     assert.match(editYaml("---\na: 1\n---\nb: 2\n", "extensions", want(goose)).snippet, /several documents/);
     assert.match(editYaml("- a\n- b\n", "extensions", want(goose)).snippet, /not a mapping/);
     assert.match(editYaml("extensions:\n    a:\n      x: 1\n  b: 2\n", "extensions", want(goose)).snippet, /unevenly/);
+    // A quoted key is the key; a block scalar's lines are its text, a "#" and a blank line in them too.
+    assert.equal(editYaml('"extensions":\n  dev:\n    type: builtin\n', "extensions", want(goose)).text, `"extensions":\n  dev:\n    type: builtin\n${two}`);
+    assert.equal(editYaml("extensions:\n  dev:\n    instructions: |\n      do this\n\n      # and this\nother: 1\n", "extensions", want(goose)).text, `extensions:\n  dev:\n    instructions: |\n      do this\n\n      # and this\n${two}other: 1\n`);
+    assert.equal(editYaml("extensions:\n  note: >-\n    a: b\n  # mine\n", "extensions", want(goose)).text, `extensions:\n  note: >-\n    a: b\n${two}  # mine\n`);
+    assert.match(editYaml("extensions:\n  dev:\n    instructions: |+\n      keep\n\nother: 1\n", "extensions", want(goose)).snippet, /block scalar/);
+    // Windows line ends: Genter's own entry is the same.
+    assert.deepEqual(editYaml(`extensions:\n${two}`.replace(/\n/g, "\r\n"), "extensions", want(goose)).kept, [{ name: "genter", how: "same" }]);
+  });
+
+  it("[rl:install/undo] Genter's entries taken out again: each with its comma, the person's comments kept, or the reason not", () => {
+    const G = '"genter": { "command": "npx", "args": ["-y", "genter-cli", "mcp"] }';
+    const out = (text) => removeJson(text, "mcpServers", { genter: local });
+    // Before another member, the last one, the last with a trailing comma, past a comment, the only one, compact.
+    assert.equal(out(`{ "mcpServers": {\n  ${G},\n  "x": 1\n} }`).text, '{ "mcpServers": {\n  "x": 1\n} }');
+    assert.equal(out(`{ "mcpServers": {\n  "x": 1,\n  ${G}\n} }`).text, '{ "mcpServers": {\n  "x": 1\n} }');
+    assert.equal(out(`{ "mcpServers": {\n  "x": 1, // mine\n  ${G},\n} }`).text, '{ "mcpServers": {\n  "x": 1, // mine\n} }');
+    assert.equal(out(`{ "mcpServers": {\n  "x": 1, // mine\n  ${G}\n} }`).text, '{ "mcpServers": {\n  "x": 1 // mine\n} }');
+    assert.equal(out(`{ "mcpServers": { ${G} } }`).text, '{ "mcpServers": { } }');
+    assert.equal(out(`{"mcpServers":{"x":1,${G.replace(/ /g, "")}}}`).text, '{"mcpServers":{"x":1}}');
+    assert.equal(out('{ "mcpServers": { "x": 1 } }').text, '{ "mcpServers": { "x": 1 } }');
+    // Not as genter install wrote it, not one object, not JSON, or a cut a comment would swallow: the reason.
+    assert.match(out('{ "mcpServers": { "genter": { "command": "node" } } }').why, /"genter" in it is not as genter install wrote it/);
+    assert.match(out('{ "mcpServers": {}, "mcpServers": {} }').why, /not one object/);
+    assert.match(out("{ nope").why, /does not read as JSON/);
+    assert.match(out(`{ "mcpServers": { "x": 1, // mine\n ${G}} }`).why, /would change more than them/);
+    // TOML and YAML: the run genter install added, when it is there once as written.
+    assert.equal(removeRun("a\nRUN\nb\n", "RUN\n").text, "a\nb\n");
+    assert.match(removeRun("a\nRUN\nRUN\n", "RUN\n").why, /not as genter install wrote them/);
+    assert.match(removeRun("a\n", "RUN\n").why, /not as genter install wrote them/);
   });
 });

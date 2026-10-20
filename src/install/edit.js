@@ -153,9 +153,10 @@ function addMembers(text, object, entries, unit) {
 
 // The JSON (or JSONC) file with `wanted` under its top-level object `key` ("mcpServers", "servers", "context_servers").
 export function editJson(text, key, wanted) {
-  if (!text.trim()) {
+  const bom = text.charCodeAt(0) === 0xfeff ? 1 : 0;
+  if (!text.slice(bom).trim()) {
     const inserted = `${renderJson({ [key]: Object.fromEntries(wanted.map((w) => [w.name, w.value])) }, "", "  ")}\n`;
-    return { kept: [], at: 0, inserted, text: inserted + text };
+    return { kept: [], at: bom, inserted, text: text.slice(0, bom) + inserted + text.slice(bom) };
   }
   let root;
   try {
@@ -202,17 +203,18 @@ function tomlValue(v) {
 }
 export const renderToml = (table, name, v) => [`[${table}.${tomlKey(name)}]`, ...Object.entries(v).map(([k, x]) => `${tomlKey(k)} = ${tomlValue(x)}`)].join("\n");
 
-// Where a TOML line's comment starts, and the multi-line string still open at its end, given the one open at its start:
-// strings are skipped whole, so a "#" or a quote inside one is text.
-function scanToml(line, open) {
+// Where a TOML line's comment starts, and what is still open at its end given what was open at its start: a multi-line
+// string (strings are skipped whole, so a "#", a quote or a bracket inside one is text), and the depth of the arrays
+// and inline tables that run on over several lines.
+function scanToml(line, open, depth) {
   let i = 0;
   while (i < line.length) {
     if (open) {
       const close = line.indexOf(open, i);
-      if (close < 0) return { cut: line.length, open };
+      if (close < 0) return { cut: line.length, open, depth };
       i = close + 3;
       open = null;
-    } else if (line[i] === "#") return { cut: i, open: null };
+    } else if (line[i] === "#") return { cut: i, open: null, depth };
     else if (line.startsWith('"""', i) || line.startsWith("'''", i)) {
       open = line.slice(i, i + 3);
       i += 3;
@@ -221,25 +223,35 @@ function scanToml(line, open) {
       let j = i + 1;
       while (j < line.length && line[j] !== q) j += q === '"' && line[j] === "\\" ? 2 : 1;
       i = j + 1;
-    } else i++;
+    } else {
+      if (line[i] === "[" || line[i] === "{") depth++;
+      else if ((line[i] === "]" || line[i] === "}") && depth > 0) depth--;
+      i++;
+    }
   }
-  return { cut: line.length, open };
+  return { cut: line.length, open, depth };
 }
 
-// The table headers and keys of a TOML file, line by line, outside strings and comments:
-// { out: [{ header, array, table, key, from }], open }, `open` set when a multi-line string never closes.
+// The table headers and keys of a TOML file, line by line, outside strings, comments and values that run on:
+// { out: [{ header, array, table, key, from, to }], open }, `open` set when a multi-line string, array or inline table
+// never closes. A key's `from` and `to` take in its whole value.
 function tomlLines(text) {
   const out = [];
   let table = "";
   let open = null;
+  let depth = 0;
   let from = 0;
   for (const line of text.split("\n")) {
     const start = from;
     from += line.length + 1;
-    const inside = open !== null;
-    const scan = scanToml(line, open);
-    open = scan.open;
-    if (inside) continue; // a line that starts inside a string holds no header and no key
+    const inside = open !== null || depth > 0;
+    const scan = scanToml(line, open, depth);
+    ({ open, depth } = scan);
+    if (inside) {
+      // A line that starts inside a value holds no header and no key: it is the last key's value going on.
+      if (out.at(-1)?.key !== undefined) out.at(-1).to = start + line.length;
+      continue;
+    }
     const code = line.slice(0, scan.cut);
     const header = /^\s*\[(\[?)\s*([^\]]*?)\s*\]\]?\s*$/.exec(code);
     if (header) {
@@ -248,31 +260,38 @@ function tomlLines(text) {
       continue;
     }
     const key = /^\s*("[^"]*"|'[^']*'|[A-Za-z0-9_-]+)\s*[=.]/.exec(code);
-    if (key) out.push({ table, key: key[1].replace(/^(["'])(.*)\1$/, "$2"), from: start });
+    if (key) out.push({ table, key: key[1].replace(/^(["'])(.*)\1$/, "$2"), from: start, to: start + line.length });
   }
-  return { out, open };
+  return { out, open: open ?? (depth ? "]" : null) };
 }
 
 // The TOML file with `wanted` as tables `[<table>.<name>]` appended at its end.
 export function editToml(text, table, wanted) {
   const { out, open } = tomlLines(text);
-  if (open) return { kept: [], snippet: "a multi-line string in it never closes" };
+  if (open) return { kept: [], snippet: "a multi-line string, array or inline table in it never closes" };
   if (out.some((l) => (l.table === "" && l.key === table) || (l.header && l.array && l.table === table))) return { kept: [], snippet: `its "${table}" is written in a form Genter does not extend` };
   const sections = sectionsOf(text, out, table);
+  // Every server already there with its text: its [<table>.<name>] section, or its key in [<table>] (inline, dotted).
+  const servers = [...Object.entries(sections), ...out.filter((l) => l.table === table && l.key !== undefined).map((l) => [l.key, text.slice(l.from, l.to)])];
   const kept = [];
   const add = [];
   for (const w of wanted) {
     const block = renderToml(table, w.name, w.value);
     const mine = (l) => l.table === `${table}.${w.name}` || l.table.startsWith(`${table}.${w.name}.`) || (l.table === table && l.key === w.name);
-    const other = Object.entries(sections).find(([name, body]) => name !== w.name && w.is(body));
-    if (out.some(mine)) kept.push({ name: w.name, how: sections[w.name]?.trimEnd() === block ? "same" : "differs" });
+    const other = servers.find(([name, body]) => name !== w.name && w.is(body));
+    if (out.some(mine)) kept.push({ name: w.name, how: sections[w.name]?.replace(/\r/g, "").trimEnd() === block ? "same" : "differs" });
     else if (other) kept.push({ name: w.name, how: `as ${other[0]}` });
-    else add.push(block);
+    else add.push({ name: w.name, block });
   }
   if (!add.length) return { kept };
   const lead = text === "" ? "" : text.endsWith("\n") ? "\n" : "\n\n";
-  const inserted = `${lead}${add.join("\n\n")}\n`;
-  return { kept, at: text.length, inserted, text: text + inserted };
+  const inserted = `${lead}${add.map((a) => a.block).join("\n\n")}\n`;
+  const after = text + inserted;
+  // The proof that nothing else moved: the file reads as the same headers and keys, then Genter's tables only.
+  const again = tomlLines(after);
+  const ours = (l) => add.some((a) => l.table === `${table}.${a.name}`);
+  if (again.open || !out.every((l, n) => same(l, again.out[n])) || !again.out.slice(out.length).every(ours)) return { kept, snippet: "the edit would change more than Genter's entries" };
+  return { kept, at: text.length, inserted, text: after };
 }
 
 // The text of each `[<table>.<name>]` section: { name: text }.
@@ -302,61 +321,148 @@ function yamlValue(v) {
 }
 export const renderYaml = (name, v, indent) => [`${indent}${name}:`, ...Object.entries(v).map(([k, x]) => `${indent}  ${k}: ${yamlValue(x)}`)].join("\n");
 
-// The YAML file with `wanted` as children of its top-level block mapping `key` ("extensions").
-export function editYaml(text, key, wanted) {
+// The top-level block mapping `key` of a YAML file: { lines, head, end, child, children } or { snippet }. `lines` are
+// the file's lines as they are, `head` the key's line, `end` the block's last line, `child` its children's indentation
+// and `children` their text by name (line ends as "\n"). The lines of a block scalar (after `|` or `>`) are its text,
+// never a key or a comment.
+function yamlBlock(text, key) {
   const lines = text.split("\n");
+  const plain = lines.map((l) => l.replace(/\r$/, ""));
   const significant = (l) => l.trim() !== "" && !/^\s*#/.test(l);
-  if (lines.some((l) => /^\t/.test(l) || /^(---|\.\.\.)(\s|$)/.test(l))) return { kept: [], snippet: "it uses tabs or several documents" };
-  const top = lines.findIndex(significant);
-  if (top >= 0 && !/^[A-Za-z_"'][^:#]*:(\s|$)/.test(lines[top])) return { kept: [], snippet: "its top level is not a mapping" };
-  const heads = lines.map((l, n) => (new RegExp(`^${key}\\s*:`).test(l) ? n : -1)).filter((n) => n >= 0);
-  if (heads.length > 1) return { kept: [], snippet: `it has "${key}" twice` };
+  if (plain.some((l) => /^\t/.test(l) || /^(---|\.\.\.)(\s|$)/.test(l))) return { snippet: "it uses tabs or several documents" };
+  const top = plain.findIndex(significant);
+  if (top >= 0 && !/^[A-Za-z_"'][^:#]*:(\s|$)/.test(plain[top])) return { snippet: "its top level is not a mapping" };
+  const name = `(?:${key}|"${key}"|'${key}')`;
+  const heads = plain.map((l, n) => (new RegExp(`^${name}\\s*:`).test(l) ? n : -1)).filter((n) => n >= 0);
+  if (heads.length > 1) return { snippet: `it has "${key}" twice` };
   const head = heads[0];
-  if (head !== undefined && !new RegExp(`^${key}\\s*:\\s*(#.*)?$`).test(lines[head])) return { kept: [], snippet: `its "${key}" is written in a form Genter does not extend` };
+  if (head !== undefined && !new RegExp(`^${name}\\s*:\\s*(#.*)?$`).test(plain[head])) return { snippet: `its "${key}" is written in a form Genter does not extend` };
   // The block under the key: its lines until the next line at the left edge.
   let end = head ?? -1;
   let child = null;
-  const children = {};
   let current = null;
+  let scalar = null; // the indentation of the line a block scalar starts on, while its text goes on
+  const children = {};
   if (head !== undefined) {
-    for (let n = head + 1; n < lines.length; n++) {
-      const l = lines[n];
-      if (!significant(l)) continue;
+    for (let n = head + 1; n < plain.length; n++) {
+      const l = plain[n];
       const indent = /^ */.exec(l)[0].length;
+      if (scalar !== null && (l.trim() === "" || indent > scalar)) {
+        if (l.trim() !== "") {
+          children[current] += `${l}\n`;
+          end = n;
+        }
+        continue;
+      }
+      scalar = null;
+      if (!significant(l)) continue;
       if (indent === 0) break;
       child ??= indent;
-      if (indent < child) return { kept: [], snippet: `its "${key}" is indented unevenly` };
+      if (indent < child) return { snippet: `its "${key}" is indented unevenly` };
       if (indent === child) {
-        if (/^ *-(\s|$)/.test(l)) return { kept: [], snippet: `its "${key}" is a list, not a mapping` };
-        const name = /^ *("[^"]*"|'[^']*'|[^:#]+?)\s*:/.exec(l)?.[1]?.replace(/^(["'])(.*)\1$/, "$2");
-        if (name === undefined) return { kept: [], snippet: `its "${key}" is not a mapping` };
-        current = name;
-        children[name] = "";
+        if (/^ *-(\s|$)/.test(l)) return { snippet: `its "${key}" is a list, not a mapping` };
+        const named = /^ *("[^"]*"|'[^']*'|[^:#]+?)\s*:/.exec(l)?.[1]?.replace(/^(["'])(.*)\1$/, "$2");
+        if (named === undefined) return { snippet: `its "${key}" is not a mapping` };
+        current = named;
+        children[named] = "";
       }
-      if (current !== null) children[current] += `${l}\n`;
+      children[current] += `${l}\n`;
       end = n;
+      const block = /(?::|^ *-) +([|>][1-9+-]{0,2}) *(#.*)?$/.exec(l);
+      if (block?.[1].includes("+")) return { snippet: `its "${key}" holds a block scalar that keeps its last blank lines` };
+      if (block) scalar = indent;
     }
   }
+  return { lines, head, end, child, children };
+}
+
+// The YAML file with `wanted` as children of its top-level block mapping `key` ("extensions").
+export function editYaml(text, key, wanted) {
+  const block = yamlBlock(text, key);
+  if (block.snippet) return { kept: [], snippet: block.snippet };
+  const { lines, head, end, child, children } = block;
   const indent = " ".repeat(child ?? 2);
   const kept = [];
   const add = [];
   for (const w of wanted) {
-    const block = renderYaml(w.name, w.value, indent);
+    const entry = renderYaml(w.name, w.value, indent);
     const other = Object.entries(children).find(([name, body]) => name !== w.name && w.is(body));
-    if (Object.hasOwn(children, w.name)) kept.push({ name: w.name, how: children[w.name] === `${block}\n` ? "same" : "differs" });
+    if (Object.hasOwn(children, w.name)) kept.push({ name: w.name, how: children[w.name] === `${entry}\n` ? "same" : "differs" });
     else if (other) kept.push({ name: w.name, how: `as ${other[0]}` });
-    else add.push(block);
+    else add.push({ name: w.name, entry });
   }
   if (!add.length) return { kept };
-  const body = `${add.join("\n")}\n`;
-  if (head === undefined) {
-    const lead = text === "" || text.endsWith("\n") ? "" : "\n";
-    const inserted = `${lead}${key}:\n${body}`;
-    return { kept, at: text.length, inserted, text: text + inserted };
+  const body = `${add.map((a) => a.entry).join("\n")}\n`;
+  let at = text.length;
+  let inserted;
+  if (head === undefined) inserted = `${text === "" || text.endsWith("\n") ? "" : "\n"}${key}:\n${body}`;
+  else {
+    // After the block's last line (its newline included), so comments and blank lines that follow it stay after it.
+    at = lines.slice(0, end + 1).join("\n").length + 1;
+    inserted = at > text.length ? `\n${body}` : body;
+    at = Math.min(at, text.length);
   }
-  // After the block's last line (its newline included), so comments and blank lines that follow it stay after it.
-  const at = lines.slice(0, end + 1).join("\n").length + 1;
-  const inserted = at > text.length ? `\n${body}` : body;
-  const where = Math.min(at, text.length);
-  return { kept, at: where, inserted, text: text.slice(0, where) + inserted + text.slice(where) };
+  const after = text.slice(0, at) + inserted + text.slice(at);
+  // The proof that nothing else moved: the block reads as the same children, then Genter's.
+  const again = yamlBlock(after, key);
+  const names = [...Object.keys(children), ...add.map((a) => a.name)];
+  if (again.snippet || !same(Object.keys(again.children), names) || Object.entries(children).some(([n, t]) => again.children[n] !== t)) return { kept, snippet: "the edit would change more than Genter's entries" };
+  return { kept, at, inserted, text: after };
+}
+
+// ---- Taking Genter's entries out again (genter install --undo, when the file was saved since) ----
+
+// The JSON (or JSONC) file without the members `entries` ({ name: value }) of its top-level object `key`, each taken
+// out with its comma and every comment kept: { text } or { why }. Each must still be what genter install wrote.
+export function removeJson(text, key, entries) {
+  let root;
+  try {
+    root = parseJsonc(text);
+  } catch (error) {
+    return { why: `it does not read as JSON (${error.message})` };
+  }
+  const found = root.type === "object" ? root.members.filter((m) => m.key === key) : [];
+  if (found.length !== 1 || found[0].node.type !== "object") return { why: `its "${key}" is not one object` };
+  const container = found[0].node;
+  const names = container.members.map((m) => m.key).filter((k) => Object.hasOwn(entries, k));
+  if (new Set(names).size < names.length) return { why: `it has "${names[0]}" twice` };
+  for (const m of container.members) if (names.includes(m.key) && !same(m.node.value, entries[m.key])) return { why: `"${m.key}" in it is not as genter install wrote it` };
+  let after = text;
+  try {
+    for (const name of names) {
+      const object = parseJsonc(after).members.find((m) => m.key === key).node;
+      after = cutMember(after, object.members, object.members.findIndex((m) => m.key === name));
+    }
+    // The proof that nothing else moved: the file reads as it did, without Genter's entries.
+    const rest = Object.fromEntries(Object.entries(container.value).filter(([k]) => !names.includes(k)));
+    if (!same(parseJsonc(after).value, { ...root.value, [key]: rest })) throw new Error();
+  } catch {
+    return { why: "taking Genter's entries out would change more than them" };
+  }
+  return { text: after };
+}
+
+// The text without member k of an object and its comma: from its key to the next one, or, for the last member, from
+// the end of what is before it (the comma before it too, unless it has a trailing comma of its own).
+function cutMember(text, members, k) {
+  const m = members[k];
+  const next = members[k + 1];
+  const prev = members[k - 1];
+  const space = (c) => c === " " || c === "\t" || c === "\n" || c === "\r";
+  let back = m.keyStart;
+  while (back > 0 && space(text[back - 1])) back--;
+  if (next) {
+    let on = m.comma + 1;
+    while (space(text[on])) on++;
+    return text.slice(0, m.keyStart) + text.slice(on);
+  }
+  if (m.comma >= 0 || !prev) return text.slice(0, back) + text.slice(m.comma >= 0 ? m.comma + 1 : m.end);
+  return text.slice(0, prev.comma) + text.slice(prev.comma + 1, back) + text.slice(m.end);
+}
+
+// The file without the run of text genter install added, when it is there once as it was written: { text } or { why }.
+export function removeRun(text, run) {
+  const at = text.indexOf(run);
+  if (!run || at < 0 || text.indexOf(run, at + 1) >= 0) return { why: "Genter's lines in it are not as genter install wrote them" };
+  return { text: text.slice(0, at) + text.slice(at + run.length) };
 }

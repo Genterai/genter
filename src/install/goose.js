@@ -3,7 +3,8 @@ import { appData, xdgCandidates } from "./paths.js";
 
 // goose: config.yaml, ~/.config/goose on macOS and Linux and %APPDATA%\Block\goose\config on Windows, one entry per
 // extension under "extensions" (https://github.com/block/goose/blob/main/documentation/docs/guides/config-files.md). A
-// remote server is a streamable_http extension, and goose signs in with OAuth (Dynamic Client Registration).
+// remote server is a streamable_http extension, and goose signs in with OAuth (Dynamic Client Registration). Its docs
+// do not say which folder an extension starts in, and its desktop app opens no project.
 export default {
   id: "goose",
   name: "goose",

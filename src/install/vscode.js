@@ -10,6 +10,7 @@ export default {
   name: "VS Code",
   format: "jsonc",
   key: "servers",
+  starts: "project",
   places: (ctx) => (ctx.platform === "linux" ? xdgCandidates(ctx, "Code") : [join(appData(ctx), "Code")]).map((dir) => ({ marker: join(dir, "User"), file: join(dir, "User", "mcp.json") })),
   local: ({ args, env }) => ({ type: "stdio", command: "npx", args, ...(env && { env }) }),
   cloud: (url) => ({ type: "http", url }),

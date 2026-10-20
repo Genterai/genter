@@ -54,7 +54,7 @@ function parse(argv) {
     else if (a === "--cloud") flags.cloud = true;
     else if (a === "--dry-run") flags.dryRun = true;
     else if (a === "--undo") flags.undo = true;
-    else if (a === "--folder") flags.folder = argv[++i];
+    else if (a === "--folder") flags.folder = argv[++i] ?? "";
     else if (a.startsWith("--folder=")) flags.folder = a.slice(9);
     else if (a !== "--local") words.push(a); // 0.3's --local: this computer is the only place now
   }
@@ -92,6 +92,13 @@ export async function local(argv) {
   const { flags, words } = parse(rest);
   if (command === "--version" || command === "-v") return console.log(version);
   if (["help", "--help", "-h"].includes(command)) return console.log(HELP);
+  // genter install's own flags mean nothing to the other commands: said, not dropped.
+  const own = flags.folder !== undefined ? "--folder" : flags.undo ? "--undo" : flags.dryRun ? "--dry-run" : null;
+  if (own && command !== "install") {
+    console.error(`${own} is for genter install`);
+    process.exitCode = 1;
+    return;
+  }
   if (command === "demo") return runDemo();
   // It edits other tools' settings, not Genter's store: no store, no key, and its --cloud adds Genter Cloud's address.
   if (command === "install") {

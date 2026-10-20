@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { chmodSync, existsSync, lstatSync, mkdirSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, lstatSync, mkdirSync, readFileSync, renameSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, resolve, sep } from "node:path";
 import { createInterface } from "node:readline/promises";
@@ -7,7 +7,7 @@ import claudeCode from "./claude-code.js";
 import claudeDesktop from "./claude-desktop.js";
 import codex from "./codex.js";
 import cursor from "./cursor.js";
-import { editJson, editToml, editYaml, renderJson, renderToml, renderYaml } from "./edit.js";
+import { editJson, editToml, editYaml, removeJson, removeRun, renderJson, renderToml, renderYaml } from "./edit.js";
 import gemini from "./gemini.js";
 import goose from "./goose.js";
 import vscode from "./vscode.js";
@@ -17,7 +17,8 @@ import zed from "./zed.js";
 // project's (those get committed), and without starting any other program. It shows what it would add and writes only
 // after a yes in a terminal. What it writes is `npx -y genter-cli mcp` and, when asked, Genter Cloud's public address:
 // never a token, a key or a private URL. A copy of every file it changes is kept in ~/.genter/install/, and
-// `genter install --undo` puts the files back byte for byte.
+// `genter install --undo` puts the files back byte for byte, or, in a file the tool has saved since, takes Genter's
+// entries out.
 
 export const CLOUD = "https://genter.ai/api/mcp";
 export const CLIENTS = [claudeCode, claudeDesktop, cursor, vscode, codex, gemini, zed, goose];
@@ -107,7 +108,8 @@ function writeAtomic(file, data, mode) {
 }
 
 // What genter install changed, file by file, each write on top of the last: { files: { <path>: [{ backup, mode,
-// written, at }] } }. `backup` names the copy of the file as it was before that write (null: there was no file).
+// written, at, format, key, entries, inserted }] } }. `backup` names the copy of the file as it was before that write
+// (null: there was no file), `entries` the servers it added ({ name: value }) and `inserted` the text it added.
 function manifest(dir) {
   try {
     return JSON.parse(readFileSync(join(dir, "manifest.json"), "utf8"));
@@ -136,7 +138,9 @@ function write(changes, dir, home, out) {
       const backup = item.exists ? `${sha(item.file).slice(0, 16)}-${stack.length}.bak` : null;
       if (backup) writeAtomic(join(dir, backup), item.before, 0o600);
       writeAtomic(item.file, item.edit.text, item.mode);
-      stack.push({ backup, mode: item.exists ? item.mode : null, written: sha(item.edit.text), at: new Date().toISOString() });
+      const entries = Object.fromEntries(item.wanted.filter((w) => !item.edit.kept.some((k) => k.name === w.name)).map((w) => [w.name, w.value]));
+      const { format, key } = item.client;
+      stack.push({ backup, mode: item.exists ? item.mode : null, written: sha(item.edit.text), at: new Date().toISOString(), format, key, entries, inserted: item.edit.inserted });
       m.files[item.file] = stack;
       keep(dir, m);
       written.push(item);
@@ -148,8 +152,20 @@ function write(changes, dir, home, out) {
   return written;
 }
 
-// --undo: each file goes back write by write, while it is still what genter install wrote; a file changed by hand since
-// is left as it is, with where its copy is.
+// Genter's entries taken out of a file, the writes of genter install that added them last first: { text } or { why }.
+function takeOut(text, writes) {
+  for (const w of [...writes].reverse()) {
+    const r = !w.format ? { why: "genter install kept no record of what it added" } : w.format === "toml" || w.format === "yaml" ? removeRun(text, w.inserted) : removeJson(text, w.key, w.entries);
+    if (r.why) return r;
+    text = r.text;
+  }
+  return { text };
+}
+
+// --undo: each file goes back write by write, byte for byte, while it is what genter install wrote. Under a change made
+// since (the tool itself saves its settings, as Claude Code does ~/.claude.json while it runs, or the person edits
+// them), Genter's own entries are taken out, if they are still as genter install wrote them; else the file is left as
+// it is, with where its copy is.
 async function undo({ dir, home, ask, dryRun, out }) {
   const m = manifest(dir);
   const files = Object.entries(m.files);
@@ -158,25 +174,34 @@ async function undo({ dir, home, ask, dryRun, out }) {
     return 0;
   }
   const steps = files.map(([file, stack]) => {
-    let current = existsSync(file) ? sha(readFileSync(file)) : null;
+    const seen = existsSync(file) ? readFileSync(file) : null;
+    let bytes = seen;
     let n = 0;
-    while (n < stack.length && current === stack[stack.length - 1 - n].written) {
+    while (n < stack.length && bytes && sha(bytes) === stack[stack.length - 1 - n].written) {
       const { backup } = stack[stack.length - 1 - n];
       if (backup && !existsSync(join(dir, backup))) break; // its copy is gone: nothing to put back from
-      current = backup ? sha(readFileSync(join(dir, backup))) : null;
+      bytes = backup ? readFileSync(join(dir, backup)) : null;
       n++;
     }
-    return { file, stack, n, target: stack[stack.length - n] };
+    const earlier = stack.slice(0, stack.length - n); // writes of genter install under a change made since
+    const taken = earlier.length && bytes ? takeOut(bytes.toString("utf8"), earlier) : {};
+    if (taken.text !== undefined) bytes = Buffer.from(taken.text);
+    const mode = n ? stack[stack.length - n].mode : seen && statSync(file).mode & 0o777;
+    return { file, stack, n, seen, bytes, mode, taken: taken.text !== undefined, why: taken.why, whole: !earlier.length || !bytes || taken.text !== undefined };
   });
-  for (const { file, stack, n, target } of steps) {
+  for (const { file, stack, n, bytes, taken, why } of steps) {
     const where = shown(file, home);
     const copy = stack.at(-1).backup;
-    if (!n) out(`${where}: changed since genter install wrote it, so it is left as it is (${copy ? `as it was before: ${shown(join(dir, copy), home)}` : "genter install made it"})`);
-    else if (!target.backup) out(`${where}: deleted (genter install made it)`);
-    else out(`${where}: put back as it was before genter install${n < stack.length ? ` wrote it on ${target.at.slice(0, 10)} (it was changed by hand before that, so Genter's earlier entry stays)` : ""}`);
+    const on = n && n < stack.length ? ` wrote it on ${stack[stack.length - n].at.slice(0, 10)}` : "";
+    if (!n && !taken) out(`${where}: changed since genter install wrote it${why ? `, and ${why}` : ""}, so it is left as it is (${copy ? `as it was before: ${shown(join(dir, copy), home)}` : "genter install made it"})`);
+    else if (!n) out(`${where}: saved since genter install wrote it, so Genter's entries are taken out of it as it is now`);
+    else if (!bytes) out(`${where}: deleted (genter install made it)`);
+    else if (n === stack.length) out(`${where}: put back as it was before genter install`);
+    else if (taken) out(`${where}: put back as it was before genter install${on}, then Genter's earlier entries taken out (it was changed before that)`);
+    else out(`${where}: put back as it was before genter install${on} (it was changed before that, and ${why}, so Genter's earlier entry stays)`);
   }
-  const todo = steps.filter((s) => s.n);
-  const left = steps.some((s) => s.n < s.stack.length); // some write of genter install stays
+  const todo = steps.filter((s) => s.n || s.taken);
+  const left = steps.some((s) => !s.whole); // some entry of Genter stays
   if (!todo.length) return 1;
   if (dryRun || !ask) {
     out(`\nNothing put back (${dryRun ? "--dry-run" : "no terminal to ask in"}). Run genter install --undo in a terminal.`);
@@ -186,19 +211,30 @@ async function undo({ dir, home, ask, dryRun, out }) {
     out("Nothing put back.");
     return 0;
   }
-  for (const { file, stack, n, target } of todo) {
-    if (target.backup) writeAtomic(file, readFileSync(join(dir, target.backup)), target.mode);
-    else unlinkSync(file);
-    for (const s of stack.splice(stack.length - n)) if (s.backup) unlinkSync(join(dir, s.backup));
-    if (!stack.length) delete m.files[file];
-    keep(dir, m);
-    out(`${target.backup ? "Put back" : "Deleted"} ${shown(file, home)}`);
+  let failed = false;
+  for (const { file, stack, n, seen, bytes, mode, whole } of todo) {
+    const where = shown(file, home);
+    try {
+      // The tool may have saved the file again while the person read the question.
+      const now = existsSync(file) ? readFileSync(file) : null;
+      if (!now?.equals(seen)) throw new Error("it changed while genter install was asking: run it again");
+      if (bytes) writeAtomic(file, bytes, mode);
+      else unlinkSync(file);
+      for (const s of stack.splice(whole ? 0 : stack.length - n)) if (s.backup) rmSync(join(dir, s.backup), { force: true });
+      if (!stack.length) delete m.files[file];
+      keep(dir, m);
+      out(`${!bytes ? "Deleted" : n ? "Put back" : "Took Genter out of"} ${where}`);
+    } catch (error) {
+      out(`${where}: not put back, ${error.message}`);
+      failed = true;
+    }
   }
-  return left ? 1 : 0;
+  return left || failed ? 1 : 0;
 }
 
 // --folder, for Claude Desktop: a folder that is there, never the home folder or the root (as `ask` never adds them).
 function folderOf(folder, home) {
+  if (!folder) throw new Error("--folder <dir>: name the folder Claude Desktop is to search");
   const path = resolve(folder === "~" || folder.startsWith("~/") ? join(home, folder.slice(1)) : folder);
   let st;
   try {
@@ -225,6 +261,7 @@ export function terminalAsk(input = process.stdin, output = process.stdout) {
 // The command: 0 when done (or nothing to do), 1 when a file could not be written or put back.
 export async function install({ home = homedir(), env = process.env, platform = process.platform, genterHome, only = [], semantic = false, cloud = false, folder, dryRun = false, undo: back = false, ask = null, out = console.log } = {}) {
   const dir = join(genterHome ?? join(home, ".genter"), "install");
+  if (back && only.length) throw new Error("genter install --undo puts back every file genter install changed: it takes no tool name");
   if (back) return undo({ dir, home, ask, dryRun, out });
   const unknown = only.filter((id) => !CLIENTS.some((c) => c.id === id));
   if (unknown.length) throw new Error(`genter install: no AI tool called ${unknown.join(", ")}; it knows ${CLIENTS.map((c) => c.id).join(", ")}`);
@@ -247,7 +284,15 @@ export async function install({ home = homedir(), env = process.env, platform = 
   for (const item of items.filter((i) => i.found)) show(item, home, out);
   const desktop = items.find((i) => i.found && !i.client.cloud);
   if (cloud && desktop) out(`\n${desktop.client.name} takes Genter Cloud as a custom connector, not in its file: ${desktop.client.cloudHere}, then ${CLOUD}`);
-  out(`\nEach tool starts npx -y genter-cli mcp in the project it opens, and Genter searches that project and your notes.${found.some((i) => i.client.folder) ? ` Claude Desktop opens no project: there Genter searches your notes${folder ? ` and ${shown(folder, home)}` : " (or a folder you name with --folder)"}.` : ""}`);
+  // What Genter searches from each tool: the project of the folder the tool starts it in, where its docs say which.
+  const by = (has) => found.filter((i) => has(i.client)).map((i) => i.client.name);
+  const sure = by((c) => c.starts);
+  const unsure = by((c) => !c.starts && !c.folder);
+  const scope = [];
+  if (sure.length) scope.push(`${listed(sure)} start${sure.length === 1 ? "s" : ""} npx -y genter-cli mcp in the folder you open or run ${sure.length === 1 ? "it" : "them"} in, and Genter searches that project and your notes.`);
+  if (unsure.length) scope.push(`${listed(unsure)} ${unsure.length === 1 ? "does not say which folder it starts" : "do not say which folder they start"} Genter in: Genter searches the project there, or only your notes when that is your home folder.`);
+  if (found.some((i) => i.client.folder)) scope.push(`Claude Desktop opens no project: there Genter searches your notes${folder ? ` and ${shown(folder, home)}` : " (or a folder you name with --folder)"}.`);
+  out(`\n${scope.join("\n")}`);
   const changes = items.filter((i) => i.found && i.edit.inserted !== undefined);
   if (!changes.length) {
     out(items.some((i) => i.found && i.edit.snippet) ? "\nNothing to write: add the lines above yourself where a file is left as it is." : "\nNothing to change: Genter is in every tool found.");

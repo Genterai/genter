@@ -2,12 +2,14 @@ import { isAbsolute, join } from "node:path";
 
 // Codex: ~/.codex/config.toml (CODEX_HOME when set, https://developers.openai.com/codex/config-advanced), one
 // [mcp_servers.<name>] table per server (https://learn.chatgpt.com/docs/extend/mcp?surface=cli); never a project's
-// .codex/config.toml. A remote server is a "url", signed in with `codex mcp login <name>`.
+// .codex/config.toml. A remote server is a "url", signed in with `codex mcp login <name>`. It runs in a terminal and
+// gives a server no other folder than its own unless "cwd" is set, so the server starts in the folder Codex runs in.
 export default {
   id: "codex",
   name: "Codex",
   format: "toml",
   key: "mcp_servers",
+  starts: "project",
   places: ({ home, env }) => {
     const dir = env.CODEX_HOME && isAbsolute(env.CODEX_HOME) ? env.CODEX_HOME : join(home, ".codex");
     return [{ marker: dir, file: join(dir, "config.toml") }];

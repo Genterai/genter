@@ -4,7 +4,8 @@ import { appData, xdgCandidates } from "./paths.js";
 // Zed: the user's settings.json, ~/.config/zed on macOS and Linux ($XDG_CONFIG_HOME/zed when set) and %APPDATA%\Zed on
 // Windows, "JSON with support for // comments" (https://github.com/zed-industries/zed/blob/main/docs/src/configuring-zed.md);
 // servers sit under "context_servers" (https://zed.dev/docs/ai/mcp). Never a project's .zed/settings.json. Comments stay
-// byte for byte. A remote server is a "url"; with no Authorization header Zed signs in with OAuth.
+// byte for byte. A remote server is a "url"; with no Authorization header Zed signs in with OAuth. Its docs do not say
+// which folder a server starts in.
 export default {
   id: "zed",
   name: "Zed",

@@ -84,10 +84,13 @@ npx genter-cli install --undo   # puts every file it changed back as it was
 
 It finds Claude Code, Claude Desktop, Cursor, VS Code, Codex, Gemini CLI, Zed and goose, and adds
 `npx -y genter-cli mcp` to each one's own settings for you, never to a project's files. Nothing is written until you
-say yes, and nothing it writes is a token or a key. Each tool starts Genter in the project it opens; Claude Desktop,
-which opens no project, searches your notes, or the folder you name with `--folder`. `--cloud` also adds
-[Genter Cloud](#genter-cloud-your-teams-apps) where the tool takes a remote server, `--semantic` turns on ranking by
-meaning, and `--dry-run` only shows. A copy of every file it changes is kept in `~/.genter/install/`.
+say yes, and nothing it writes is a token or a key. Genter searches the project of the folder a tool starts it in:
+for VS Code the workspace, for Claude Code, Codex and Gemini CLI the folder you run them in (Cursor, Zed and goose do
+not say which folder they use). Claude Desktop, which opens no project, searches your notes, or the folder you name
+with `--folder`. `--cloud` also adds [Genter Cloud](#genter-cloud-your-teams-apps) where the tool takes a remote
+server, `--semantic` turns on ranking by meaning, and `--dry-run` only shows. A copy of every file it changes is kept
+in `~/.genter/install/`; `--undo` puts it back, or, if the tool has saved the file since, takes only Genter's entries
+out of it.
 
 ## Choose how you run it
 
