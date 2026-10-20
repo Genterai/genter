@@ -42,6 +42,20 @@ describe("DriftBench", () => {
     assert.ok(once.t1.stale > 0);
   });
 
+  it("[rl:driftbench/old-first] [rl:local-search/current-first] genter never puts the replaced answer first on a page replaced by a newer one; an index built once does, and a run that does fails the guard", () => {
+    const r = run();
+    const rows = Object.fromEntries(r.rows.map((x) => [x.name, x.score]));
+    assert.equal(rows.genter.kinds.deprecated.old_first, 0);
+    assert.equal(rows.genter.t1.old_first, 0);
+    assert.ok(rows["index built once"].kinds.deprecated.old_first > 0);
+    const report = fullReport(r);
+    assert.match(report, /\| deprecated \(5\) \| \d+ fresh · 0 stale · 0 old first \|/);
+    assert.match(report, /\| arm \| after, unchanged facts \| after, old answer first \|/);
+    const readme = replaceReadmeBlock("# x\n<!-- driftbench:start -->\n<!-- driftbench:end -->\n", readmeBlock(r, "r.md"));
+    const first = { ...r, rows: r.rows.map((x) => (x.name === "genter" ? { ...x, score: { ...x.score, kinds: { ...x.score.kinds, deprecated: { ...x.score.kinds.deprecated, old_first: 1 } } } } : x)) };
+    assert.match(guard(first, readme).join(), /replaced answer first on 1 questions of the deprecated kind/);
+  });
+
   it("[spec:driftbench/arm-index-resynced] [spec:driftbench/over-time] genter is current at every time after an edit; an index re-synced every N minutes is stale until it re-syncs", () => {
     const t = run().over_time;
     const arm = (name) => t.arms.find((a) => a.name === name).by_delay;

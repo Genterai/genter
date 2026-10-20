@@ -61,7 +61,17 @@ safe.
 * **[gone-not-answer]** A file or page that is gone is listed as gone and answers nothing; when it comes back it
   answers again. A project whose source holds a deleted file says it is gone, even when another project's source read
   the file first.
-* **[follow-replaced]** A place marked as replaced brings what replaces it right after it, marked "replaces [n]".
+* **[follow-replaced]** What replaces a place is brought beside it only as [current-first] says: right before it,
+  marked "replaces [n]"; any other replaced mark shows on its place (anchor-drift/quote-not-verdict) and the order
+  stays: nothing is moved up or brought in for it.
+* **[current-first]** The current answer first: when a file inside the project's folder is marked as replaced by what
+  its readers read (a decision record's status, a banner at its top, its front matter) and what replaces it is a file
+  inside that folder this search reads, what replaces it takes the replaced file's rank (its section among those found,
+  moved up, else its best section of all) and the replaced file follows right after it, its notice quoted; when what
+  replaces it already ranks above, nothing moves and it says "replaces [n]". A place brought in from outside the
+  sections found brings nothing more (its own mark shows), and two places that name each other end. A place outside the
+  project's folder on either side (a source added from elsewhere, the notes, a website), or a mark no reader read (the
+  language rules' phrases at the top of a file no reader takes), changes no order.
 * **[reader-marks]** A file a reader in `readers/` takes is marked as replaced where the reader says (an ADR's Status
   section, a banner at its top, its front matter), the mark that names what replaces it first; what replaces it is the
   place the reader read beside the mark, when that place is there, and a link elsewhere in the file is taken only for a
@@ -70,6 +80,10 @@ safe.
   made by an earlier version shows them without the file being edited. A result shows the date and status the file gives
   itself as its readers read them (`anchor.document`: `readers`, `date`, `status`), read again with the file and never
   kept in the store.
+* **[document-dates]** A decision's date is the one its document gives as its readers read it (an ADR's `Date:`, a
+  CHANGELOG's latest dated heading, front matter): a result and a read show it (`dated <day>`), a mark naming the
+  document as what replaced another place is dated by it (contract/marks), and a file's own time is shown beside it
+  only when it is no clone time (anchor-drift/fresh-clone).
 * **[no-text-stored]** The store keeps which places there are, their numbers, digests, headings and dates, sealed;
   never a line of their text (a replaced mark's notice is quoted from the text read now), and no place name in the
   clear.
@@ -78,7 +92,8 @@ safe.
 
 * **[ranking-words]** Sections are ranked by BM25 over their words (English and Russian stems); a word in the
   headings counts more than one in the text.
-* **[sections]** At most two sections of one place, and the limit asked (5 by default, 20 at most).
+* **[sections]** At most two sections of one place, and the limit asked (5 by default, 20 at most); a section found
+  brings at most one place more, what replaces it ([current-first]).
 * **[semantic-opt-in]** Given embeddings, a ranking by vectors is fused with the words'; without, words alone.
 * **[semantic-providers]** Embeddings come from `GENTER_EMBED_URL` when set, else the provider named, else the first
   whose key is set, else Ollama on localhost; any OpenAI-compatible `/embeddings` works; when none answers the error
@@ -91,7 +106,8 @@ safe.
 * **[ac-deleted-file]** Given two docs, when one is deleted, then the search lists it as gone and answers nothing
   from it.
 * **[ac-replaced]** Given a doc marked "Deprecated: replaced by Deploy v2", when it answers, then Deploy v2 comes
-  right after it.
+  first, marked "replaces [2]", and the doc right after it saying `ops/deploy.md says at its top: "Deprecated: replaced
+  by Deploy v2"`.
 * **[ac-secrets-skipped]** Given a token in `.env`, `id_rsa`, a private key file, `node_modules/` and an ignored
   folder, when searched for, then it never appears.
 * **[ac-note]** Given a remembered note, when asked about it, then it answers with its date.

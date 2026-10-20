@@ -28,19 +28,25 @@ reaches a place of another project), and [conformance] ("works with Genter" mean
 
 * **[search-shape]** `search` answers with the places that match: each starts `[id] title` (the passage's headings,
   else the place's title) on a line of its own, then an indented line with where it is (`path:lines` or the link),
-  what it is (file, page, notes), its date (`updated <day>`) and what Genter saw (`replaces [id]`, changed or new
-  since the last look, a note's date), then its marks, then the passage, four spaces in, so no line of it reads as a
-  place or a mark. What changed since the last look comes first (a refused `genter.json` before it), and the answer
-  ends saying that read takes the ids. Nothing found is a sentence that names no place.
+  what it is (file, page, notes), its dates (`dated <day>`, the one its document gives, local-search/document-dates;
+  `updated <day>`, its file's, or `file dates unknown (fresh clone)`, anchor-drift/fresh-clone) and what Genter saw
+  (`replaces [id]`, changed or new since the last look, a note's date), then its marks, then the passage, four spaces
+  in, so no line of it reads as a place or a mark. A place that replaces another comes right before it, or above it
+  when it already ranked higher, as local-search/current-first says. What changed since the last look comes first (a
+  refused `genter.json` before it), and the answer ends saying that read takes the ids. Nothing found is a sentence
+  that names no place.
 * **[marks]** A mark is a line of its own, `  ⚠ ` then what it says; a place's marks are the lines right after its
   second line, and no line of a file (a passage four spaces in, a read text after an empty line) can join them or read
-  as one. A place that says at its top that it was replaced, by a place this project reads: `⚠ superseded by [id] on
-  <day>: “<its notice>”`, the day that place's own date; by a place this project does not read, or with no place
-  named: `⚠ marked as replaced by <place> at its top: “…”` or `⚠ marked as <deprecated, obsolete…> at its top: “…”`,
-  never an id read would refuse; a page whose address now redirects: `⚠ address now redirects to <address>`; a place
-  old beside newer ones in the same answer: its age as a fact. The notice is quoted from the text read now (160
-  characters at most) and never stored. A contradiction, when an engine finds one, is `⚠ contradicted by [id]
-  (<day>): “…”` on the earlier side and `⚠ contradicts [id] (<day>): “…”` on the later.
+  as one. A place that says it was replaced, by a place this project reads whose day is known: `⚠ superseded by [id]
+  on <day>: “<its notice>”`, the day that place's own (the date its document gives, else its file's time when that is
+  no clone time; a page's); by a place this project does not read, with no place named, or by one whose day is not
+  known: `⚠ marked as replaced by <place> at its top: “…”` or `⚠ marked as <deprecated, obsolete…> at its top: “…”`
+  (`at line <n>` for a notice a reader found past the top), never an id read would refuse; a page whose address now
+  redirects: `⚠ address now redirects to <address>`; a place old beside newer ones in the same answer: its age as a
+  fact. The notice is quoted from the text read now, in its own words without Markdown's signs
+  (anchor-drift/quote-not-verdict; 160 characters at most), and never stored. A contradiction, when an engine finds
+  one, is `⚠ contradicted by [id] (<day>): “…”` on the earlier side and `⚠ contradicts [id] (<day>): “…”` on the
+  later.
 * **[read-whole]** `read` reads each place now, several in one call: `[id] title · read now` (the place's title), a
   second line like search's (where it is, what it is, its date, what Genter saw now) and its replaced mark, then,
   after an empty line, its text as it is now (20,000 characters at most, then how many more), places apart by a line
@@ -66,5 +72,6 @@ reaches a place of another project), and [conformance] ("works with Genter" mean
 
 * **[ac-two-tools]** Given a project whose runbook says at its top "Deprecated: replaced by [Release process
   v2](release-process-v2.md)", when an MCP client lists the tools of `genter mcp`, searches "can we deploy on Friday?"
-  and reads the ids it got, then it sees search and read, the runbook marked `⚠ superseded by [<v2's id>] on <v2's
-  day>: “…”`, and reads v2 by that id; `genter mcp` in another project refuses the same ids.
+  and reads the ids it got, then it sees search and read, v2 first and the runbook right after it marked
+  `⚠ superseded by [<v2's id>] on <v2's day>: “Deprecated: replaced by Release process v2”`, and reads v2 by that id;
+  `genter mcp` in another project refuses the same ids.
