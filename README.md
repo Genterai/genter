@@ -66,14 +66,25 @@ npx genter-cli ask "how do we deploy?" --semantic      # 3. ask your folder
 claude mcp add genter -e GENTER_SEMANTIC=1 -- npx -y genter-cli mcp   # 4. give it to your agent
 ```
 
-Your agent now has four tools:
+Your agent now has two tools, the same two as [Genter Cloud](#genter-cloud-your-teams-apps), both read-only:
 
 | Tool | What it does |
 | -- | -- |
-| `genter_find` | finds the passages that answer, reads them now, and returns each with its `path:lines` and what changed since the last look |
-| `genter_add` | adds a folder, a file or a website (a sibling repository, a vendor's API docs) |
-| `genter_remember` | keeps a note (a decision, a convention) that it finds later, with the note's date |
-| `genter_sources` | lists what this project searches |
+| `search {query, limit}` | finds the passages that answer, reads them now, and returns each place with its id, `path:lines`, date and marks |
+| `read {ids}` | reads places whole, as they are now, by the ids `search` returned, several at once |
+
+```
+[2] Release process › Friday
+  docs/runbook.md:5-7 · file · updated 2026-10-20
+  ⚠ superseded by [1] on 2026-10-03: “> **Deprecated:** replaced by [Release process v2](release-process-v2.md)”
+  ## Friday
+
+  Deploys go out on Fridays from the release branch.
+```
+
+The MCP contract is these two tools. Adding a folder, keeping a note and listing sources are commands (`genter add`,
+`genter remember`, `genter sources`). The tools of 0.3 (`genter_find`, `genter_add`, `genter_remember`,
+`genter_sources`) still answer, marked deprecated, until genter-cli 0.5.
 
 ## Add it to your AI tools
 
@@ -120,18 +131,18 @@ curl -fsSL https://raw.githubusercontent.com/Genterai/genter/main/examples/proje
 ```
 
 `.mcp.json` starts `genter-cli mcp .` for Claude Code with ranking by meaning on. It uses the first embeddings key the
-person has set, and without one it ranks by words. `AGENTS.md` tells the agent to call `genter_find` first and to cite
-`path:lines`.
+person has set, and without one it ranks by words. `AGENTS.md` tells the agent to call Genter's `search` first and to
+cite `path:lines`.
 
 What changes:
 
 | | Without Genter | With Genter |
 | -- | -- | -- |
-| "where do we check who may see an invoice?" | the agent greps `invoice`, `permission`, `canView`… and reads ten files | one `genter_find`, which returns 5 passages with `path:lines` |
+| "where do we check who may see an invoice?" | the agent greps `invoice`, `permission`, `canView`… and reads ten files | one `search`, which returns 5 passages with `path:lines` |
 | a question your docs answer | it reaches you | the agent answers it, citing the doc |
 | a doc edited an hour ago | an index answers with the old text | the new text, marked *changed since the last look* |
-| a page replaced by a newer one | both look equally true | the old page says *marked as replaced*, and the new one comes right after it |
-| a decision made in chat | lost after the session | `genter_remember`, found later with its date |
+| a page replaced by a newer one | both look equally true | the old page is marked *superseded by [id]* with its own notice quoted, and the new one comes right after it |
+| a decision made in chat | lost after the session | `genter remember`, found later with its date |
 
 ### A new project
 
@@ -172,7 +183,21 @@ OPENAI_API_KEY=sk-... node examples/answer-with-sources.mjs ./docs "how do we de
 ```
 
 Each call reads the files again, so the assistant answers from what the docs say now, even if they were edited a
-minute ago.
+minute ago. Each result also carries `id`, its place's number; `genter.read([id])` reads that place whole, now.
+
+### Works with Genter
+
+An MCP server that speaks Genter's contract (two read-only tools, numbered places, one mark format) can check itself
+with `genter-cli/conformance`, which has no dependency. Give it a function that sends one JSON-RPC request:
+
+```js
+import { conformance } from "genter-cli/conformance";
+
+const report = await conformance(send, { query: "how do we deploy?" }); // send(request) → the JSON-RPC response
+if (!report.ok) console.error(report.checks.filter((c) => !c.ok));
+```
+
+Genter's own tests run it against `genter mcp` over stdio ([test/contract.test.js](test/contract.test.js)).
 
 ## Ranking by meaning
 
@@ -207,8 +232,9 @@ claude mcp add --transport http genter-cloud https://genter.ai/api/mcp
 
 Claude, ChatGPT, Cursor, VS Code and other clients that take a remote MCP server add the same address. The client signs
 you in with OAuth the first time. Nothing is kept on your disk for it: genter-cli never calls Genter Cloud and holds no
-token (the first command removes the one 0.3's `genter login` kept). Your agent then asks `genter_find` about your
-folders and Genter Cloud's `search` and `read` about your apps, each with the places it cites.
+token (the first command removes the one 0.3's `genter login` kept). Your agent then has the same two tools from each,
+`search` and `read`: `genter` for your folders and `genter-cloud` for your apps, each with the places it cites, its
+marks in the same format.
 
 | | `genter-cli` | Genter Cloud |
 | -- | -- | -- |
@@ -221,8 +247,8 @@ folders and Genter Cloud's `search` and `read` about your apps, each with the pl
 
 [harden](https://github.com/Genterai/harden) has the agent write a brief before code: what the change is for, where
 the truth lives and what must not break. Its Claude Code plugin brings Genter with it. Before the agent asks the owner
-a question, it searches with `genter_find`, and a question the code or the docs already answer becomes a Source in the
-brief instead of reaching the owner. With Genter Cloud connected, the decision behind the code (a ticket, a thread)
+a question, it searches with Genter's `search`, and a question the code or the docs already answer becomes a Source in
+the brief instead of reaching the owner. With Genter Cloud connected, the decision behind the code (a ticket, a thread)
 becomes a Source too.
 
 ## How it resolves, and why it stays current

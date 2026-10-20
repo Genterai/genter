@@ -62,8 +62,9 @@ safe.
   answers again. A project whose source holds a deleted file says it is gone, even when another project's source read
   the file first.
 * **[follow-replaced]** A place marked as replaced brings what replaces it right after it, marked "replaces [n]".
-* **[no-text-stored]** The store keeps which places there are, their digests, headings and dates, sealed; never a
-  line of their text, and no place name in the clear.
+* **[no-text-stored]** The store keeps which places there are, their numbers, digests, headings and dates, sealed;
+  never a line of their text (a replaced mark's notice is quoted from the text read now), and no place name in the
+  clear.
 
 ### Ranking
 

@@ -17,24 +17,36 @@ function project() {
 const rpc = (id, method, params) => ({ jsonrpc: "2.0", id, method, ...(params && { params }) });
 
 describe("the local MCP server", () => {
-  it("[spec:cli/ac-mcp-tools] [spec:cli/local-mcp-tools] answers initialize and lists the four local tools", async () => {
+  it("[rl:cli/ac-mcp-tools] [rl:cli/local-mcp-tools] [rl:contract/two-tools] answers initialize and lists search and read, then the 0.3 names, deprecated", async () => {
     const p = project();
     try {
       const init = await handle(p.local, rpc(1, "initialize", { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "t", version: "1" } }), { version: "9.9.9" });
       assert.equal(init.result.protocolVersion, "2025-06-18");
       assert.deepEqual(init.result.serverInfo, { name: "genter", version: "9.9.9" });
       assert.match(init.result.instructions, /Genter finds; you think and write/);
+      assert.match(init.result.instructions, /^- search: /m);
+      assert.match(init.result.instructions, /^- read: /m);
       const old = await handle(p.local, rpc(2, "initialize", { protocolVersion: "1999-01-01" }));
       assert.equal(old.result.protocolVersion, "2025-06-18");
-      const list = await handle(p.local, rpc(3, "tools/list"));
-      assert.deepEqual(list.result.tools.map((t) => t.name), ["genter_find", "genter_remember", "genter_add", "genter_sources"]);
-      assert.equal(list.result.tools[0].annotations.readOnlyHint, true);
+      const { tools } = (await handle(p.local, rpc(3, "tools/list"))).result;
+      assert.deepEqual(tools.map((t) => t.name), ["search", "read", "genter_find", "genter_remember", "genter_add", "genter_sources"]);
+      // The contract's two, as Genter Cloud serves them: a title, read-only, the same input.
+      const [search, read] = tools;
+      for (const t of [search, read]) {
+        assert.ok(t.title?.trim(), t.name);
+        assert.deepEqual(t.annotations, { readOnlyHint: true }, t.name);
+      }
+      assert.deepEqual([search.inputSchema.required, search.inputSchema.properties.query.type, search.inputSchema.properties.limit.type], [["query"], "string", "number"]);
+      assert.deepEqual([read.inputSchema.required, read.inputSchema.properties.ids], [["ids"], { type: "array", items: { type: "number" }, description: read.inputSchema.properties.ids.description }]);
+      // The 0.3 names, each saying first that it goes, the read-only ones still marked so.
+      for (const t of tools.slice(2)) assert.match(t.description, /^Deprecated: genter-cli 0\.5 removes this tool: /, t.name);
+      assert.deepEqual(tools.slice(2).map((t) => t.annotations?.readOnlyHint === true), [true, false, false, true]);
     } finally {
       p.done();
     }
   });
 
-  it("[spec:cli/local-mcp] finds, remembers and reports errors the MCP way", async () => {
+  it("[spec:cli/local-mcp] [rl:cli/local-mcp-tools] finds, remembers and reports errors the MCP way, the 0.3 names as they were", async () => {
     const p = project();
     try {
       const found = await handle(p.local, rpc(1, "tools/call", { name: "genter_find", arguments: { question: "which day does production ship?" } }));
