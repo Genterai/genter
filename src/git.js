@@ -1,11 +1,13 @@
-import { readFileSync, realpathSync, statSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
+import { realOf } from "./local.js";
 
 // The commit a checkout is at, read from its .git with fs alone: Genter runs nothing (security/never-run), `git`
 // included. HEAD holds a commit, or names a branch whose commit is in a loose ref file (refs/heads/<branch>) or in
 // packed-refs. A worktree's or a submodule's .git is a file naming its own git folder, whose commondir names the folder
-// that holds the branches.
+// that holds the branches. A repository whose refs are in git's reftable format (binary tables in .git/reftable, HEAD a
+// placeholder naming refs/heads/.invalid) cannot be read this way, and says so.
 
 const SHA = /^[0-9a-f]{40}(?:[0-9a-f]{24})?$/;
 const HOPS = 5;
@@ -15,13 +17,6 @@ const textOf = (path) => {
     return readFileSync(path, "utf8");
   } catch {
     return null;
-  }
-};
-const realOf = (path) => {
-  try {
-    return realpathSync.native(path);
-  } catch {
-    return path;
   }
 };
 
@@ -57,6 +52,9 @@ function headIn(gitDir) {
   if (head == null) throw new Error(`${join(gitDir, "HEAD")} cannot be read`);
   const shared = textOf(join(gitDir, "commondir"))?.trim();
   const common = shared ? resolve(gitDir, shared) : gitDir;
+  if (existsSync(join(common, "reftable")) || /^ref: *refs\/heads\/\.invalid\s*$/.test(head)) {
+    throw new Error(`${common} keeps its branches in git's reftable format, which Genter cannot read without running git: the commit cannot be stamped`);
+  }
   let ref = head.trim();
   let branch;
   for (let hop = 0; hop < HOPS; hop++) {

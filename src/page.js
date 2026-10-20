@@ -18,8 +18,8 @@ export const DECISION_READERS = ["adr", "decisions", "rfc"];
 // null for a file a mark names that the readers read nothing in). A row: { state: "current" | "replaced", title, path,
 // line, date?, status?, notice?: { line, quote } | { line, status }, by?: { path } | { name } | { link } }; line is
 // where its date is written, else its title; notice: the line that marks it, or the status it gives itself
-// ("superseded", "deprecated" and the other kinds of readers.js) when no line names what replaces it; by: the file of
-// the project that replaces it, else the name or the link its notice gives.
+// (REPLACED_STATUSES) when no line names what replaces it, quoted as written when documents() gave that line, else as
+// the status; by: the file of the project that replaces it, else the name or the link its notice gives.
 // Current rows first, then replaced ones, each newest first, undated last.
 export function decisionsOf(documents) {
   const rows = [];
@@ -51,12 +51,16 @@ export function decisionsOf(documents) {
   return rows.sort((a, b) => rank(a) - rank(b) || (b.date ?? "").localeCompare(a.date ?? "") || a.path.localeCompare(b.path) || a.line - b.line);
 }
 
+// The statuses a document gives itself that say it no longer holds: the kinds of readers.js, and the words RFCs and
+// KEPs use for it ("Status: Replaced by ADR-0012", a KEP's `status: replaced`, an RFC's "obsoleted").
+export const REPLACED_STATUSES = [...KINDS, "replaced", "obsoleted"];
+
 // One row. Of a decision's marks, the notice shown is the one that names what replaces it (a file of the project, then
 // a link or a name), else its first; with no mark, a status of a replaced kind is its notice.
 function row(d, { title, line, date, status, marks = [] }) {
   const sorted = [...marks].sort((a, b) => a.line - b.line);
   const mark = sorted.find((m) => m.to) ?? sorted.find((m) => m.by || m.name) ?? sorted[0];
-  const replaced = !mark && status && KINDS.includes(status.value) ? status : null;
+  const replaced = !mark && status && REPLACED_STATUSES.includes(status.value) ? status : null;
   const by = mark && (mark.to ? { path: mark.to } : mark.name ? { name: mark.name } : mark.by ? { link: mark.by } : null);
   return {
     state: mark || replaced ? "replaced" : "current",
@@ -66,7 +70,7 @@ function row(d, { title, line, date, status, marks = [] }) {
     ...(date?.value && { date: date.value }),
     ...(status?.value && !mark && !replaced && { status: status.value }),
     ...(mark && { notice: { line: mark.line, quote: mark.quote } }),
-    ...(replaced && { notice: { line: replaced.line, status: replaced.value } }),
+    ...(replaced && { notice: { line: replaced.line, ...(replaced.quote ? { quote: replaced.quote } : { status: replaced.value }) } }),
     ...(by && { by }),
   };
 }
@@ -82,6 +86,7 @@ h1{font-size:24px;line-height:1.25;margin:0 0 6px}
 p{margin:0}
 .stamp,.empty,footer{color:var(--muted)}
 .counts{margin:14px 0 20px}
+.cut{margin:-8px 0 20px;color:var(--replaced)}
 code{font:13px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--code);padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
 table{width:100%;border-collapse:collapse}
 th{text-align:left;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--line)}
@@ -101,9 +106,9 @@ const CSP = `default-src 'none'; style-src 'sha256-${createHash("sha256").update
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const code = (s) => `<code>${esc(s)}</code>`;
 
-// The page: { project (its name), commit (null before the first commit), date (YYYY-MM-DD), rows (decisionsOf) } in,
-// one HTML file out.
-export function decisionsPage({ project, commit, date, rows }) {
+// The page: { project (its name), commit (null before the first commit), date (YYYY-MM-DD), rows (decisionsOf), cut
+// (the number of files the listing stopped at, when it stopped before the project's end) } in, one HTML file out.
+export function decisionsPage({ project, commit, date, rows, cut }) {
   const current = rows.filter((r) => r.state === "current").length;
   const replaced = rows.length - current;
   const stamp = commit ? `generated at ${code(commit.slice(0, 7))} on ${esc(date)}` : `generated on ${esc(date)}, before the first commit`;
@@ -114,7 +119,7 @@ export function decisionsPage({ project, commit, date, rows }) {
 ${rows.map(rowHtml).join("\n")}
 </tbody>
 </table>`
-    : `<p class="empty">No decision records and no replaced marks in ${esc(project)}: Genter reads ADRs and RFCs (their status and date), the headings of docs/decisions.md, front matter, and a notice at the top of a document.</p>`;
+    : `<p class="empty">No decision records and no replaced marks in ${cut ? `the first ${cut} files of ` : ""}${esc(project)}: Genter reads ADRs and RFCs (their status and date), the headings of docs/decisions.md, front matter, and a notice at the top of a document.</p>`;
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -130,7 +135,7 @@ ${rows.map(rowHtml).join("\n")}
 <header>
 <h1>Decisions in ${esc(project)}</h1>
 <p class="stamp">${stamp} · run <code>genter decisions</code> again to refresh</p>
-<p class="counts">${current} current · ${replaced} replaced, by their own text · dates as the documents give them</p>
+<p class="counts">${current} current · ${replaced} replaced, by their own text · dates as the documents give them</p>${cut ? `\n<p class="cut">${cutText(cut)}</p>` : ""}
 </header>
 ${body}
 <footer>
@@ -143,6 +148,9 @@ ${body}
 `;
 }
 
+// What the page and the command say when the listing stopped before the project's end.
+export const cutText = (cut) => `The listing stopped at ${cut} files: decisions past it are not on this page.`;
+
 function rowHtml(r) {
   const place = code(`${r.path}:${r.line}`);
   const date = r.date ? esc(r.date) : `<span class="undated">no date written</span>`;
@@ -152,7 +160,7 @@ function rowHtml(r) {
   const line = `<tr class="${state}${r.notice ? " with-notice" : ""}"><td><span class="state">${label}</span></td><td>${esc(r.title)}${status}</td><td>${place}</td><td>${date}</td></tr>`;
   if (!r.notice) return line;
   const link = r.by?.link && (/^https?:\/\//i.test(r.by.link) ? `replaced by ${code(r.by.link)}` : `replaced by ${code(r.by.link)}, not a file Genter reads here`);
-  const by = r.by?.path ? `replaced by ${code(r.by.path)}` : r.by?.name ? `replaced by “${esc(r.by.name)}”` : (link ?? "it names nothing that replaces it");
+  const by = r.by?.path ? `replaced by ${code(r.by.path)}` : r.by?.name ? `replaced by “${esc(r.by.name)}”` : link;
   const says = r.notice.quote !== undefined ? `says: “${esc(r.notice.quote)}”` : `gives its status as “${esc(r.notice.status)}”`;
-  return `${line}\n<tr class="replaced notice"><td></td><td colspan="3">${code(`${r.path}:${r.notice.line}`)} ${says} · ${by}</td></tr>`;
+  return `${line}\n<tr class="replaced notice"><td></td><td colspan="3">${code(`${r.path}:${r.notice.line}`)} ${says}${by ? ` · ${by}` : ""}</td></tr>`;
 }

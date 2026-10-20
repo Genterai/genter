@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 import { headOf } from "../src/git.js";
-import { createLocal } from "../src/local.js";
+import { createLocal, LIMITS } from "../src/local.js";
 import { decisionsOf, decisionsPage } from "../src/page.js";
 
 const bin = fileURLToPath(new URL("../bin/genter.js", import.meta.url));
@@ -41,7 +41,7 @@ function repo(files = ACME, name = "acme") {
   const genter = join(home, ".genter");
   return { base, home, dir, genter, done: () => rmSync(base, { recursive: true, force: true }) };
 }
-const rowsOf = (box) => decisionsOf(createLocal({ home: box.genter, secret: "s", cwd: box.dir }).documents());
+const rowsOf = (box) => decisionsOf(createLocal({ home: box.genter, secret: "s", cwd: box.dir }).documents().documents);
 const pageOf = (box, project = "acme") => decisionsPage({ project, commit: COMMIT, date: "2026-10-20", rows: rowsOf(box) });
 const bodyOf = (html) => html.slice(html.indexOf("<body>"));
 const run = (box, args = [], cwd = box.dir) => spawnSync(process.execPath, [bin, "decisions", ...args], { cwd, env: { PATH: process.env.PATH, HOME: box.home, GENTER_HOME: box.genter }, encoding: "utf8" });
@@ -94,6 +94,7 @@ describe("genter decisions", () => {
       "notes/meeting.md": "---\ndate: 2026-06-02\n---\n# Meeting\n\nWe might move to Redis.\n",
       "docs/decisions/0007-flags-in-env.md": "# Flags in the environment\n\n* Status: superseded\n* Date: 2026-04-01\n\n## Context\n\nFlags were env vars.\n",
       "docs/decisions/0008-cache-invoices.md": "# Cache invoices\n\n* Status: proposed\n* Date: 2026-10-12\n",
+      "docs/decisions/0009-queue.md": `# Queue\n\n* Status: Superseded by [${"Run background jobs on Redis streams with consumer groups ".repeat(2).trim()}](0011-run-background-jobs-on-redis-streams-with-consumer-groups-and-idempotent-handlers.md)\n* Date: 2026-05-01\n`,
     });
     try {
       const rows = rowsOf(box);
@@ -114,8 +115,11 @@ describe("genter decisions", () => {
       // A status of a replaced kind with no line naming what replaces it: replaced, by that status; any other status is
       // shown as the document gives it.
       const flags = rows.find((r) => r.path === "docs/decisions/0007-flags-in-env.md");
-      assert.deepEqual([flags.state, flags.notice], ["replaced", { line: 3, status: "superseded" }]);
-      assert.match(bodyOf(pageOf(box)), /<code>docs\/decisions\/0007-flags-in-env\.md:3<\/code> gives its status as “superseded” · it names nothing that replaces it/);
+      assert.deepEqual([flags.state, flags.notice], ["replaced", { line: 3, quote: "* Status: superseded" }]);
+      assert.match(bodyOf(pageOf(box)), /<code>docs\/decisions\/0007-flags-in-env\.md:3<\/code> says: “\* Status: superseded”<\/td>/, "no verdict of Genter's on what replaces it");
+      // A notice longer than the reader's own quote is still quoted whole, as written.
+      const queue = rows.find((r) => r.path === "docs/decisions/0009-queue.md");
+      assert.ok(queue.notice.quote.length > 200 && queue.notice.quote.endsWith(".md)"), queue.notice.quote);
       const cache = rows.find((r) => r.path === "docs/decisions/0008-cache-invoices.md");
       assert.deepEqual([cache.state, cache.status, cache.date], ["current", "proposed", "2026-10-12"]);
       assert.ok(!rows.some((r) => ["notes/meeting.md", "CHANGELOG.md", "docs/oncall.md", "docs/adr/README.md", "src/app.js"].includes(r.path)), JSON.stringify(rows.map((r) => r.path)));
@@ -127,6 +131,47 @@ describe("genter decisions", () => {
       // A date is the document's own, never its file's time.
       for (const r of rows.filter((x) => x.date)) assert.ok(readFileSync(join(box.dir, r.path), "utf8").includes(r.date), `${r.path} gives ${r.date}`);
       assert.ok(!/disagree|contradict/i.test(bodyOf(pageOf(box)).replace(/<footer>[\s\S]*<\/footer>/, "")), "no disagreement rows");
+    } finally {
+      box.done();
+    }
+  });
+
+  it("[rl:decisions-page/explicit-only] a decision whose own status says it was replaced is REPLACED, and a KEP's or a PEP's title is its header, never a comment or code", () => {
+    const box = repo({
+      ".git/HEAD": ACME[".git/HEAD"],
+      ".git/refs/heads/main": ACME[".git/refs/heads/main"],
+      "docs/adr/0004-queue-on-postgres.md": "# 4. Queue on Postgres\n\n* Status: Replaced by ADR-0012\n* Date: 2026-03-03\n",
+      "keps/sig-node/688-pod-overhead/kep.yaml": 'title: Pod Overhead\nkep-number: 688\nauthors:\n  - "@egernst"\nowning-sig: sig-node\nstatus: replaced\ncreation-date: 2019-02-26\n# The target maturity stage in the current dev cycle for this KEP.\nstage: stable\n',
+      "peps/pep-0008.rst": "PEP: 8\nTitle: Style Guide for Python Code\nAuthor: Guido van Rossum\nStatus: Active\nType: Process\nCreated: 05-Jul-2001\n\nIntroduction\n============\n\nCode::\n\n   # Correct:\n   foo = long_function_name(var_one)\n",
+      "peps/pep-0001.rst": "Status: Active\nCreated: 13-Jun-2000\n\n==========================\nPEP Purpose and Guidelines\n==========================\n\n   # Not a title\n",
+    });
+    try {
+      const rows = rowsOf(box);
+      const at = (path) => rows.find((r) => r.path === path);
+      assert.deepEqual(at("docs/adr/0004-queue-on-postgres.md"), { state: "replaced", title: "4. Queue on Postgres", path: "docs/adr/0004-queue-on-postgres.md", line: 4, date: "2026-03-03", notice: { line: 3, quote: "* Status: Replaced by ADR-0012" } });
+      assert.deepEqual(at("keps/sig-node/688-pod-overhead/kep.yaml"), { state: "replaced", title: "Pod Overhead", path: "keps/sig-node/688-pod-overhead/kep.yaml", line: 7, date: "2019-02-26", notice: { line: 6, quote: "status: replaced" } });
+      assert.deepEqual(at("peps/pep-0008.rst"), { state: "current", title: "Style Guide for Python Code", path: "peps/pep-0008.rst", line: 6, date: "2001-07-05", status: "active" });
+      assert.deepEqual([at("peps/pep-0001.rst").title, at("peps/pep-0001.rst").state], ["PEP Purpose and Guidelines", "current"]);
+      const body = bodyOf(decisionsPage({ project: "acme", commit: COMMIT, date: "2026-10-20", rows }));
+      assert.match(body, /<p class="counts">2 current · 2 replaced, by their own text/);
+      assert.ok(body.includes("<code>docs/adr/0004-queue-on-postgres.md:3</code> says: “* Status: Replaced by ADR-0012”</td>"));
+    } finally {
+      box.done();
+    }
+  });
+
+  it("[rl:decisions-page/explicit-only] a listing that stopped at its limit is said, on the page and by the command, and the page claims no absence past it", () => {
+    const files = { ".git/HEAD": ACME[".git/HEAD"], ".git/refs/heads/main": ACME[".git/refs/heads/main"], "docs/adr/0001-queue.md": "# 1. Queue\n\nDate: 2026-01-01\n\n## Status\n\nAccepted\n" };
+    for (let i = 0; i < LIMITS.files; i++) files[`apps/web/src/f${i}.js`] = "x\n";
+    const box = repo(files, "mono");
+    try {
+      const out = run(box);
+      assert.equal(out.status, 0, out.stderr);
+      assert.match(out.stderr, new RegExp(`The listing stopped at ${LIMITS.files} files: decisions past it are not on this page`));
+      const html = readFileSync(join(box.genter, "pages", "mono.html"), "utf8");
+      assert.ok(html.includes(`<p class="cut">The listing stopped at ${LIMITS.files} files: decisions past it are not on this page.</p>`));
+      assert.ok(html.includes(`No decision records and no replaced marks in the first ${LIMITS.files} files of mono:`));
+      assert.ok(!decisionsPage({ project: "mono", commit: COMMIT, date: "2026-10-20", rows: [] }).includes('class="cut"'), "a whole listing says nothing of a limit");
     } finally {
       box.done();
     }
@@ -171,6 +216,8 @@ describe("genter decisions", () => {
     const box = repo();
     try {
       const before = listing(box.dir);
+      mkdirSync(join(box.genter, "pages"), { recursive: true });
+      if (posix) chmodSync(join(box.genter, "pages"), 0o755);
       const out = run(box);
       assert.equal(out.status, 0, out.stderr);
       const page = join(box.genter, "pages", "acme.html");
@@ -178,12 +225,19 @@ describe("genter decisions", () => {
       assert.match(out.stderr, /3 current · 2 replaced in acme at 3f2c1ab/);
       assert.equal(bodyOf(readFileSync(page, "utf8")).replace(/on \d{4}-\d{2}-\d{2}/, "on 2026-10-20"), SNAPSHOT);
       if (posix) assert.equal(statSync(page).mode & 0o777, 0o600);
+      if (posix) assert.equal(statSync(join(box.genter, "pages")).mode & 0o777, 0o700, "its folder is its owner's only, one that was there before too");
       assert.deepEqual(listing(box.dir), before, "nothing written in the repository");
       // --out chooses the file, inside the repository too, since the person names it.
       const chosen = run(box, ["--out", "site/decisions.html"]);
       assert.equal(chosen.status, 0, chosen.stderr);
       assert.ok(existsSync(join(box.dir, "site/decisions.html")));
       assert.equal(chosen.stdout.trim(), "site/decisions.html holds quotes from acme: check before sharing");
+      // --out naming a folder is refused, and leaves nothing beside it or in it.
+      mkdirSync(join(box.base, "out"));
+      const folder = run(box, ["--out", join(box.base, "out")]);
+      assert.equal(folder.status, 1);
+      assert.match(folder.stderr, /out is a folder: --out names the page's file/);
+      assert.deepEqual([readdirSync(box.base).filter((f) => f.startsWith("out")), readdirSync(join(box.base, "out"))], [["out"], []]);
       // A Genter home inside the repository would put the default there: refused, saying to choose with --out.
       const inside = spawnSync(process.execPath, [bin, "decisions"], { cwd: box.dir, env: { PATH: process.env.PATH, HOME: box.home, GENTER_HOME: join(box.dir, ".genter") }, encoding: "utf8" });
       assert.equal(inside.status, 1);
@@ -211,7 +265,7 @@ describe("genter decisions", () => {
     }
   });
 
-  it("[rl:decisions-page/stamped] the commit is read from .git with fs alone: a loose ref, packed-refs, a detached HEAD, a worktree, a branch with no commit", () => {
+  it("[rl:decisions-page/stamped] the commit is read from .git with fs alone: a loose ref, packed-refs, a detached HEAD, a worktree, a branch with no commit, reftable said", () => {
     const base = mkdtempSync(join(tmpdir(), "genter-git-"));
     const put = (path, text) => {
       mkdirSync(join(base, path, ".."), { recursive: true });
@@ -236,6 +290,10 @@ describe("genter decisions", () => {
       assert.deepEqual(headOf(join(base, "wt"), base), { root: join(base, "wt"), commit: COMMIT, branch: "pages" });
       put("fresh/.git/HEAD", "ref: refs/heads/main\n");
       assert.deepEqual(headOf(join(base, "fresh"), base), { root: join(base, "fresh"), commit: null, branch: "main" });
+      put("reftable/.git/HEAD", "ref: refs/heads/.invalid\n");
+      put("reftable/.git/refs/heads", "this repository uses the reftable format\n");
+      put("reftable/.git/reftable/tables.list", "0x000000000001-0x000000000002-1a2b3c4d.ref\n");
+      assert.throws(() => headOf(join(base, "reftable"), base), /reftable format, which Genter cannot read without running git/, "never stamped as before the first commit");
       put("evil/.git/HEAD", "ref: refs/../../../etc/passwd\n");
       assert.throws(() => headOf(join(base, "evil"), base), /names neither a commit nor a branch/);
       put("plain/readme.md", "x");

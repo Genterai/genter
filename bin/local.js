@@ -1,15 +1,15 @@
 // The genter command, with no keys and no packages: folders, files, websites and notes (src/local.js), and the same as
 // an MCP server over stdio (src/mcp-server.js). Each searches the project of the folder it runs in (mcp: its first folder).
 // `genter decisions` writes the project's decisions page (src/page.js), stamped with its commit (src/git.js).
-import { mkdirSync, readFileSync, realpathSync, renameSync, statSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import { runDemo } from "../src/demo.js";
 import { headOf } from "../src/git.js";
 import { install, terminalAsk } from "../src/install/index.js";
-import { createLocal, embedderFor, embeddingProvider, findText, genterHome, shown } from "../src/local.js";
+import { createLocal, embedderFor, embeddingProvider, findText, genterHome, LIMITS, realOf, shown, under } from "../src/local.js";
 import { serveMcp, sourcesText } from "../src/mcp-server.js";
-import { decisionsOf, decisionsPage } from "../src/page.js";
+import { cutText, decisionsOf, decisionsPage } from "../src/page.js";
 import { readerCommand } from "./reader.js";
 
 const version = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")).version;
@@ -118,7 +118,9 @@ function projectFolder(words) {
 }
 
 // The decisions page of the project: written outside its repository unless --out names a file, readable by its owner
-// only, since it quotes the project's documents. { path, project, commit, current, replaced }.
+// only, since it quotes the project's documents; written whole, through a temp file of its own (never one already
+// there, nor a link) that is removed when the page cannot take its place. { path, project, commit, current, replaced,
+// complete }.
 function decisions(g, home, flags, words) {
   if (words.length || flags.out === "") throw new Error("genter decisions [--out <file>]: it reads the project of the folder it runs in");
   const { root, place, refused } = g.project();
@@ -128,35 +130,42 @@ function decisions(g, home, flags, words) {
   const project = basename(root);
   const path = flags.out ? resolve(flags.out === "~" || flags.out.startsWith("~/") ? join(homedir(), flags.out.slice(1)) : flags.out) : join(home, "pages", `${project.replace(/[^\p{L}\p{N}_.-]+/gu, "-").replace(/^[.-]+/, "") || "project"}.html`);
   if (!flags.out && [root, head.root].some((dir) => within(path, dir))) throw new Error(`${shown(path)} is inside ${project}: the page quotes its documents, so it is written outside the repository; choose a file with --out <file>`);
-  const rows = decisionsOf(g.documents());
+  if (isFolder(path)) throw new Error(`${shown(path)} is a folder: --out names the page's file, such as ${shown(join(path, `${project}.html`))}`);
+  const { documents, complete } = g.documents();
+  const rows = decisionsOf(documents);
   const d = new Date();
   const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  const html = decisionsPage({ project, commit: head.commit, date, rows });
+  const cut = complete ? undefined : LIMITS.files;
+  const html = decisionsPage({ project, commit: head.commit, date, rows, cut });
   mkdirSync(dirname(path), { recursive: true, mode: 0o700 });
-  writeFileSync(`${path}.${process.pid}.tmp`, html, { mode: 0o600 });
-  renameSync(`${path}.${process.pid}.tmp`, path);
+  if (!flags.out) chmodSync(dirname(path), 0o700);
+  const temp = `${path}.${process.pid}.tmp`;
+  writeFileSync(temp, html, { mode: 0o600, flag: "wx" });
+  try {
+    renameSync(temp, path);
+  } catch (error) {
+    try {
+      unlinkSync(temp);
+    } catch {}
+    throw error;
+  }
   const current = rows.filter((r) => r.state === "current").length;
   console.error(`genter: ${current} current · ${rows.length - current} replaced in ${project}${head.commit ? ` at ${head.commit.slice(0, 7)}` : ", before its first commit"}`);
-  return { path, project, commit: head.commit, current, replaced: rows.length - current };
+  if (cut) console.error(`genter: ${cutText(cut)}`);
+  return { path, project, commit: head.commit, current, replaced: rows.length - current, complete };
 }
+
+const isFolder = (path) => {
+  try {
+    return statSync(path).isDirectory();
+  } catch {
+    return false;
+  }
+};
 
 // Whether a path is a folder or inside it, as written or once links are followed (for a path that is not there yet,
 // where its nearest folder that is leads).
-function within(path, dir) {
-  const inside = (p, d) => {
-    const rel = relative(d, p);
-    return rel === "" || (!rel.startsWith("..") && !isAbsolute(rel));
-  };
-  const real = (p) => {
-    try {
-      return realpathSync(p);
-    } catch {
-      const up = dirname(p);
-      return up === p ? p : join(real(up), basename(p));
-    }
-  };
-  return inside(path, dir) || inside(real(path), real(dir));
-}
+const within = (path, dir) => under(path, [dir]) || under(realOf(path), [realOf(dir)]);
 
 export async function local(argv) {
   const [command = "help", ...rest] = argv;
