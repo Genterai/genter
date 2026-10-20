@@ -12,6 +12,7 @@ import { mkdirSync, readdirSync, readFileSync, statSync, utimesSync, writeFileSy
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { conformance } from "../src/conformance.js";
+import { LIMITS } from "../src/local.js";
 
 export const QUERY = "can we deploy on Friday?";
 const NOTICE = "> **Deprecated:** replaced by [Release process v2](release-process-v2.md)";
@@ -137,12 +138,16 @@ export async function check(base, { token, repos } = {}) {
   // them. Twice: the second time the 20 go over the connections the first opened, so they reach the server together and
   // all wait their turn there, which is when a server that holds its event loop through the searches answers /health
   // only after them. What it is measured by is how many searches it waited behind, not milliseconds: a busy machine
-  // slows the searches and /health alike.
+  // slows the searches and /health alike. /health waits for at most two turns of the server's event loop (one accepts
+  // its connection, one reads its request), and a search gives a turn after every LIMITS.turnMs of its work
+  // (src/local.js): so it may wait behind, for each turn, the searches that fit in turnMs and the one the turn falls in,
+  // a search taking what one took in that round (the median time between two answers). A faster machine ends more
+  // searches in a turn, a busy one fewer.
   const rounds = [await burst(base, token), await burst(base, token)];
   const failed = rounds.flatMap((r) => r.failed);
   add("20 searches at once all answer, twice", !failed.length, JSON.stringify(failed.map((r) => [r.status, r.body]).slice(0, 2)));
-  const said = rounds.map((r) => `in ${r.answeredIn} ms, behind ${r.behind} of the ${r.waiting} still running`).join("; ");
-  add(`/health answers while 20 searches run, waiting for none of them (${said})`, rounds.every((r) => r.healthy === 200 && r.waiting > 0 && r.behind < r.waiting / 2), rounds.map((r) => `health ${r.healthy} asked at +${r.askedAt} ms, answered at +${r.healthAt} ms; searches answered by then ${r.answeredBefore}, the last at +${r.lastSearch} ms`).join("; "));
+  const said = rounds.map((r) => `in ${r.answeredIn} ms, behind ${r.behind} of the ${r.waiting} still running, at most ${r.allowed}`).join("; ");
+  add(`/health answers while 20 searches run, behind no more of them than two turns of the event loop end (${said})`, rounds.every((r) => r.healthy === 200 && r.waiting > 0 && r.behind <= r.allowed), rounds.map((r) => `health ${r.healthy} asked at +${r.askedAt} ms, answered at +${r.healthAt} ms; searches answered by then ${r.answeredBefore}, the last at +${r.lastSearch} ms; one search ${r.unit} ms`).join("; "));
 
   if (repos) add("the served folders are unchanged", listing(repos) === before, "a file was written, changed or removed under the served folder");
   return checks;
@@ -150,7 +155,9 @@ export async function check(base, { token, repos } = {}) {
 
 // 20 searches sent at once, then /health 20 ms later: { healthy, answeredIn, askedAt, healthAt, lastSearch (ms from the
 // start), waiting (searches not answered when /health was asked), behind (of those, the ones answered before it),
-// answeredBefore, failed (the searches that did not answer) }.
+// unit (the median ms between two answers: one search, as they run one at a time), allowed (the most it may wait
+// behind: two turns of LIMITS.turnMs, each the searches that fit in it and the one it falls in), answeredBefore, failed
+// (the searches that did not answer) }.
 async function burst(base, token) {
   const started = performance.now();
   const ms = (t) => Math.round(t - started);
@@ -166,6 +173,8 @@ async function burst(base, token) {
   const healthy = await fetch(`${base}/health`).then((r) => r.status);
   const healthAt = performance.now();
   const all = await Promise.all(searches);
+  const gaps = answered.slice(1).map((t, i) => t - answered[i]).sort((a, b) => a - b);
+  const unit = gaps[Math.floor(gaps.length / 2)];
   return {
     healthy,
     answeredIn: Math.round(healthAt - asked),
@@ -174,6 +183,8 @@ async function burst(base, token) {
     lastSearch: ms(Math.max(...answered)),
     waiting: answered.filter((t) => t > asked).length,
     behind: answered.filter((t) => t > asked && t < healthAt).length,
+    unit: Math.round(unit * 10) / 10,
+    allowed: 2 * (Math.ceil(LIMITS.turnMs / unit) + 1),
     answeredBefore: answered.filter((t) => t < healthAt).length,
     failed: all.filter((r) => r.status !== 200 || r.body?.result?.isError || !/^\[\d+\] /m.test(textOf(r))),
   };

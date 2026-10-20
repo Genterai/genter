@@ -3,16 +3,17 @@
 Status: shipped
 Request: the product owner (dan), 2026-10-20, accepting Genter's open-source plan: "по всему что предлагаешь" (on
 everything you propose), and asking to carry it through to main. This fixes step 3.3 of that plan (`genter serve`,
-proved by "health answers during 20 concurrent searches"): on pull request #92's CI run, the job `test (22)` failed once
-on `test/serve.test.js`'s smoke test and passed when run again
+whose red line serve/async-reads says `/health` answers at once "also while 20 searches run"): on pull request #92's
+CI run, the job `test (22)` failed once on `test/serve.test.js`'s smoke test and passed when run again
 (https://github.com/Genterai/genter/actions/runs/39498720225/job/118890415857: "/health answers while 20 searches run
 (in 618 ms; the searches took 696 ms)", "health 200 after 618 ms, at +696 ms; last search at +696 ms"). "Flaky" is no
 root cause: find it, and fix the product if it is the product, the red line kept as written.
 
 Intent: `genter serve` answers `/health` at once while 20 searches run, as serve/async-reads says, on a busy machine as
 on an idle one — success: with the 20 searches sent over connections already open (so all 20 reach the server
-together), `/health` is answered behind at most 2 of them instead of after all 20, in every run under full CPU
-contention, and the smoke test judges it by how many searches it waited behind, not by a number of milliseconds.
+together), `/health` is answered behind no more of them than two turns of the event loop end (two turns of
+`LIMITS.turnMs`, each the searches that fit in it and the one it falls in: 4 to 6 here) instead of after all 20, in
+every run under full CPU contention, and the smoke test judges it by that count, not by a number of milliseconds.
 Searched: `npx -y genter-cli@0.3 ask "does a search hold the event loop, so /health waits while searches run?"` from
 the worktree answers `sh: 1: genter: not found` (inside its own repository npx resolves to this package, which has no
 `genter` bin there), so it was asked with this worktree's engine (`node bin/genter.js ask`, its own `GENTER_HOME`):
@@ -57,12 +58,20 @@ Decided:
   over a large folder. With the turns inside the search, a call that starts right after another goes on with the same
   10 ms budget.
 * The test: `test/serve-smoke.mjs` sends the 20 searches twice, the second time over the connections the first opened,
-  so they reach the server together (the case that shows a held event loop on every run), and judges `/health` by the
-  searches still running when it was asked that were answered before it: fewer than half. The 1,000 ms bound goes: a
-  busy machine slows the searches and `/health` alike, while the count does not move (before the fix 19 of the 19 still
-  running at the median; after, at most 2). The docker compose smoke test (`test/serve-compose.test.js`) runs the same check. A test in
-  process: a timer due at once fires before 20 searches over files already read, one after the other, end (before the
-  fix it fired after all 20).
+  so they reach the server together (the case that shows a held event loop on almost every run), and judges `/health`
+  by the searches still running when it was asked that were answered before it. `/health` waits for at most two turns
+  of the event loop (one accepts its connection, one reads its request), and a turn comes after at most `turnMs` of
+  search work, so after the searches that fit in `turnMs` and the one it falls in; one search takes what one took in
+  that round (the median time between two answers, as they run one at a time). So the check allows
+  2 × (⌈`turnMs` / one search⌉ + 1) searches: 4 to 6 on this machine. The 1,000 ms bound goes: a busy machine slows the
+  searches and `/health` alike, and a faster one ends more searches in a turn, which the bound follows (over a folder of
+  20 notes, where a search takes about 3 ms instead of 9, `/health` waited behind up to 5 of the 14 still running at
+  the median, close to the half a fixed share would allow, and the bound allowed 8 to 12). Before the fix it waited behind
+  19 of the 19 still running at the median. The docker compose smoke test (`test/serve-compose.test.js`) runs the same
+  check. Two tests in process: a timer due at once fires before 20 searches over files already read, one after the
+  other, end (before the fix it fired after all 20); and one such search, with no budget left (`turnMs` 0), turns the
+  event loop at least once per file (858 turns over the smoke folder's 403 files; 0 before the fix, and 1 with a single
+  turn at the start of each search, the alternative above, which the first test does not tell apart).
 Open:
 * A warm search over a large folder spends about a fifth of its time cutting Markdown that did not change
   (`describeFile` calls `splitMarkdown` at every settle: 441 of 2,092 ms for 20 searches over 4,903 files) → a
@@ -71,12 +80,22 @@ Open:
   `src/lexical.js`'s interface; only if a larger folder shows it [non-blocking]
 Proof: `test/serve.test.js` "[rl:serve/same-contract] [rl:serve/tokens] [rl:serve/health] [rl:serve/read-only]
 [rl:serve/async-reads] [rl:serve/team-reads-all] the smoke test passes against genter serve …" with the new check:
-on the code before the fix it fails on every run (3 of 3 alone, 16 of 16 eight at once: "health 200 asked at +25 ms,
-answered at +469 ms; searches answered by then 20, the last at +469 ms"); with the fix it passes 40 of 40 eight at once
-and 40 of 40 eight at once with a busy loop on every core / "[rl:serve/async-reads] searches over files already read
-give the event loop its turns: a timer due at once fires before 20 of them, one after the other, end": fails before
-the fix, passes with it. Measured on 4 cores with a busy loop on each (`node -e 'for(;;){}'`), `genter serve` over
-the smoke folder, 32 runs on main (a32c0f7) and 32 with the fix, taken in turns; each run reads every file once, then
+on the code before the fix it fails on almost every run, not on every one: with the first bound (fewer than half),
+3 of 3 alone and 16 of 16 eight at once ("health 200 asked at +25 ms, answered at +469 ms; searches answered by then
+20, the last at +469 ms"), and 28 of 30 under a busy loop per core in review; with the bound tied to `turnMs`
+(2 × (⌈`turnMs` / one search⌉ + 1), the old code given the same 10 ms), 10 of 10 alone, 10 of 10 alone under the busy
+loops and 16 of 16 eight at once ("in 346 ms, behind 20 of the 20 still running, at most 4"). With the fix it passes
+40 of 40 alone under the busy loops, 40 of 40 eight at once under them and 40 of 40 eight at once idle. A second set
+took the raw times of both rounds, main (a32c0f7) and the fix in turns, over 400 notes (30 runs each under the busy
+loops, 20 idle), 80 notes (the same) and 20 notes (20 idle), and judged them offline: with the fix every run passes,
+with 4 to 12 allowed and `/health` behind at most 5, at least 3 fewer than allowed in every round; main passes 0 of
+60 under the busy loops and 3 of 60 idle (a fixed half would have passed 0 and 2).
+The deterministic test of the old code is the in-process one: "[rl:serve/async-reads] searches over files already read
+give the event loop its turns: a timer due at once fires before 20 of them, one after the other, end" fails before the
+fix and passes with it, and "[rl:serve/async-reads] one search over files already read gives the event loop turns
+while it runs, not only between searches …" fails before the fix (0 turns), fails with one turn per search and none
+inside it (1 turn), and passes with the fix (858 turns over 403 files). The first set, before the review: on 4 cores
+with a busy loop on each (`node -e 'for(;;){}'`), `genter serve` over the smoke folder, 32 runs on main (a32c0f7) and 32 with the fix, taken in turns; each run reads every file once, then
 sends the 20 searches and asks `/health` 20 ms later, over new connections, then again over the open ones. Over open
 connections: `/health` before min 22 / p50 291 / p90 368 / max 408 ms, answered after the last search in 29 of 32,
 behind 19 of the 19 still running at the median; after min 1 / p50 11 / p90 27 / max 36 ms, after the last search in
