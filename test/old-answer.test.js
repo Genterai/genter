@@ -188,7 +188,7 @@ describe("the old-answer test", () => {
     assert.equal(spec.reviewed, "pending owner");
   });
 
-  it("[rl:old-answer/questions-reviewed] [rl:old-answer/counts] every later document of a chain names the document whose mark leads to it and quotes that mark's line, written by hand; the run checks each line is in its document", () => {
+  it("[rl:old-answer/questions-reviewed] [rl:old-answer/counts] every later document of a chain names the document whose mark leads to it and quotes that mark's line, written by hand; the run checks each line is in its document, names the later document, and that document is a file", () => {
     const spec = json("old-answer/questions.json");
     assert.match(spec.current_rule, /written current document or any later document reached from it by the archive's own explicit replacement marks/);
     assert.match(spec.current_rule, /showed one question affected, peps\/0241/);
@@ -208,15 +208,21 @@ describe("the old-answer test", () => {
         if (q.source === "python/peps") assert.equal(l.mark, `Superseded-By: ${Number(/pep-(\d+)\./.exec(l.place)[1])}`, `${q.id}: a PEP header names ${l.place}`);
       });
     }
-    // The check the run makes at each pinned commit, on plain text: a mark's line is in its document, else it stops.
+    // The check the run makes at each pinned commit, on plain text: a mark's line is in its document, names its place,
+    // and the place is a file there, else it stops.
     const dir = mkdtempSync(join(tmpdir(), "old-answer-later-"));
     try {
       mkdirSync(join(dir, "peps"));
       writeFileSync(join(dir, "peps/pep-0314.rst"), "PEP: 314\nStatus: Superseded\nSuperseded-By: 345\n\nAbstract\n");
-      const q = (mark, at = "peps/pep-0314.rst") => [{ id: "peps/0241", later: [{ place: "peps/pep-0345.rst", in: at, mark }] }];
+      for (const n of ["0345", "0999"]) writeFileSync(join(dir, `peps/pep-${n}.rst`), `PEP: ${Number(n)}\n`);
+      const q = (mark, at = "peps/pep-0314.rst", place = "peps/pep-0345.rst") => [{ id: "peps/0241", later: [{ place, in: at, mark }] }];
       assert.deepEqual(laterMissing(dir, q("Superseded-By: 345")), []);
-      assert.deepEqual(laterMissing(dir, q("Superseded-By: 34")), ['peps/0241: peps/pep-0314.rst has no line "Superseded-By: 34"']);
+      assert.deepEqual(laterMissing(dir, q("Superseded-By: 34")), ['peps/0241: peps/pep-0314.rst has no line "Superseded-By: 34"', 'peps/0241: "Superseded-By: 34" does not name peps/pep-0345.rst']);
       assert.deepEqual(laterMissing(dir, q("Superseded-By: 345", "peps/pep-9999.rst")), ['peps/0241: peps/pep-9999.rst has no line "Superseded-By: 345"']);
+      // A place misspelled, or one the mark does not name, though a file is there: either would credit the wrong document.
+      assert.deepEqual(laterMissing(dir, q("Superseded-By: 345", undefined, "peps/pep-0345.txt")), ["peps/0241: peps/pep-0345.txt is not a file"]);
+      assert.deepEqual(laterMissing(dir, q("Superseded-By: 345", undefined, "peps/pep-0999.rst")), ['peps/0241: "Superseded-By: 345" does not name peps/pep-0999.rst']);
+      assert.deepEqual(laterMissing(dir, q("Superseded-By: 345", undefined, "peps")), ['peps/0241: "Superseded-By: 345" does not name peps', "peps/0241: peps is not a file"]);
       assert.deepEqual(laterMissing(dir, [{ id: "x" }]), []);
     } finally {
       rmSync(dir, { recursive: true, force: true });

@@ -17,7 +17,7 @@
 // lists: Genter puts the old answer first, leaves it unmarked in its first five, or does worse than plain ranking (the
 // current answer with its chain). --before names an earlier run, whose first results RESULTS.md shows beside this run's,
 // question by question.
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, dirname, join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -119,8 +119,12 @@ export function tally(rows) {
   return t;
 }
 
-// A chain's evidence: each `later` mark is a line of the document it says it is in, as checked out ([] when every one
-// is; else one line per mark not found). Plain text, not Genter's readers: the scorer never asks Genter what is current.
+// A chain's evidence, as checked out: each `later` mark is a line of the document it says it is in, the mark names its
+// place (the place's path, its file name or the last number its path carries, leading zeros dropped), and the place is
+// a file there ([] when every one holds; else one line per failure). Plain text, not Genter's readers: the scorer never
+// asks Genter what is current.
+const numbers = (s) => (s.match(/\d+/g) ?? []).map(Number);
+const namesPlace = (mark, place) => mark.includes(place) || mark.includes(basename(place)) || numbers(mark).includes(numbers(place).at(-1));
 export function laterMissing(dir, questions) {
   const out = [];
   for (const q of questions)
@@ -130,6 +134,12 @@ export function laterMissing(dir, questions) {
         lines = readFileSync(join(dir, l.in), "utf8").split(/\r?\n/).map((x) => x.trim());
       } catch {}
       if (!lines.includes(l.mark)) out.push(`${q.id}: ${l.in} has no line "${l.mark}"`);
+      if (!namesPlace(l.mark, l.place)) out.push(`${q.id}: "${l.mark}" does not name ${l.place}`);
+      let file = false;
+      try {
+        file = statSync(join(dir, l.place)).isFile();
+      } catch {}
+      if (!file) out.push(`${q.id}: ${l.place} is not a file`);
     }
   return out;
 }
@@ -161,6 +171,7 @@ export async function runSource(src) {
 
 export async function run({ offline = false, cache = join(tmpdir(), "genter-bench-repos") } = {}) {
   const spec = JSON.parse(readFileSync(join(here, "questions.json"), "utf8"));
+  if (!spec.current_rule) throw new Error("questions.json has no current_rule: the rule the counts use is published with them");
   const base = mkdtempSync(join(tmpdir(), "old-answer-"));
   const sources = [];
   const skipped = [];
@@ -174,7 +185,7 @@ export async function run({ offline = false, cache = join(tmpdir(), "genter-benc
       const co = checkout(cache, s.repo, s.commit);
       const questions = spec.questions.filter((q) => q.source === s.repo);
       const missing = laterMissing(co.dir, questions);
-      if (missing.length) throw new Error(`a chain's mark is not in its document at ${s.commit.slice(0, 7)}: ${missing.join("; ")}`);
+      if (missing.length) throw new Error(`a chain's evidence does not hold at ${s.commit.slice(0, 7)}: ${missing.join("; ")}`);
       sources.push({ id: s.repo, title: s.title, url: `https://github.com/${s.repo}/tree/${s.commit}`, commit: s.commit, committed: co.committed, dir: co.dir, questions });
     }
     const rows = [];
@@ -321,7 +332,7 @@ function chainLines(results, srcOf) {
   return [
     "## The current answer, as written and with its chain",
     "",
-    `${results.rule ?? "A question's current answer is its written current document."} The counts above take the current answer with its chain; as written, the written current document alone:`,
+    `${results.rule ?? "A question's current answer is its written current document or a later one its chain of marks leads to (questions.json `later`)."} The counts above take the current answer with its chain; as written, the written current document alone:`,
     "",
     "| arm | current answer first, as written | with its chain | current answer in the first five, as written | with its chain |",
     "| -- | --: | --: | --: | --: |",

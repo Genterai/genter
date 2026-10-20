@@ -23,8 +23,9 @@ left out, proves nothing.
   A question's current answer is its written current document or any later document reached from it by the archive's
   own explicit replacement marks, the same kind of mark its pair quotes, for every question alike; the old answer is
   the replaced document alone, never current. The later documents are written by hand from the archive (questions.json
-  `later`, each with the line of its mark quoted, checked as plain text in its document at the pinned commit, a run
-  stopping when one is not there), never computed with Genter's readers. RESULTS.md gives the current answer's counts
+  `later`, each with the line of its mark quoted), never computed with Genter's readers; at the pinned commit the run
+  checks as plain text that each mark's line is in its document, that it names the later document (its path, its file
+  name or the last number its path carries) and that the later document is a file there, and stops when one is not. RESULTS.md gives the current answer's counts
   both ways, as written (the written current document alone) and with the chain, says the rule was set after a run
   showed one question affected, and names every question the chain takes out of the losses; the losses, the decision
   rule and `--guard` use the chain.
@@ -44,7 +45,9 @@ left out, proves nothing.
 * **[one-command]** `node bench/old-answer/run.mjs` writes RESULTS.md and results/<date>.json from the sources alone; the
   same commits give the same numbers (no model, no key, no clock in the ranking); `--offline` writes only the files it
   is given (`--out`, `--md`), never the published ones; `--before <an earlier run>` puts that run's totals and what each
-  arm put first on each question beside this run's, a question whose current answer was corrected since said so. Only
+  arm put first on each question beside this run's, a question whose current answer was corrected since said so;
+  `--from <results>` writes RESULTS.md again from a results file without a run, and refuses one written before the
+  chain rule ([counts]), writing nothing. Only
   public repositories are fetched, from github.com with git, nothing fetched is run, and the bench uses Node's built-ins
   only.
 * **[never-worse]** Genter never leaves the old answer unmarked in its first five and is worse than plain ranking on no

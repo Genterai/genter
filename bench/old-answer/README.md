@@ -49,7 +49,9 @@ document reached from it by the archive's own explicit replacement marks, the sa
 quotes (a PEP header's `Superseded-By: 345`). It applies to every question alike; the old answer stays the `replaced`
 document alone. Those later documents are written by hand from the archive, the way `pair` is, as a `later` list in
 [questions.json](questions.json): each names its place, the document whose mark leads to it and that mark's line,
-quoted. The run checks, as plain text at the pinned commit, that each line is in its document, and stops if one is not;
+quoted. The run checks, as plain text at the pinned commit, that each line is in its document, that it names the later
+document (its path, its file name or the last number its path carries) and that the later document is a file there,
+and stops if one is not;
 it never asks Genter's own readers what is current, which would make Genter grade itself. Every question whose current
 document carries such a mark has its `later`: peps/0241 (PEP 314, then PEP 345, then PEP 566) and peps/0314 (PEP 345,
 then PEP 566). The rule was decided on 2026-10-20, under the product's principle "current over history", after a run

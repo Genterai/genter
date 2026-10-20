@@ -48,7 +48,7 @@ local-search,decisions-page,driftbench}.md`; the repositories, each at the commi
 Red lines: new readers/by-id (a mark's id becomes a place by its manifest's template: bounded, inside the project, never
 an address, hidden or secret-looking; the engine takes the one readable file there) and readers/records (a manifest
 says whether its documents are decision records); old-answer/repos-gate amended (two samples, the verdict on the
-held-out one, committed before the readers ran on it) and old-answer/one-command (`--before`); decisions-page/
+held-out one, committed before the readers ran on it) and old-answer/one-command (`--before`, `--from`); decisions-page/
 explicit-only and local-search/current-first name the new paths without changing what they promise. Stay true:
 readers/declarative, restricted-patterns, no-network, secrets-never-read, off-honoured, contract-tested (every new reader
 has fixtures and expected output, checked by `genter reader check` and `test/readers.test.js` in CI);
@@ -59,7 +59,8 @@ a synchronous metadata call, and reads no text); remote/anchors-not-copies (only
 for by id; an MCP server's documents are read as before); zero runtime dependencies; nothing in `src/` spawns a
 process; old-answer/never-worse holds again
 (no loss with the chain rule), its guard now failing on any loss. old-answer/counts changed (a question's current
-answer includes its chain, both counts published) and old-answer/questions-reviewed (`later`).
+answer includes its chain, both counts published, each later document's evidence checked at the pinned commit) and
+old-answer/questions-reviewed (`later`).
 Decided:
 * **A question's current answer includes its chain** (the plan's lead, 2026-10-20, under the product's principle
   "current over history", answering the peps/0241 Open line below): a question's current answer is its written
@@ -69,8 +70,9 @@ Decided:
   (`bench/old-answer/results/2026-10-20-by-id.json`) showed one question affected, peps/0241, and RESULTS.md says so
   beside both counts, as written and with the chain, naming the question the chain takes out of the losses. The later
   documents are written by hand from the archive as `later` in questions.json, each with its mark's line quoted; the run
-  checks each line as plain text at the pinned commit and stops if one is not there. They are never computed with
-  Genter's own readers, which would make Genter grade itself.
+  checks as plain text at the pinned commit that each line is in its document, names the later document and that the
+  later document is a file there, and stops if one is not. They are never computed with Genter's own readers, which
+  would make Genter grade itself.
 * **Which questions have a chain.** Every question's current document was read at the pinned commits for a replacement
   mark of its own: two carry one, PEP 314 ("Superseded-By: 345") and PEP 345 ("Superseded-By: 566"), so peps/0241 has
   `later` PEP 345 then PEP 566, and peps/0314 has PEP 566. The other 26 current PEPs (PEP 566, the chains' end, among
@@ -164,10 +166,11 @@ counts as current and as written does not, the replaced document named again in 
 tallied and published, no loss and the chain question named / "[rl:old-answer/questions-reviewed]
 [rl:old-answer/counts] every later document of a chain…": peps/0241 and peps/0314 alone have `later`, each entry in
 chain order with one quoted line (a PEP's naming its number), and `laterMissing` finds a line that is there and
-reports one that is not / "[rl:old-answer/never-worse] the guard fails a run on any loss…": the old answer first,
+reports one that is not, a place that is not a file (a misspelled extension, a folder) and a mark that does not name its
+place though a file is there / "[rl:old-answer/never-worse] the guard fails a run on any loss…": the old answer first,
 marked, where plain ranking puts it first too, fails it; a later document of the chain first does not /
 "[rl:old-answer/one-command] the published RESULTS.md…": `--from` refuses a results file written before the chain
-rule / "[rl:old-answer/one-command] an earlier run
+rule and writes nothing / "[rl:old-answer/one-command] an earlier run
 beside this one…": what each arm put first then and now, and a corrected question scored both ways / `genter reader
 check` (13 readers, every fixture as expected). The runs: the held-out list committed and pushed (a93d935) before `node
 bench/repos/run.mjs --out bench/repos/results/2026-10-20-heldout.json --before bench/repos/results/2026-10-20.json` (96
@@ -193,12 +196,14 @@ its pinned commit: 51 to 64 ms with a folder listed once per pass, 88 to 105 ms 
 - readers/by-id (new)
 - readers/records (new)
 - old-answer/repos-gate (changed: two samples, the verdict on the held-out one, committed before the readers ran on it)
-- old-answer/one-command (changed: `--before` shows an earlier run question by question)
+- old-answer/one-command (changed: `--before` shows an earlier run question by question; `--from` refuses a results
+  file written before the chain rule)
 - decisions-page/explicit-only (changed: every document a reader of decision records reads, not only the adr and rfc
   readers')
 - local-search/current-first (changed: what replaces a file may be the file its id names, readers/by-id)
 - old-answer/counts (changed: a question's current answer is its written current document or a later one its chain of
-  the archive's own marks leads to, listed by hand as `later`; both counts published)
+  the archive's own marks leads to, listed by hand as `later`, each mark's line, the place it names and that place's
+  file checked at the pinned commit; both counts published)
 - old-answer/questions-reviewed (changed: `later`, the later documents of a chain in order, each mark's line quoted)
 - old-answer/never-worse (changed: the current answer counted with its chain, and `--guard` fails on any loss; it holds
   again)
