@@ -1,0 +1,368 @@
+{
+  "about": "The questions of the old-answer test (step 1.7 of Genter's open-source plan): one per pair of a document that says of itself that it is replaced and the document that replaces it, in the archives bench/repos picked, asked so that the current answer lives in the replacing document. DriftBench's deprecated kind is read from bench/drift/questions.json by run.mjs. Each question here was written from both documents at the commit below and waits for a person's review: \"reviewed\" says who checked it.",
+  "reviewed": "pending owner",
+  "sources": [
+    {
+      "repo": "python/peps",
+      "title": "Python Enhancement Proposals",
+      "commit": "1317769c334c658db28aa5336d910f58443049eb"
+    },
+    {
+      "repo": "kubernetes/enhancements",
+      "title": "Kubernetes Enhancement Proposals",
+      "commit": "5b503a75369bdfdd494a2c2c72107a41bf6dd1a8"
+    },
+    {
+      "repo": "jaegertracing/jaeger",
+      "title": "Jaeger's RFCs and ADRs",
+      "commit": "ca047c72f34cf413c16d1118e19c7419de04bbab"
+    }
+  ],
+  "questions": [
+    {
+      "id": "peps/0005",
+      "source": "python/peps",
+      "question": "How long must a deprecated Python feature keep warning before it can be removed?",
+      "replaced": "peps/pep-0005.rst",
+      "current": "peps/pep-0387.rst",
+      "pair": "peps/pep-0005.rst says \"Superseded-By: 387\" in its header (the rfc reader's mark names PEP 387 by number, not by place)",
+      "current_says": "Wait for the warning to appear in at least two minor Python releases.",
+      "reviewed": "pending owner"
+    },
+    {
+      "id": "peps/0102",
+      "source": "python/peps",
+      "question": "What steps does the release manager follow to make a Python bugfix release?",
+      "replaced": "peps/pep-0102.rst",
+      "current": "peps/pep-0101.rst",
+      "pair": "peps/pep-0102.rst says \"Superseded-By: 101\" in its header (the rfc reader's mark names PEP 101 by number, not by place)",
+      "current_says": "The release manager's checklist for every release.",
+      "reviewed": "pending owner"
+    },
+    {
+      "id": "peps/0215",
+      "source": "python/peps",
+      "question": "How do I substitute $name placeholders in a string with values from a mapping?",
+      "replaced": "peps/pep-0215.rst",
+      "current": "peps/pep-0292.rst",
+      "pair": "peps/pep-0215.rst says \"Superseded-By: 292\" in its header (the rfc reader's mark names PEP 292 by number, not by place)",
+      "current_says": "string.Template with $-substitution.",
+      "reviewed": "pending owner"
+    },
+    {
+      "id": "peps/0216",
+      "source": "python/peps",
+      "question": "Which markup should be used to write structured Python docstrings?",
+      "replaced": "peps/pep-0216.rst",
+      "current": "peps/pep-0287.rst",
+      "pair": "peps/pep-0216.rst says \"Superseded-By: 287\" in its header (the rfc reader's mark names PEP 287 by number, not by place)",
+      "current_says": "reStructuredText.",
+      "reviewed": "pending owner"
+    },
+    {
+      "id": "peps/0241",
+      "source": "python/peps",
+      "question": "Which metadata fields say what a package requires, provides and obsoletes?",
+      "replaced": "peps/pep-0241.rst",
+      "current": "peps/pep-0314.rst",
+      "pair": "peps/pep-0241.rst says \"Superseded-By: 314\" in its header (the rfc reader's mark names PEP 314 by number, not by place)",
+      "current_says": "Requires, Provides and Obsoletes, added in metadata 1.1.",
+      "reviewed": "pending owner"
+    },
+    {
+      "id": "peps/0248",
+      "source": "python/peps",
+      "question": "What does the Python database API require a driver module to define at module level?",
+      "replaced": "peps/pep-0248.rst",
+      "current": "peps/pep-0249.rst",
+      "pair": "peps/pep-0248.rst says \"Superseded-By: 249\" in its header (the rfc reader's mark names PEP 249 by number, not by place)",
+      "current_says": "apilevel, threadsafety and paramstyle (DB-API 2.0).",
+      "reviewed": "pending owner"
+    },
+    {
+      "id": "peps/0291",
+      "source": "python/peps",
+      "question": "Which backward compatibility rules apply when changing a standard library module?",
+      "replaced": "peps/pep-0291.rst",
+      "current": "peps/pep-0387.rst",
+      "pair": "peps/pep-0291.rst says \"Superseded-By: 387\" in its header (the rfc reader's mark names PEP 387 by number, not by place)",
+      "current_says": "The general backwards compatibility policy.",
+      "reviewed": "pending owner"
+    },
+    {
+      "id": "peps/0314",
+      "source": "python/peps",
+      "question": "How does a package's metadata say which Python versions it supports?",
+      "replaced": "peps/pep-0314.rst",
+      "current": "peps/pep-0345.rst",
+      "pair": "peps/pep-0314.rst says \"Superseded-By: 345\" in its header (the rfc reader's mark names PEP 345 by number, not by place)",
+      "current_says": "Requires-Python (metadata 1.2).",
+      "reviewed": "pending owner"
+    },
+    {
+      "id": "peps/0333",
+      "source": "python/peps",
+      "question": "How should a WSGI application handle bytes and strings for the response body on Python 3?",
+      "replaced": "peps/pep-0333.rst",
+      "current": "peps/pep-3333.rst",
+      "pair": "peps/pep-0333.rst says \"Superseded-By: 3333\" in its header (the rfc reader's mark names PEP 3333 by number, not by place)",
+      "current_says": "WSGI 1.0.1: bytestrings for bodies, native strings for headers.",
+      "reviewed": "pending owner"
+    },
+    {
+      "id": "peps/0345",
+      "source": "python/peps",
+      "question": "How does package metadata declare the markup format of the long description?",
+      "replaced": "peps/pep-0345.rst",
+      "current": "peps/pep-0566.rst",
+      "pair": "peps/pep-0345.rst says \"Superseded-By: 566\" in its header (the rfc reader's mark names PEP 566 by number, not by place)",
+      "current_says": "Description-Content-Type (metadata 2.1).",
+      "reviewed": "pending owner"
+    },
+    {
+      "id": "peps/0354",
+      "source": "python/peps",
+      "question": "How do I define an enumeration type with the standard library?",
+      "replaced": "peps/pep-0354.rst",
+      "current": "peps/pep-0435.rst",
+      "pair": "peps/pep-0354.rst says \"Superseded-By: 435\" in its header (the rfc reader's mark names PEP 435 by number, not by place)",
+      "current_says": "The enum module (Enum, IntEnum).",
+      "reviewed": "pending owner"
+    },
+    {
+      "id": "peps/0386",
+      "source": "python/peps",
+      "question": "How are pre-release and post-release versions of a Python package numbered and ordered?",
+      "replaced": "peps/pep-0386.rst",
+      "current": "peps/pep-0440.rst",
+      "pair": "peps/pep-0386.rst says \"Superseded-By: 440\" in its header (the rfc reader's mark names PEP 440 by number, not by place)",
+      "current_says": "The version scheme of PEP 440.",
+      "reviewed": "pending owner"
+    },
+    {
+      "id": "peps/0409",
+      "source": "python/peps",
+      "question": "How does raise ... from None suppress the context of a chained exception, and where is that recorded?",
+      "replaced": "peps/pep-0409.rst",
+      "current": "peps/pep-0415.rst",
+      "pair": "peps/pep-0409.rst says \"Superseded-By: 415\" in its header (the rfc reader's mark names PEP 415 by number, not by place)",
+      "current_says": "The __suppress_context__ attribute.",
+      "reviewed": "pending owner"
+    },
+    {
+      "id": "peps/0426",
+      "source": "python/peps",
+      "question": "Which version of the core metadata format should packaging tools write, and can it be expressed as JSON?",
+      "replaced": "peps/pep-0426.rst",
+      "current": "peps/pep-0566.rst",
+      "pair": "peps/pep-0426.rst says \"Superseded-By: 566\" in its header (the rfc reader's mark names PEP 566 by number, not by place)",
+      "current_says": "Metadata 2.1, with a JSON-compatible form.",
+      "reviewed": "pending owner"
+    },
+    {
+      "id": "peps/0431",
+      "source": "python/peps",
+      "question": "How can I get time zone information from the IANA database in the standard library?",
+      "replaced": "peps/pep-0431.rst",
+      "current": "peps/pep-0615.rst",
+      "pair": "peps/pep-0431.rst says \"Superseded-By: 615\" in its header (the rfc reader's mark names PEP 615 by number, not by place)",
+      "current_says": "The zoneinfo module.",
+      "reviewed": "pending owner"
+    },
+    {
+      "id": "peps/0433",
+      "source": "python/peps",
+      "question": "Are file descriptors that Python opens inherited by child processes?",
+      "replaced": "peps/pep-0433.rst",
+      "current": "peps/pep-0446.rst",
+      "pair": "peps/pep-0433.rst says \"Superseded-By: 446\" in its header (the rfc reader's mark names PEP 446 by number, not by place)",
+      "current_says": "New file descriptors are non-inheritable.",
+      "reviewed": "pending owner"
+    },
+    {
+      "id": "peps/0438",
+      "source": "python/peps",
+      "question": "Can a project on PyPI host its release files on an external site?",
+      "replaced": "peps/pep-0438.rst",
+      "current": "peps/pep-0470.rst",
+      "pair": "peps/pep-0438.rst says \"Superseded-By: 470\" in its header (the rfc reader's mark names PEP 470 by number, not by place)",
+      "current_says": "External hosting support is removed.",
+      "reviewed": "pending owner"
+    },
+    {
+      "id": "peps/0501",
+      "source": "python/peps",
+      "question": "How can a string literal's interpolations be handed to my own function instead of being formatted right away?",
+      "replaced": "peps/pep-0501.rst",
+      "current": "peps/pep-0750.rst",
+      "pair": "peps/pep-0501.rst says \"Superseded-By: 750\" in its header (the rfc reader's mark names PEP 750 by number, not by place)",
+      "current_says": "Template strings (t-strings).",
+      "reviewed": "pending owner"
+    },
+    {
+      "id": "peps/0509",
+      "source": "python/peps",
+      "question": "Can code rely on the private version tag that dictionaries carry?",
+      "replaced": "peps/pep-0509.rst",
+      "current": "peps/pep-0699.rst",
+      "pair": "peps/pep-0509.rst says \"Superseded-By: 699\" in its header (the rfc reader's mark names PEP 699 by number, not by place)",
+      "current_says": "The ma_version_tag field is removed.",
+      "reviewed": "pending owner"
+    },
+    {
+      "id": "peps/0513",
+      "source": "python/peps",
+      "question": "Which platform tag should a portable Linux wheel carry?",
+      "replaced": "peps/pep-0513.rst",
+      "current": "peps/pep-0600.rst",
+      "pair": "peps/pep-0513.rst says \"Superseded-By: 600\" in its header (the rfc reader's mark names PEP 600 by number, not by place)",
+      "current_says": "manylinux_x_y tags (perennial manylinux).",
+      "reviewed": "pending owner"
+    },
+    {
+      "id": "peps/0543",
+      "source": "python/peps",
+      "question": "How is a TLS client configured with the unified TLS API for Python?",
+      "replaced": "peps/pep-0543.rst",
+      "current": "peps/pep-0748.rst",
+      "pair": "peps/pep-0543.rst says \"Superseded-By: 748\" in its header (the rfc reader's mark names PEP 748 by number, not by place)",
+      "current_says": "TLSClientConfiguration.",
+      "reviewed": "pending owner"
+    },
+    {
+      "id": "peps/0554",
+      "source": "python/peps",
+      "question": "How do I create another interpreter and run code in it from the standard library?",
+      "replaced": "peps/pep-0554.rst",
+      "current": "peps/pep-0734.rst",
+      "pair": "peps/pep-0554.rst says \"Superseded-By: 734\" in its header (the rfc reader's mark names PEP 734 by number, not by place)",
+      "current_says": "concurrent.interpreters.",
+      "reviewed": "pending owner"
+    },
+    {
+      "id": "peps/0563",
+      "source": "python/peps",
+      "question": "When are function annotations evaluated in Python, and are they kept as strings?",
+      "replaced": "peps/pep-0563.rst",
+      "current": [
+        "peps/pep-0649.rst",
+        "peps/pep-0749.rst"
+      ],
+      "pair": "peps/pep-0563.rst says \"Superseded-By: 649, 749\" in its header (the rfc reader's mark names PEP 649 by number, not by place)",
+      "current_says": "Deferred evaluation through __annotate__ (PEP 649; PEP 749 implements it).",
+      "reviewed": "pending owner"
+    },
+    {
+      "id": "peps/0571",
+      "source": "python/peps",
+      "question": "What does the manylinux2010 platform tag mean today?",
+      "replaced": "peps/pep-0571.rst",
+      "current": "peps/pep-0600.rst",
+      "pair": "peps/pep-0571.rst says \"Superseded-By: 600\" in its header (the rfc reader's mark names PEP 600 by number, not by place)",
+      "current_says": "An alias of manylinux_2_12.",
+      "reviewed": "pending owner"
+    },
+    {
+      "id": "peps/0599",
+      "source": "python/peps",
+      "question": "Which glibc version does the manylinux2014 platform tag stand for?",
+      "replaced": "peps/pep-0599.rst",
+      "current": "peps/pep-0600.rst",
+      "pair": "peps/pep-0599.rst says \"Superseded-By: 600\" in its header (the rfc reader's mark names PEP 600 by number, not by place)",
+      "current_says": "An alias of manylinux_2_17 (glibc 2.17).",
+      "reviewed": "pending owner"
+    },
+    {
+      "id": "peps/0601",
+      "source": "python/peps",
+      "question": "Is a return statement that leaves a finally block allowed?",
+      "replaced": "peps/pep-0601.rst",
+      "current": "peps/pep-0765.rst",
+      "pair": "peps/pep-0601.rst says \"Superseded-By: 765\" in its header (the rfc reader's mark names PEP 765 by number, not by place)",
+      "current_says": "A SyntaxWarning for return, break or continue that exits a finally block.",
+      "reviewed": "pending owner"
+    },
+    {
+      "id": "peps/0622",
+      "source": "python/peps",
+      "question": "What is the syntax and behaviour of the match statement?",
+      "replaced": "peps/pep-0622.rst",
+      "current": "peps/pep-0634.rst",
+      "pair": "peps/pep-0622.rst says \"Superseded-By: 634\" in its header (the rfc reader's mark names PEP 634 by number, not by place)",
+      "current_says": "The specification of structural pattern matching.",
+      "reviewed": "pending owner"
+    },
+    {
+      "id": "peps/0631",
+      "source": "python/peps",
+      "question": "How do I list my project's dependencies in pyproject.toml?",
+      "replaced": "peps/pep-0631.rst",
+      "current": "peps/pep-0621.rst",
+      "pair": "peps/pep-0631.rst says \"Superseded-By: 621\" in its header (the rfc reader's mark names PEP 621 by number, not by place)",
+      "current_says": "The dependencies array of the [project] table.",
+      "reviewed": "pending owner"
+    },
+    {
+      "id": "peps/0665",
+      "source": "python/peps",
+      "question": "What file format records Python dependencies for reproducible installs?",
+      "replaced": "peps/pep-0665.rst",
+      "current": "peps/pep-0751.rst",
+      "pair": "peps/pep-0665.rst says \"Superseded-By: 751\" in its header (the rfc reader's mark names PEP 751 by number, not by place)",
+      "current_says": "pylock.toml.",
+      "reviewed": "pending owner"
+    },
+    {
+      "id": "peps/0722",
+      "source": "python/peps",
+      "question": "How does a single-file script declare the dependencies it needs, inside the script?",
+      "replaced": "peps/pep-0722.rst",
+      "current": "peps/pep-0723.rst",
+      "pair": "peps/pep-0722.rst says \"Superseded-By: 723\" in its header (the rfc reader's mark names PEP 723 by number, not by place)",
+      "current_says": "Inline script metadata in a # /// script block.",
+      "reviewed": "pending owner"
+    },
+    {
+      "id": "peps/3153",
+      "source": "python/peps",
+      "question": "Which standard library module provides an event loop for asynchronous IO?",
+      "replaced": "peps/pep-3153.rst",
+      "current": "peps/pep-3156.rst",
+      "pair": "peps/pep-3153.rst says \"Superseded-By: 3156\" in its header (the rfc reader's mark names PEP 3156 by number, not by place)",
+      "current_says": "asyncio.",
+      "reviewed": "pending owner"
+    },
+    {
+      "id": "keps/2451",
+      "source": "kubernetes/enhancements",
+      "question": "What file permissions does a projected service account token file get in a pod?",
+      "replaced": "keps/sig-storage/2451-service-account-token-volumes/README.md",
+      "current": "keps/sig-auth/1205-bound-service-account-tokens/README.md",
+      "pair": "keps/sig-storage/2451-service-account-token-volumes/README.md says in its title \"[Replaced by [Bound Service Account Tokens](https://github.com/kubernetes/enhancements/tree/master/keps/sig-auth/1205-bound-service-account-tokens)]\" (the banners reader's mark names the replacing KEP by its address on github.com, not by place)",
+      "current_says": "TokenRequestProjection › File Permission, in the Bound Service Account Tokens KEP.",
+      "reviewed": "pending owner"
+    },
+    {
+      "id": "jaeger/rfc-0002",
+      "source": "jaegertracing/jaeger",
+      "question": "How are the browser's UI tools delivered to the agent sidecar and called by it in Jaeger's AI chat?",
+      "replaced": "docs/rfc/0002-ai-gateway-contextual-tools.md",
+      "current": "docs/rfc/0008-ai-gateway-mcp-tool-routing.md",
+      "pair": "docs/rfc/0002-ai-gateway-contextual-tools.md says in its Status line \"the §5 tool-routing decision is superseded by [RFC 0008](./0008-ai-gateway-mcp-tool-routing.md)\" (the banners reader's mark links the replacing RFC)",
+      "current_says": "Over the gateway-hosted, turn-scoped MCP endpoint, UI tools named ui__<name>; RFC 0002 chose an ACP extension method.",
+      "note": "RFC 0002 says only its §5 is superseded; Genter's mark is on the whole document, as quoted.",
+      "reviewed": "pending owner"
+    },
+    {
+      "id": "jaeger/rfc-0012",
+      "source": "jaegertracing/jaeger",
+      "question": "Which address does an external MCP client such as Cursor use to reach Jaeger's MCP tools?",
+      "replaced": "docs/rfc/0012-mcp-server-extension.md",
+      "current": "docs/rfc/0008-ai-gateway-mcp-tool-routing.md",
+      "pair": "docs/rfc/0012-mcp-server-extension.md says in its Status line \"tool routing superseded by [RFC 0008](./0008-ai-gateway-mcp-tool-routing.md)\" (the banners reader's mark links the replacing RFC)",
+      "current_says": "The shared /api/ai/mcp/ path on the query port; RFC 0012 proposed a standalone extension on :16687.",
+      "note": "RFC 0012 says only its tool routing is superseded; Genter's mark is on the whole document, as quoted.",
+      "reviewed": "pending owner"
+    }
+  ]
+}

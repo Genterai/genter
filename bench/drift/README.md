@@ -142,4 +142,7 @@ and the current one is not, and **missed** otherwise; a deleted fact is stale wh
 the current one: the full report counts it per kind, and the guard fails a run where genter puts a replaced answer first
 on the deprecated kind.
 
+The deprecated kind is also one input of [the old-answer test](../old-answer), which counts, over the same sections,
+how often plain ranking and genter put a replaced document first or leave it unmarked in the first five.
+
 Latest full run: [2026-10-10](results/2026-10-10.md) (numbers in `results/2026-10-10.json`; `node bench/drift/run.mjs --from bench/drift/results/2026-10-10.json --md bench/drift/results/2026-10-10.md --readme`, from the repository root, writes its report and the README tables again).
