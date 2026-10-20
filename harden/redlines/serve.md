@@ -6,7 +6,7 @@ client with a token searches "can we deploy on Friday?" and reads the places it 
 them; a client with no token, or one whose line was removed, gets 401 and nothing.
 Sources: `src/http.js`, `Dockerfile`, `docker-compose.yml`; in `bin/local.js`, the `serve` command; in `src/local.js`,
 `notes: false`, `only: true` and the reads off the main thread (`look`, `textAsync`, `within`, `reading`, `readMs`,
-`documentAt`, `lookReplacers`); `docs/team.md`.
+`documentAt`, `lookReplacers`) and the event loop's turns during a search (`turn`, `turnMs`); `docs/team.md`.
 
 Most weight: [tokens] and [loopback-default] (who can reach it), [team-reads-all] (what a token opens: what the command
 names, said plainly), [read-only] and [notes-off] (nothing written, no one's notes), [own-home] and [seal-outside] (a

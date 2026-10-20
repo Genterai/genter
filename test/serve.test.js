@@ -11,7 +11,7 @@ import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 import { conformance } from "../src/conformance.js";
 import { isLoopback, parseTokens, serveHttp, serveSetup, tokensFile } from "../src/http.js";
-import { createLocal } from "../src/local.js";
+import { createLocal, LIMITS } from "../src/local.js";
 import { handle, mcpTools, searchText } from "../src/mcp-server.js";
 import { cipher } from "../src/seal.js";
 import { check, post, QUERY, sender, setup } from "./serve-smoke.mjs";
@@ -527,6 +527,51 @@ describe("genter serve: the local engine for a small team over HTTP", () => {
       assert.equal(most, 1, "one tool call at a time");
     } finally {
       await s.close();
+      b.done();
+    }
+  });
+
+  it("[rl:serve/async-reads] searches over files already read give the event loop its turns: a timer due at once fires before 20 of them, one after the other, end", { timeout: 60_000 }, async () => {
+    const b = box();
+    setup(b.base);
+    const g = createLocal({ home: b.at("data"), secret: hex(), cwd: b.base, notes: false, only: true });
+    await g.add(b.at("repos"));
+    await g.find(QUERY); // every file is read now: no search below waits for a read
+    let fired = null;
+    setTimeout(() => {
+      fired = performance.now();
+    }, 0);
+    for (let i = 0; i < 20; i++) assert.ok((await g.find(`${["billing", "rollback", "worker", "cache"][i % 4]} step ${i}`)).results.length);
+    const ended = performance.now();
+    assert.ok(fired !== null && fired < ended, "the timer fired while the searches ran, not after them");
+    b.done();
+  });
+
+  it("[rl:serve/async-reads] one search over files already read gives the event loop turns while it runs, not only between searches: with no budget left (turnMs 0), at least one turn per file", { timeout: 60_000 }, async () => {
+    const b = box();
+    setup(b.base);
+    const g = createLocal({ home: b.at("data"), secret: hex(), cwd: b.base, notes: false, only: true });
+    await g.add(b.at("repos"));
+    await g.find(QUERY); // every file is read now: the search below waits for no read
+    // With no budget a search turns wherever it may, so what is counted is where it turns, not how fast this machine is:
+    // a search that turned once, at its start, would hold the event loop through a large folder all the same.
+    const saved = LIMITS.turnMs;
+    LIMITS.turnMs = 0;
+    let turns = 0;
+    let counting = true;
+    const count = () => {
+      turns++;
+      if (counting) setImmediate(count);
+    };
+    try {
+      setImmediate(count);
+      assert.ok((await g.find(QUERY)).results.length);
+      counting = false;
+      const files = 400; // setup's filler notes, at the least
+      assert.ok(turns >= files, `${turns} turns of the event loop in one search over ${files} files`);
+    } finally {
+      counting = false;
+      LIMITS.turnMs = saved;
       b.done();
     }
   });
