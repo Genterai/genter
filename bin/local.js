@@ -1,12 +1,15 @@
 // The genter command, with no keys and no packages: folders, files, websites and notes (src/local.js), and the same as
 // an MCP server over stdio (src/mcp-server.js). Each searches the project of the folder it runs in (mcp: its first folder).
-import { readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
+// `genter decisions` writes the project's decisions page (src/page.js), stamped with its commit (src/git.js).
+import { mkdirSync, readFileSync, realpathSync, renameSync, statSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { runDemo } from "../src/demo.js";
+import { headOf } from "../src/git.js";
 import { install, terminalAsk } from "../src/install/index.js";
-import { createLocal, embedderFor, embeddingProvider, findText, genterHome } from "../src/local.js";
+import { createLocal, embedderFor, embeddingProvider, findText, genterHome, shown } from "../src/local.js";
 import { serveMcp, sourcesText } from "../src/mcp-server.js";
+import { decisionsOf, decisionsPage } from "../src/page.js";
 import { readerCommand } from "./reader.js";
 
 const version = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")).version;
@@ -34,6 +37,9 @@ reads it there again, so the answer is what your docs say now.
                                      shows each change, then asks. --cloud adds Genter Cloud too, --semantic sets
                                      GENTER_SEMANTIC=1, --folder <dir> is what Claude Desktop searches, --dry-run only
                                      shows, --undo puts every file back
+  genter decisions [--out <file>]    a page of this project's decisions: current, and replaced by their own text, with
+                                     where each is written, its own date and the notice quoted; written outside the
+                                     repository (~/.genter/pages/<project>.html) unless --out names a file
   genter reader new <name>           make readers/<name>/: a reader for a text format (its date, status and replaced
                                      marks), written as data, with fixtures and what they give
   genter reader check [folder ...]   lint the readers in readers/ (and rules/) and check them against their fixtures
@@ -65,6 +71,8 @@ function parse(argv) {
     else if (a === "--undo") flags.undo = true;
     else if (a === "--folder") flags.folder = argv[++i] ?? "";
     else if (a.startsWith("--folder=")) flags.folder = a.slice(9);
+    else if (a === "--out") flags.out = argv[++i] ?? "";
+    else if (a.startsWith("--out=")) flags.out = a.slice(6);
     else if (a !== "--local") words.push(a); // 0.3's --local: this computer is the only place now
   }
   return { flags, words };
@@ -109,6 +117,47 @@ function projectFolder(words) {
   }
 }
 
+// The decisions page of the project: written outside its repository unless --out names a file, readable by its owner
+// only, since it quotes the project's documents. { path, project, commit, current, replaced }.
+function decisions(g, home, flags, words) {
+  if (words.length || flags.out === "") throw new Error("genter decisions [--out <file>]: it reads the project of the folder it runs in");
+  const { root, place, refused } = g.project();
+  if (refused) console.error(`genter: ${refused}`);
+  const head = headOf(root);
+  if (!head) throw new Error(`${place} is not a git repository: the decisions page is stamped with the commit it is made at, so run genter decisions in a clone`);
+  const project = basename(root);
+  const path = flags.out ? resolve(flags.out === "~" || flags.out.startsWith("~/") ? join(homedir(), flags.out.slice(1)) : flags.out) : join(home, "pages", `${project.replace(/[^\p{L}\p{N}_.-]+/gu, "-").replace(/^[.-]+/, "") || "project"}.html`);
+  if (!flags.out && [root, head.root].some((dir) => within(path, dir))) throw new Error(`${shown(path)} is inside ${project}: the page quotes its documents, so it is written outside the repository; choose a file with --out <file>`);
+  const rows = decisionsOf(g.documents());
+  const d = new Date();
+  const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const html = decisionsPage({ project, commit: head.commit, date, rows });
+  mkdirSync(dirname(path), { recursive: true, mode: 0o700 });
+  writeFileSync(`${path}.${process.pid}.tmp`, html, { mode: 0o600 });
+  renameSync(`${path}.${process.pid}.tmp`, path);
+  const current = rows.filter((r) => r.state === "current").length;
+  console.error(`genter: ${current} current · ${rows.length - current} replaced in ${project}${head.commit ? ` at ${head.commit.slice(0, 7)}` : ", before its first commit"}`);
+  return { path, project, commit: head.commit, current, replaced: rows.length - current };
+}
+
+// Whether a path is a folder or inside it, as written or once links are followed (for a path that is not there yet,
+// where its nearest folder that is leads).
+function within(path, dir) {
+  const inside = (p, d) => {
+    const rel = relative(d, p);
+    return rel === "" || (!rel.startsWith("..") && !isAbsolute(rel));
+  };
+  const real = (p) => {
+    try {
+      return realpathSync(p);
+    } catch {
+      const up = dirname(p);
+      return up === p ? p : join(real(up), basename(p));
+    }
+  };
+  return inside(path, dir) || inside(real(path), real(dir));
+}
+
 export async function local(argv) {
   const [command = "help", ...rest] = argv;
   const { flags, words } = parse(rest);
@@ -118,6 +167,11 @@ export async function local(argv) {
   const own = flags.folder !== undefined ? "--folder" : flags.undo ? "--undo" : flags.dryRun ? "--dry-run" : null;
   if (own && command !== "install") {
     console.error(`${own} is for genter install`);
+    process.exitCode = 1;
+    return;
+  }
+  if (flags.out !== undefined && command !== "decisions") {
+    console.error("--out is for genter decisions");
     process.exitCode = 1;
     return;
   }
@@ -137,7 +191,7 @@ export async function local(argv) {
     }
     return;
   }
-  if (!["add", "ask", "remember", "forget", "sources", "mcp", "login", "logout"].includes(command)) {
+  if (!["add", "ask", "remember", "forget", "sources", "mcp", "decisions", "login", "logout"].includes(command)) {
     console.error(`Unknown command: ${command}\n\n${HELP}`);
     process.exitCode = 1;
     return;
@@ -187,6 +241,9 @@ export async function local(argv) {
       console.error(`genter: searching the project ${place} and your notes`);
       if (refused) console.error(`genter: ${refused}`);
       await serveMcp(g, { version });
+    } else if (command === "decisions") {
+      const out = decisions(g, home, flags, words);
+      say(flags, out, `${shown(out.path)} holds quotes from ${out.project}: check before sharing`);
     }
   } catch (error) {
     console.error(error.message);

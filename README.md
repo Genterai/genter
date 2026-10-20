@@ -339,6 +339,7 @@ memory layers publish), run `node bench/convo/run.mjs --answer` with a key. [Res
 | `genter sources` · `genter forget <...>` | list what this project searches; stop searching one here |
 | `genter mcp [folder\|url ...]` | all of it for your agent, over stdio |
 | `genter install [tool ...]` | add Genter to the AI tools on this computer; `--undo` puts their files back |
+| `genter decisions [--out <file>]` | a page of this project's decisions: current, and replaced by their own text |
 | `genter reader new <name>` · `genter reader check` | make a reader for a text format; check readers against their fixtures |
 
 `--semantic` ranks by meaning too (or set `GENTER_SEMANTIC=1`); `--json` prints JSON; `--limit N` sets the number of
@@ -368,6 +369,30 @@ no `genter.json` brings them back.
 A store from 0.3 (one list of sources) is split once, the first time it is opened after the upgrade: each folder or
 file goes to the project that holds it (one outside any project answers from its own folder), websites stay in every
 project, notes stay yours.
+
+## The decisions page
+
+```bash
+npx genter-cli decisions   # in a clone: ~/.genter/pages/<project>.html
+```
+
+One page of the project's decisions: each ADR, RFC and heading of `docs/decisions.md`, current or replaced, with where it
+is written (`path:line`) and the date the document gives itself. A replaced one quotes its own notice and names what
+replaces it; a document that says at its top or in its front matter that it is replaced is listed too, with what it
+names. Every row is what a document says about itself: no model, no key, no file dates, and no row says that two
+documents disagree (that needs a model).
+
+```
+Decisions in acme · generated at 3f2c1ab on 2026-10-20 · run `genter decisions` again to refresh
+1 current · 1 replaced, by their own text · dates as the documents give them
+CURRENT    Jobs run on Redis · Status: accepted   docs/adr/0011.md:3   2026-09-24
+REPLACED   Jobs run on Postgres                   docs/adr/0003.md:3   2026-03-03
+           docs/adr/0003.md:7 says: “Superseded by [ADR-0011](0011.md)” · replaced by docs/adr/0011.md
+```
+
+It quotes your documents, so it is written outside the repository, readable by you only (`--out <file>` puts it
+elsewhere): check it before you share it. It is one HTML file with no script and nothing to load, so it opens offline,
+and it is stamped with the commit it was made at, read from `.git` (Genter runs nothing, `git` included).
 
 ## More
 

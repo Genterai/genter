@@ -587,6 +587,16 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
         });
     },
 
+    // What the readers read in the files of this project's folder, for the decisions page (page.js): the folder as the
+    // first search would add it (its genter.json narrows it, the person's off list holds; never the home folder or the
+    // root), not the notes, not a website. [{ path (from the project's root), title, read }] as documentsOf gives them.
+    // The store is not opened: nothing is kept.
+    documents() {
+      const { skip } = scope();
+      if (homes().includes(root) || root === resolve("/")) return [];
+      return documentsOf(listFolder(root, { skip }).files, readerPath);
+    },
+
     // Stops searching a source in this project, by its id, its path or its address; once no project searches it, its
     // Anchors are dropped, but for those another source still holds (they become that source's). A website kept from
     // 0.3 is in every project, so it is forgotten in all. { source, removed, elsewhere }: elsewhere counts the
@@ -1236,4 +1246,67 @@ async function pool(items, n, fn) {
     }),
   );
   return out;
+}
+
+// ---- the decisions page ----
+
+// What the readers read in each of a project's files (readers.js), for the decisions page: the files they read
+// something in, then the files those marks name that they read nothing in (read: null), each { path (rel(file)),
+// title, read }. A mark's link to another of these files is resolved, as search resolves it, to that file's path (to);
+// a link to a file that is not one of them (not there, switched off, left out) resolves to nothing.
+function documentsOf(files, rel) {
+  const pathOf = new Map(files.map((file) => [file, rel(file)]));
+  const fileOf = new Map(files.map((file) => [rel(file), file]));
+  const textAt = (file) => {
+    try {
+      return statSync(file).size <= LIMITS.fileBytes ? readText(file) : null;
+    } catch {
+      return null;
+    }
+  };
+  const marksOf = (read) => [...(read.marks ?? []), ...(read.entries ?? []).flatMap((e) => e.marks ?? [])];
+  const out = new Map();
+  for (const file of files) {
+    const text = textAt(file);
+    const read = text == null ? null : readDocument(pathOf.get(file), text);
+    if (!read) continue;
+    for (const m of marksOf(read)) {
+      if (!m.by || /^https?:/i.test(m.by)) continue;
+      const to = localLink(file, m.by);
+      if (to && to !== file && pathOf.has(to)) m.to = pathOf.get(to);
+    }
+    out.set(pathOf.get(file), { path: pathOf.get(file), title: titleOf(text, file), read });
+  }
+  for (const d of [...out.values()]) {
+    for (const m of marksOf(d.read)) {
+      if (m.to && !out.has(m.to)) out.set(m.to, { path: m.to, title: titleOf(textAt(fileOf.get(m.to)) ?? "", m.to), read: null });
+    }
+  }
+  return [...out.values()];
+}
+
+// A document's title as a person reads it: its first "# " heading (not in front matter or code), else a "title:" line
+// among its first 30 (front matter, a PEP's or a KEP's header), else its file's name; { text, line? }.
+function titleOf(text, path) {
+  const lines = text.split("\n", 400);
+  const words = (s) => s.replace(/\*\*|__|`/g, "").replace(/\s+/g, " ").trim().slice(0, 200);
+  let k = 0;
+  if (lines[0]?.trim() === "---") {
+    const end = lines.findIndex((l, i) => i > 0 && (l.trim() === "---" || l.trim() === "..."));
+    if (end > 0) k = end + 1;
+  }
+  for (let fence = null; k < lines.length; k++) {
+    const f = /^ {0,3}(`{3,}|~{3,})/.exec(lines[k])?.[1];
+    if (fence ? f && f[0] === fence[0] && f.length >= fence.length : f) {
+      fence = fence ? null : f;
+      continue;
+    }
+    const h = !fence && /^ {0,3}#[ \t]+(.+?)(?:[ \t]+#+)?[ \t]*$/.exec(lines[k].replace(/\r$/, ""));
+    if (h && words(h[1])) return { text: words(h[1]), line: k + 1 };
+  }
+  for (let i = 0; i < Math.min(lines.length, 30); i++) {
+    const t = /^title: {0,3}["']?(.+?)["']?\s*$/i.exec(lines[i].trim());
+    if (t && words(t[1])) return { text: words(t[1]), line: i + 1 };
+  }
+  return { text: basename(path).replace(/\.(md|mdx|markdown|rst|txt|adoc|ya?ml)$/i, "") };
 }
