@@ -121,7 +121,7 @@ describe("the Claude Desktop extension", () => {
     assert.ok(existsSync(at(entry)));
     assert.deepEqual(pointedAt(manifest), [entry]);
 
-    // The folder: a directory the person picks, required, with no default (no folder is read that they did not choose),
+    // The folder: a directory the person picks, required, with no default (nothing is searched until they choose one),
     // one folder, and nothing secret to ask for.
     assert.deepEqual(Object.keys(manifest.user_config), ["folder"]);
     const { type: kind, title, description, required, ...other } = manifest.user_config.folder;

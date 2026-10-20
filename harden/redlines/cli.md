@@ -76,8 +76,8 @@ Where clients and directories find Genter and how they start it. The release job
 * **[listings]** `docs/listings.md` gives the registry entry's name and one line as `server.json` has them, and the
   hosted address; `glama.json` names as maintainer an owner CODEOWNERS names.
 * **[mcpb-manifest]** `manifest.json` is an MCPB manifest (0.3) for Claude Desktop that starts `node bin/genter.js mcp
-  <folder>`: the folder is a `directory` the person picks (required, one, no default, so no folder is read that they did
-  not choose); the tools it lists are the contract's two, `search` and `read`; it has no environment, key or secret
+  <folder>`: the folder is a `directory` the person picks (required, one, no default: nothing is searched until they
+  choose a folder); the tools it lists are the contract's two, `search` and `read`; it has no environment, key or secret
   field; it names macOS and Windows and Node 20, as the package's `engines`.
 * **[mcpb-starts]** The bundle holds what `npm pack` ships and the manifest, and nothing else; the manifest's command,
   started in another folder than the person's with a folder whose name has a space, searches the folder chosen and

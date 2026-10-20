@@ -72,14 +72,14 @@ Decided:
   published package. `server.json` and `manifest.json` name `package.json`'s version (0.3.1 now), a test keeps them equal,
   and `.github/scripts/versions.mjs` writes it into them, so the step that raises the version has one command to run
 * The extension runs the package's own command, `node bin/genter.js mcp <folder>`, with a `directory` setting the person
-  picks: required, one folder, no default (no folder is read that they did not choose; Claude Desktop starts the server
+  picks: required, one folder, no default (nothing is searched until they choose one; Claude Desktop starts the server
   in no project, so without it the server would search its notes only). The manifest asks for no key and no environment.
   Whether a manifest can ask for a folder and use it: yes (`user_config` of type `directory`, substituted into `args` as
   `${user_config.folder}`), and the test starts the manifest's command in that way, from another folder, with a space in
   the folder's name, and passes it through `genter-cli/conformance` (plan step 1.8)
 * The bundle is what `npm pack` ships plus `manifest.json`, taken from npm's own file list (`npm pack --dry-run --json`),
-  so it cannot drift from the package and needs no `node_modules` (Genter has no dependencies): 40 files, 330 kB
-  unpacked, 124.9 kB packed by `@anthropic-ai/mcpb` 2.1.2. It names macOS and Windows (Claude Desktop's platforms, the
+  so it cannot drift from the package and needs no `node_modules` (Genter has no dependencies): 41 files, 356 kB
+  unpacked, 134.1 kB packed by `@anthropic-ai/mcpb` 2.1.2. It names macOS and Windows (Claude Desktop's platforms, the
   two the plan records an install on) and Node 20 (`engines`). No icon (the Genter mark waits for TRADEMARKS.md's owner),
   no `privacy_policies` (it contacts nothing; the directory no longer takes MCPB)
 * The release job is a job of its own, after `release`, so that packing cannot fail the npm publish and "Re-run failed
@@ -93,8 +93,9 @@ Decided:
   line with an owner GitHub does not know is silently ignored. It lists the files the plan's D7 names
   (`src/memory.js`, `src/readers.js`, `src/net.js`, `src/lexical.js`), `src/local.js` and `src/http.js`, the reader schema,
   the first-party readers and rules, what clients run (`server.json`, `manifest.json`, `glama.json`, the plugin and the
-  skill), the files that state the promises, and `.github/`, because a pull request can change its own checks. Two of
-  the files are not in the tree yet; the line holds from the pull request that adds each. A reader with another owner
+  skill, and the `Dockerfile` and compose file that the release job's image is built from), the files that state the
+  promises, and `.github/`, because a pull request can change its own checks. `src/memory.js` is not in the tree yet; its
+  line holds from the pull request that adds it. A reader with another owner
   in its `reader.json` gets its own line in the pull request that adds it, which a test checks and the owner approves
 * The DCO check is one script and plain git, on `pull_request`, with read-only rights and no third-party action or app.
   A sign-off must be the commit author's or committer's own address; a merge commit (the "update branch" button) is not
@@ -105,7 +106,8 @@ Decided:
   default for a server is Apache-2.0 and does not name the fallback. It states the license history (Apache-2.0 since
   b91be02, PolyForm before) and not who wrote which commit. A test pins each promise's title, so a promise leaves the
   file only with a failing test and the owner's review. [no-phone-home] is a tripwire for the fourth promise: only
-  `src/net.js` and the embeddings call in `src/local.js` name a network primitive
+  `src/net.js`, the embeddings call in `src/local.js` and the listening server of `genter serve` (`src/http.js`, which
+  imports `createServer` and nothing that makes a request) name a network primitive
 * TRADEMARKS.md: forks rename, an unchanged copy may keep the name, "works with Genter" needs `genter-cli/conformance`,
   and it makes no claim about registration (the search is the owner's, D6). GOVERNANCE.md: the owner decides, maintainers
   keep a surface through CODEOWNERS, no foundation; it names the owner as his GitHub profile does
@@ -123,6 +125,11 @@ Open:
 * The owner's GitHub settings, which no file can show: the checks `test`, `harden`, `readers`, `secrets` and `dco` required
   on `main`; "Require review from Code Owners"; sign-off required for web-based commits; secret scanning with push
   protection (plan step 0.8) → the owner switches them on when this merges [non-blocking]
+* `genter mcp` still serves 0.3's deprecated `genter_add` and `genter_remember` for one more minor release (contract
+  decision D3; `cli/local-mcp-tools`), so an AI connected through the extension can ask to add another source or keep a
+  note, which the person approves in Claude Desktop call by call; the manifest lists only `search` and `read`. They leave
+  in 0.5 → nothing to build now; the long description and the setting say what the folder is for and not that nothing
+  else can be added [non-blocking]
 * The trademark search (D6) before anything is listed: a registry name is not renamed → `docs/listings.md` says so
   [non-blocking, the plan already makes it a launch blocker]
 * The recorded install of `genter.mcpb` on a Mac and a Windows PC, the plan's proof for 1.8, was not done: it needs those
@@ -156,14 +163,14 @@ Dependabot; a real git repository with a hostile subject, `-s`, a merge of main;
 "[rl:community/ac-dco]", "[rl:community/owner-review]", "[rl:community/works-with-genter]" (a server that answers every
 request with an error does not pass), "[rl:community/stewardship]", "[rl:community/no-phone-home]",
 "[rl:community/community-files]"; `test/security.test.js` "[rl:security/text-is-data]". Each test fails when its part is
-undone (checked by hand, 32 mutations: server name lowercased, a header added, versions drifted, the folder argument
+undone (checked by hand, 35 mutations: server name lowercased, a header added, versions drifted, the folder argument
 dropped, a default folder, an env key, a missing entry file, `needs` dropped, a token in the pack step, an unpinned
 `mcpb`, `mcpb` in the npm job, a sign-off of anyone's address, the exemption by commit author, every commit skipped, the
 parent count read from the text, `pull_request_target`, a third-party action, a skip by actor, `src/net.js` and
 `.github/` unowned, an organization as owner, a promise removed, no conformance in TRADEMARKS.md, a `fetch(` in
-`bin/`, a dependency, SECURITY.md's section, ip-boundary's store, a broken link). By hand: `server.json` validates
+`bin/`, a `fetch(` and a `node:https` in `src/http.js`, the `Dockerfile` unowned, a dependency, SECURITY.md's section, ip-boundary's store, a broken link). By hand: `server.json` validates
 against the registry's JSON schema and `manifest.json` against MCPB's (ajv 8.17.1 in a scratch folder);
-`mcpb validate` and `mcpb pack` 2.1.2 pass on the staged folder (40 files, 124.9 kB); the gate's five cases run against a
+`mcpb validate` and `mcpb pack` 2.1.2 pass on the staged folder (41 files, 134.1 kB); the gate's five cases run against a
 stub `gh`; `release.yml` parses with the new job after `release` and the old job's 11 steps unchanged / `npm test`,
 `npm run lint` (no new finding: the one warning and one info are in files this change does not touch), `harden check`
 0 errors.

@@ -40,6 +40,7 @@ jobs:
         id: gate
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
           tag="v$(node -p 'require("./package.json").version')"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
@@ -72,6 +73,7 @@ jobs:
         if: steps.gate.outputs.attach == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
           TAG: ${{ steps.gate.outputs.tag }}
         run: |
           gh release upload "$TAG" genter.mcpb
