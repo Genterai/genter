@@ -9,7 +9,7 @@ unsupported.
 
 | Path | What |
 | -- | -- |
-| `redlines/<area>.md` | the red lines of each area: local-search, cli, contract, install, plugin, security, driftbench, readers, anchor-drift, decisions-page, old-answer, serve, community |
+| `redlines/<area>.md` | the red lines of each area: local-search, cli, contract, install, plugin, security, driftbench, readers, anchor-drift, decisions-page, old-answer, serve, remote, community |
 | `briefs/YYYY-MM-DD-<slug>.md` | one brief per change request, written before the code |
 | `retired.txt` | removed ids; an id is never reused |
 | `config.json` | older `[spec:…]` tags still count; tests are `test/**` only (`.github/scripts` tests carry sample tags) |

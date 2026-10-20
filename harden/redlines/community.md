@@ -25,11 +25,12 @@ it, and a test reads it.
   it opens. What they rest on is true: the package is Apache-2.0 and has no `dependencies`, `peerDependencies` or
   `optionalDependencies`, and contributions come in with a sign-off and no CLA. A change to the file is a brief and the
   owner's review.
-* **[no-phone-home]** Only the fetch of a website the person added (`src/net.js`), the embeddings call `--semantic` makes
-  (`src/local.js`) and the listening server of `genter serve` (`src/http.js`, which imports `createServer` and nothing that
-  makes a request) name a network primitive (`fetch`, `http`, `https`, `net`, `tls`, `dns`, `dgram`, `http2`, `WebSocket`,
-  `sendBeacon`): no other file of `bin/` or `src/` can send anything, so nothing the command or the servers run sends a
-  count, a ping or a report. SECURITY.md says what `--semantic` sends.
+* **[no-phone-home]** Only the fetch of a website or an MCP server the person added (`src/net.js`), the embeddings call
+  `--semantic` makes (`src/local.js`), the listening server of `genter serve` (`src/http.js`) and the loopback server a
+  sign-in to an MCP server waits on (`src/remote.js`, whose requests go through `src/net.js`) name a network primitive
+  (`fetch`, `http`, `https`, `net`, `tls`, `dns`, `dgram`, `http2`, `WebSocket`, `sendBeacon`); the two servers import
+  `createServer` and nothing that makes a request. No other file of `bin/` or `src/` can send anything, so nothing the
+  command or the servers run sends a count, a ping or a report. SECURITY.md says what `--semantic` sends.
 * **[community-files]** STEWARDSHIP.md, TRADEMARKS.md, GOVERNANCE.md, ip-boundary.md, CONTRIBUTING.md, SECURITY.md,
   docs/first-issues.md and docs/listings.md link only to files that are there. CONTRIBUTING.md has the two kinds of
   contribution (core: a brief and red lines; manifests: CI is the brief) and the sign-off; GOVERNANCE.md says the owner

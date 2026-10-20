@@ -243,16 +243,20 @@ describe("what the project promises", () => {
     assert.ok(text("harden/redlines/community.md").includes("STEWARDSHIP.md"));
   });
 
-  it("[rl:community/no-phone-home] only the website fetch (src/net.js), the embeddings call (src/local.js) and genter serve's listening server (src/http.js) name a network primitive: nothing else of the command or the engine can send", () => {
+  it("[rl:community/no-phone-home] only the website fetch (src/net.js), the embeddings call (src/local.js), genter serve's listening server (src/http.js) and the sign-in's loopback server (src/remote.js) name a network primitive: nothing else of the command or the engine can send", () => {
     const NET = /\bfetch\(|node:(?:https?|net|tls|dns|dgram|http2)\b|\bXMLHttpRequest\b|\bWebSocket\b|\bsendBeacon\b|from\s+["'](?:https?|net|tls|dns|dgram|http2)["']/;
     const files = ["src", "bin"].flatMap((dir) => readdirSync(at(dir), { recursive: true }).filter((f) => /\.[cm]?js$/.test(f)).map((f) => `${dir}/${f}`));
     assert.ok(files.includes("src/local.js") && files.includes("bin/genter.js"), files.join(", "));
     const reaching = files.filter((f) => NET.test(text(f))).sort();
-    assert.deepEqual(reaching, ["src/http.js", "src/local.js", "src/net.js"]);
-    // genter serve only listens and answers: it imports createServer from node:http and nothing that makes a request.
-    const serve = text("src/http.js");
-    assert.match(serve, /^import \{ createServer \} from "node:http";$/m);
-    assert.doesNotMatch(serve, /\bfetch\(|\.request\(|\.get\(\s*["'`]https?:|node:https|node:net|node:tls|node:dns|WebSocket|sendBeacon/);
+    assert.deepEqual(reaching, ["src/http.js", "src/local.js", "src/net.js", "src/remote.js"]);
+    // genter serve and the sign-in's loopback only listen and answer: each imports createServer from node:http and
+    // nothing that makes a request (an MCP server the person added is called through src/net.js's publicFetch).
+    for (const file of ["src/http.js", "src/remote.js"]) {
+      const listens = text(file);
+      assert.match(listens, /^import \{ createServer \} from "node:http";$/m, file);
+      assert.doesNotMatch(listens, /\bfetch\(|\.request\(|\.get\(\s*["'`]https?:|node:https|node:net|node:tls|node:dns|WebSocket|sendBeacon/, file);
+    }
+    assert.match(text("src/remote.js"), /^import \{ publicFetch, textOf \} from "\.\/net\.js";$/m);
     // The embeddings call is the one --semantic makes, to the provider the person chose (SECURITY.md says so).
     assert.match(text("SECURITY.md"), /With `--semantic`, the passages to rank go to the embeddings provider you\s+chose/);
   });

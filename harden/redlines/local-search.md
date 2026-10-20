@@ -43,11 +43,11 @@ safe.
   entry (on stderr for the command, first in the MCP answer), and nothing from it is used; a place it leaves out is
   neither read nor gone. A project nested in another (a folder inside with its own `genter.json`) keeps its narrowing
   when the outer project reads there.
-* **[person-off-wins]** The person's own `off` list (`off` in `~/.genter/config.json`, paths) holds in every project:
-  those places are never read, their anchors leave the store, a source under it cannot be added, and nothing in a
-  project's `genter.json` brings one back. A path is matched as written and where its links lead, so no link reaches
-  a place switched off, and one switched off through a link is off where the link leads. A config that is not a JSON
-  object stops Genter with a message and is never replaced.
+* **[person-off-wins]** The person's own `off` list (`off` in `~/.genter/config.json`, paths, or addresses of MCP
+  servers as remote/switch-off says) holds in every project: those places are never read, their anchors leave the
+  store, a source under it cannot be added, and nothing in a project's `genter.json` brings one back. A path is matched
+  as written and where its links lead, so no link reaches a place switched off, and one switched off through a link is
+  off where the link leads. A config that is not a JSON object stops Genter with a message and is never replaced.
 * **[store-split]** A store made by 0.3 (one list of sources) is split once, when it is first opened: each folder or
   file goes to the project whose root holds it (one outside any project is a project of its own folder, searched from
   there), each website stays in every project, notes stay the person's own; ids and digests are kept, so the first

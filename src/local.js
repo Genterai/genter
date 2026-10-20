@@ -6,6 +6,7 @@ import { classifyFailure, contentHash, MARKDOWN_FILE as MARKDOWN, pieces as cut,
 import { cloneWindow, driftFacts, HEAD_LINES, noticeWords, supersededOf } from "./drift.js";
 import { bm25, prepare, terms, topTerms } from "./lexical.js";
 import { LIMITS as READER_LIMITS, readDocument } from "./readers.js";
+import { createRemote, MCP_READ, mcpAddress, oneLine, REMOTE } from "./remote.js";
 import { cipher } from "./seal.js";
 import { crawl, forgetPage, readPage, siteUrl } from "./web.js";
 
@@ -24,6 +25,9 @@ import { crawl, forgetPage, readPage, siteUrl } from "./web.js";
 // fresh clone), whose times say when the files arrived, not when anyone changed them.
 // Every place has a number, the id search and read name it by over MCP; read reads a place whole, now, by that number,
 // and only a place of the project it runs in.
+// A vendor's MCP server added by address (remote.js) is a source too: the person signs in once in their browser, and
+// what its read-only tools list and find becomes Anchors (MCP_READ {server, tool, arguments}, or {server, resource}),
+// read again at every question like a page; one that fails, or whose sign-in expired, is named in the answer.
 // A file's text is read off the main thread, a few at a time: one over fileBytes is not read, and one whose read takes
 // longer than readMs is left out of that search and named in its answer, so one huge or slow file holds up nothing
 // else (genter serve answers its health check meanwhile).
@@ -31,6 +35,7 @@ import { crawl, forgetPage, readPage, siteUrl } from "./web.js";
 export const LIMITS = { files: 5000, fileBytes: 1_000_000, readMs: 2000, readers: 8, passageChars: 1400, perPlace: 2, webCandidates: 8, chunkChars: 1500, dims: 256, readIds: 10, readChars: 20_000 };
 export const FILE_READ = "FILE_READ";
 export const PAGE_READ = "WEBSITE_READ_PAGE";
+export { MCP_READ };
 
 export const genterHome = () => process.env.GENTER_HOME || join(homedir(), ".genter");
 
@@ -90,9 +95,11 @@ export function localSecret(home = genterHome()) {
 // notes: false leaves the person's notes out (genter serve: a team's server has no one's notes); only: true reads the
 // sources added through this Genter alone (genter serve: what its command names, never another source of the project
 // nor a website kept from 0.3); readMs: how long one file may take to read.
-export function createLocal({ home = genterHome(), secret, userId = "default", openrouterApiKey, embed, cwd = process.cwd(), project = cwd, notes = true, only = false, readMs = LIMITS.readMs } = {}) {
+// signInMs: how long the sign-in to an MCP server waits for the person's browser.
+export function createLocal({ home = genterHome(), secret, userId = "default", openrouterApiKey, embed, cwd = process.cwd(), project = cwd, notes = true, only = false, readMs = LIMITS.readMs, signInMs } = {}) {
   secret ??= localSecret(home);
   const { seal, open } = cipher(`${secret}:${userId}:local`);
+  const remote = createRemote({ home, secret, userId, ...(signInMs && { signInMs }) });
   const file = join(home, "local.json");
   const notesPath = join(home, "notes.md");
   embed ??= openrouterApiKey ? openrouterEmbedder(openrouterApiKey) : null;
@@ -203,13 +210,18 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
     state.lastNumber = last;
   }
   const anchorId = (tool, args) => recipeId({ workspaceId: userId, scope: "", tool, args });
-  const place = (a) => (a.args.url ? a.args.url : shown(a.args.path, cwd));
+  // Where a place is: a file's path, a page's address, an MCP server's name for one of its documents. named: the place
+  // as what changed since the last look names it (an MCP document with its title).
+  const serverOf = (a) => state.sources[a.source]?.name ?? (a.args.server ? new URL(a.args.server).host : "");
+  const place = (a) => (a.tool === MCP_READ ? serverOf(a) : a.args.url ? a.args.url : shown(a.args.path, cwd));
+  const named = (a) => (a.tool === MCP_READ ? `${serverOf(a)} › ${a.title}` : place(a));
+  const whereOf = (a) => a.args.path ?? a.args.url ?? a.id;
   // A source this project searches: one added in it, a website kept from 0.3, or the person's notes (unless notes are off);
   // with only, one added through this Genter and nothing else.
   const ours = (src) => Boolean(src) && (addedHere ? addedHere.has(src.id) : (notes && src.kind === "notes") || src.everywhere === true || Boolean(src.projects?.includes(root)));
   // A place this project reads: a page of one of its sources, or a file one of its sources holds that it does not leave
   // out (skip, from scope()). read reads nothing else.
-  const inProject = (a, skip) => (a.tool === PAGE_READ ? ours(state.sources[a.source]) : Object.values(state.sources).some((src) => ours(src) && src.path && covers(src, a.args.path)) && !skip(a.args.path));
+  const inProject = (a, skip) => (a.tool === PAGE_READ || a.tool === MCP_READ ? ours(state.sources[a.source]) : Object.values(state.sources).some((src) => ours(src) && src.path && covers(src, a.args.path)) && !skip(a.args.path));
 
   // ---- what is read ----
 
@@ -220,8 +232,12 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
   // not used at all.
   function scope() {
     const config = join(home, "config.json");
-    const off = readConfig(home).off ?? [];
-    if (!Array.isArray(off) || off.some((p) => typeof p !== "string")) throw new Error(`${config}: "off" must be a list of paths`);
+    let off = readConfig(home).off ?? [];
+    if (!Array.isArray(off) || off.some((p) => typeof p !== "string")) throw new Error(`${config}: "off" must be a list of paths or addresses of MCP servers`);
+    // An address in the list (https://…) switches off the MCP servers at it or under it; every other entry is a path.
+    const addresses = off.filter((p) => /^https?:\/\//i.test(p.trim())).map((p) => p.trim());
+    off = off.filter((p) => !/^https?:\/\//i.test(p.trim()));
+    const offUrl = (url) => addresses.some((a) => underAddress(url, a));
     const reals = new Map();
     const real = (path) => {
       if (!reals.has(path)) reals.set(path, realOf(path));
@@ -247,12 +263,13 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
       }
       return false;
     };
-    return { skip, off: isOff, ...(repo.refused && { refused: repo.refused }) };
+    return { skip, off: isOff, offUrl, ...(repo.refused && { refused: repo.refused }) };
   }
-  // A place the person switched off is not kept either: its anchor (headings, dates, digest) leaves the store.
-  function dropOff({ off }) {
+  // A place the person switched off is not kept either: its anchor (headings, dates, digest) leaves the store; so do the
+  // documents of an MCP server they switched off.
+  function dropOff({ off, offUrl }) {
     for (const a of Object.values(state.anchors)) {
-      if (!a.args.path || !off(a.args.path)) continue;
+      if (a.tool === MCP_READ ? !offUrl(a.args.server) : !a.args.path || !off(a.args.path)) continue;
       delete state.anchors[a.id];
       texts.delete(a.args.path);
       dirty = true;
@@ -405,6 +422,75 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
     return { record: s.anchors[id], text: data.text, event };
   }
 
+  // A document an MCP server read, as its Anchor, the same way: { record, text, event }. call: the read that gives it
+  // ({ tool, arguments } or { resource }); doc: what it answered (remote.js docOf), its title, date and link from the
+  // listing when the read gives none, else what the Anchor kept (its date only while the text is the same), else its
+  // first heading. Kept: its title, headings, most frequent words, date, link and digest (of its text); never its text.
+  function noteDoc(source, call, doc) {
+    const s = state;
+    const id = anchorId(MCP_READ, { server: source.url, ...call });
+    const prev = s.anchors[id];
+    const digest = contentHash({ text: doc.text });
+    const title = doc.title || prev?.title || oneLine(/^#{1,3}\s+(.+)$/m.exec(doc.text)?.[1].replace(/[`*_]/g, "")) || "Untitled";
+    const at = now();
+    const top = (doc.data && supersededOf(doc.data)) || supersededOf({ title, text: doc.text.slice(0, 1500) });
+    const about = {
+      title: title.slice(0, 120),
+      items: [...new Set(splitMarkdown(id, doc.text).map((p) => oneLine(p.headings.join(" › "), 300)))].slice(0, 40),
+      terms: topTerms(`${title}\n${doc.text}`),
+      source_at: doc.date ?? (prev?.digest === digest ? prev.source_at : undefined),
+      link: doc.link ?? prev?.link,
+      superseded: replacedMark({ title, text: doc.text.slice(0, 1500) }, (link) => (doc.link ? absoluteLink(doc.link, link) : /^https?:/i.test(link) ? link : null), undefined, top) ?? undefined,
+    };
+    if (!prev) {
+      s.anchors[id] = { id, number: nextNumber(s), tool: MCP_READ, args: { server: source.url, ...call }, source: source.id, ...about, digest, status: "fresh", created_at: at, updated_at: at, checked_at: at };
+      dirty = true;
+      return { record: s.anchors[id], text: doc.text, event: "created" };
+    }
+    const event = prev.digest !== digest ? "changed" : prev.status !== "fresh" ? "back" : "unchanged";
+    s.anchors[id] = { ...prev, ...about, digest, status: "fresh", checked_at: at, ...(event === "changed" && { updated_at: at }) };
+    dirty = true;
+    return { record: s.anchors[id], text: doc.text, event };
+  }
+  // What one read of a document gave, kept: { record, text?, event } (event null when it could not be read now: a
+  // failure says nothing about the document). item: { call, title?, date?, link? } as a listing or a search gave it.
+  function settleDoc(source, item, got) {
+    if (got?.doc) return noteDoc(source, item.call, { ...got.doc, title: got.doc.title ?? item.title, date: got.doc.date ?? item.date, link: got.doc.link ?? item.link });
+    const id = anchorId(MCP_READ, { server: source.url, ...item.call });
+    const prev = state.anchors[id];
+    if (got?.gone && prev && prev.status !== "gone") {
+      state.anchors[id] = { ...prev, status: "gone", checked_at: now() };
+      dirty = true;
+      return { record: state.anchors[id], event: "gone" };
+    }
+    return { record: prev, event: null, ...(got?.error && { error: got.error }) };
+  }
+  const callOf = (a) => (a.args.resource !== undefined ? { resource: a.args.resource } : { tool: a.args.tool, arguments: a.args.arguments ?? {} });
+
+  // Reads an MCP server's documents now, in a session signed in with its tokens: what it lists (its resources and its
+  // lists' things), and the documents it gave before that the listing no longer has, read again so a removed one becomes
+  // gone. { created, changed, unchanged, gone, places, complete, problems, reads, others }: reads, the tools Genter
+  // calls on it; others, how many of its tools it never calls.
+  async function readServer(source, s) {
+    const listed = await remote.listing(s);
+    const seen = new Set(listed.items.map((x) => anchorId(MCP_READ, { server: source.url, ...x.call })));
+    const known = listed.complete ? Object.values(state.anchors).filter((a) => a.source === source.id && a.status === "fresh" && !seen.has(a.id)).map((a) => ({ call: callOf(a) })) : [];
+    const items = [...listed.items, ...known];
+    const got = await pool(items, REMOTE.readers, (item) => remote.read(s, item.call));
+    const stats = { created: 0, changed: 0, unchanged: 0, gone: 0 };
+    let places = 0;
+    const errors = [];
+    items.forEach((item, i) => {
+      const r = settleDoc(source, item, got[i]);
+      if (r.event) stats[r.event === "back" ? "changed" : r.event]++;
+      if (r.text != null) places++;
+      else if (r.error) errors.push(r.error);
+    });
+    const problems = [...listed.problems, ...(errors.length ? [`${errors.length === 1 ? "a document" : `${errors.length} documents`} could not be read now (${errors[0]})`] : [])];
+    const tools = [...new Set([...s.plan.lists.map((l) => l.tool), ...s.plan.searches.map((q) => q.tool), ...s.plan.lists.map((l) => l.reader.tool), ...s.plan.searches.map((q) => q.reader.tool)])];
+    return { ...stats, places, complete: listed.complete, problems, calls: tools, others: s.tools.length - tools.length };
+  }
+
   // Reads a website's pages now (a crawl) and keeps each as an Anchor; a known page the crawl no longer finds is read
   // again so a removed one (404) becomes gone.
   async function readSite(source, depth) {
@@ -489,12 +575,14 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
     const key = `${record.id}:${record.digest}`;
     const hit = prepared.get(key);
     if (hit) return hit;
-    const where = record.args.path ?? record.args.url;
+    const where = whereOf(record);
     const starts = lineStarts(text);
-    const pieces = cut(where, text, { markdown: MARKDOWN.test(where) || record.tool === PAGE_READ, chunk: LIMITS.chunkChars });
-    const name = record.tool === PAGE_READ ? record.title : basename(where);
+    const pieces = cut(where, text, { markdown: MARKDOWN.test(where) || record.tool !== FILE_READ, chunk: LIMITS.chunkChars });
+    const name = record.tool === FILE_READ ? basename(where) : record.title;
     const out = pieces
-      .map(([start, end, headings]) => {
+      .map(([start, end, cutHeadings]) => {
+        // An MCP document's headings are the server's text, printed on one line of an answer.
+        const headings = record.tool === MCP_READ ? cutHeadings.map((h) => oneLine(h, 200)) : cutHeadings;
         const body = text.slice(start, end);
         if (!body.trim()) return null;
         const from = lineOf(starts, start);
@@ -581,7 +669,7 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
   }
   // The day a place gives itself: the date its document gives (as its readers read it), else its file's time unless that
   // is a clone time; a page's Last-Modified, else when Genter saw it change. null when no day is known.
-  const dayOf = (a, cloned) => (a.tool === PAGE_READ ? (a.source_at ?? a.updated_at ?? null) : (documentAt(a.args.path)?.date?.value ?? (cloned(a) ? null : (a.source_at ?? null))));
+  const dayOf = (a, cloned) => (a.tool !== FILE_READ ? (a.source_at ?? a.updated_at ?? null) : (documentAt(a.args.path)?.date?.value ?? (cloned(a) ? null : (a.source_at ?? null))));
 
   // A place's replaced mark as search and read give it: { marker, by?, id?, at?, quote?, line? }. by: what replaces it,
   // shown; id and at: that place's number and its own day, only when this project reads it and its day is known, as a
@@ -604,9 +692,10 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
     };
   }
 
-  // One place read whole, now, as read gives it: { id, kind, place, path? | url?, title, text?, more?, superseded?,
-  // seen, source_at?, dated?, fresh_clone?, gone? | error? }. The text is cut at LIMITS.readChars; more says how many
-  // characters were left out; dated: the date its document gives; fresh_clone: its file time is a clone time.
+  // One place read whole, now, as read gives it: { id, kind, place, path? | url? | server and url?, title, text?, more?,
+  // superseded?, seen, source_at?, dated?, fresh_clone?, gone? | error? }. The text is cut at LIMITS.readChars; more says
+  // how many characters were left out; dated: the date its document gives; fresh_clone: its file time is a clone time.
+  // An MCP server's document is read in a session of its own; url is its own link, when the server gives one.
   async function readWhole(a, skip, cloned) {
     let record = a;
     let text = null;
@@ -620,6 +709,22 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
         record = state.anchors[a.id] = { ...a, status: "gone", checked_at: now() };
         dirty = true;
       } else error = got.error;
+    } else if (a.tool === MCP_READ) {
+      const src = state.sources[a.source];
+      try {
+        const s = await remote.open(src.url);
+        try {
+          const r = settleDoc(src, { call: callOf(a) }, await remote.read(s, callOf(a)));
+          record = r.record ?? a;
+          text = r.text ?? null;
+          event = r.event;
+          if (r.error) error = r.error;
+        } finally {
+          await s.close();
+        }
+      } catch (e) {
+        error = `${src.name ?? src.url}: ${e.message}`;
+      }
     } else {
       const r = await readFile(a.args.path, a.source);
       record = r.record ?? a;
@@ -631,13 +736,62 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
     if (text != null) await lookReplacers([record], skip);
     const clone = cloned(record);
     const dated = text != null && record.args.path ? texts.get(record.args.path)?.read?.date?.value : undefined;
-    const out = { id: record.number, kind: kindOf(record), place: place(record), ...(record.args.path ? { path: record.args.path } : { url: record.args.url }), title: record.title, ...(record.source_at && !clone && { source_at: record.source_at }), ...(dated && { dated }), ...(clone && { fresh_clone: true }) };
+    const where = record.args.path ? { path: record.args.path } : record.tool === MCP_READ ? { server: record.args.server, ...(record.link && { url: record.link }) } : { url: record.args.url };
+    const out = { id: record.number, kind: kindOf(record), place: place(record), ...where, title: record.title, ...(record.source_at && !clone && { source_at: record.source_at }), ...(dated && { dated }), ...(clone && { fresh_clone: true }) };
     if (text == null) return { ...out, seen: [], ...(error ? { error } : { gone: true }) };
     const seen = event === "changed" || event === "back" ? ["changed since the last look"] : event === "created" ? ["new since the last look"] : [];
     const superseded = markOf(record, text, skip, cloned);
     return { ...out, text: text.slice(0, LIMITS.readChars), more: Math.max(0, text.length - LIMITS.readChars), ...(superseded && { superseded }), seen };
   }
-  const kindOf = (a) => (a.tool === PAGE_READ ? "page" : a.args.path === notesPath ? "notes" : "file");
+  const kindOf = (a) => (a.tool === PAGE_READ ? "page" : a.tool === MCP_READ ? "mcp" : a.args.path === notesPath ? "notes" : "file");
+
+  // One MCP server's part of a search (find): in a session of its own, its own search with the question, then those
+  // places and the ones it gave before whose kept words fit, read again now, LIMITS.webCandidates of those at most. Each
+  // read joins reads; what changed joins changes; a server that cannot be searched (down, its sign-in expired, slower
+  // than REMOTE.serverMs, every search of it failing, or none of its documents read) joins failed with why.
+  async function searchServer(src, q, reads, changes, failed) {
+    const known = Object.values(state.anchors).filter((a) => a.tool === MCP_READ && a.source === src.id && a.status === "fresh");
+    const scores = bm25(q, known.map((a) => ({ tf: new Map(a.terms ?? []), len: (a.terms ?? []).reduce((n, [, c]) => n + c, 0), pairs: new Set() })));
+    const fit = known.map((a, i) => [a, scores[i]]).filter(([, sc]) => sc > 0).sort((a, b) => b[1] - a[1]).slice(0, LIMITS.webCandidates).map(([a]) => ({ call: callOf(a) }));
+    let timer;
+    const work = (async () => {
+      const s = await remote.open(src.url);
+      try {
+        const found = await remote.search(s, q);
+        const seen = new Set();
+        const items = [...found.items, ...fit].filter((x) => {
+          const k = JSON.stringify(x.call);
+          return !seen.has(k) && seen.add(k);
+        });
+        return { items, got: await pool(items, REMOTE.readers, (item) => remote.read(s, item.call)), problems: found.problems, searches: s.plan.searches.length };
+      } finally {
+        await s.close();
+      }
+    })();
+    try {
+      const { items, got, problems, searches } = await Promise.race([work, new Promise((_, reject) => (timer = setTimeout(() => reject(new Error(`it did not answer within ${REMOTE.serverMs / 1000} s`)), REMOTE.serverMs)))]);
+      let read = 0;
+      const errors = [];
+      items.forEach((item, i) => {
+        const r = settleDoc(src, item, got[i]);
+        // A document a server's search finds for the first time is not new, only newly found: not said.
+        if (r.event === "changed" || r.event === "back" || r.event === "gone") changes.push({ place: named(r.record), event: r.event === "back" ? "changed" : r.event });
+        if (r.text != null) {
+          reads.push(r);
+          read++;
+        } else if (r.error) errors.push(r.error);
+      });
+      // What it gave is in the answer, but a search that failed, or reads that all failed, are said: never a server
+      // that seems to have nothing.
+      const why = [...(searches && problems.length >= searches ? [`its search failed (${problems.join("; ")})`] : []), ...(!read && errors.length ? [`no document could be read (${errors[0]})`] : [])];
+      if (why.length) failed.push({ place: src.name ?? new URL(src.url).host, url: src.url, error: why.join("; ") });
+    } catch (e) {
+      failed.push({ place: src.name ?? new URL(src.url).host, url: src.url, error: e.message });
+    } finally {
+      clearTimeout(timer);
+      work.catch(() => {});
+    }
+  }
 
   // ---- the API ----
 
@@ -645,14 +799,41 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
     home,
     notesPath,
 
-    // A folder, a file or a public website for this project to search from now on: every file or page it reads is read
-    // now and kept as an Anchor. { source, places, created, changed, unchanged, gone, complete, refused? }.
-    async add(target, { depth } = {}) {
+    // A folder, a file, a public website or an MCP server for this project to search from now on: every file, page or
+    // document it reads is read now and kept as an Anchor. { source, places, created, changed, unchanged, gone,
+    // complete, refused? }; for an MCP server also { name, calls, others, problems }. An address that may be an MCP
+    // server (remote.js mcpAddress) is asked whether it is one; one that asks to sign in is signed in to with signIn(url,
+    // { server }), which shows the person where (the command prints it); without signIn that is an error saying how.
+    async add(target, { depth, signIn } = {}) {
       if (!target || typeof target !== "string") throw new Error("Pass a folder, a file or a website address");
       load();
-      const source = sourceFor(target.trim());
+      let source = sourceFor(target.trim());
       const sc = scope();
       if (source.path && sc.off(source.path)) throw new Error(`${shown(source.path, cwd)} is switched off ("off" in ${join(home, "config.json")}): Genter does not read it`);
+      if (source.url && mcpAddress(source.url)) {
+        if (sc.offUrl(source.url)) throw new Error(`${source.url} is switched off ("off" in ${join(home, "config.json")}): Genter does not read it`);
+        // One added before stays a server, even while it does not answer as one (it is down): never crawled as a website.
+        const id = `src_${sha(`mcp|${source.url}`).slice(0, 16)}`;
+        if (state.sources[id] || (await remote.probe(source.url))) source = { id, kind: "mcp", url: source.url };
+      }
+      if (source.kind === "mcp") {
+        // A team's server reads for everyone who holds a token: an MCP server signed in as one person is never served.
+        if (addedHere) throw new Error(`${source.url} is an MCP server: Genter signs in to it as one person, so genter serve does not serve it to a team`);
+        const s = await remote.open(source.url, { signIn }).catch((e) => {
+          throw new Error(`${source.url}: ${e.message}`);
+        });
+        try {
+          load();
+          dropOff(scope());
+          const isNew = addSource({ ...source, name: s.name });
+          if (state.sources[source.id].name !== s.name) state.sources[source.id] = { ...state.sources[source.id], name: s.name };
+          const stats = await readServer(state.sources[source.id], s);
+          save();
+          return { source: shownSource(state.sources[source.id], cwd), name: s.name, new: isNew, ...stats, ...(sc.refused && { refused: sc.refused }) };
+        } finally {
+          await s.close();
+        }
+      }
       dropOff(sc);
       const isNew = addSource(source);
       let stats;
@@ -672,15 +853,16 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
       return { root, place: shown(root, cwd), by, ...(refused && { refused }) };
     },
 
-    // The sources this project searches, notes included: [{ id, kind, place, places, gone, added_at, everywhere?, off? }].
+    // The sources this project searches, notes included: [{ id, kind, place, places, gone, added_at, name?, everywhere?,
+    // off? }] (name: an MCP server's).
     sources() {
       const s = load();
-      const { off, skip } = scope();
+      const { off, offUrl, skip } = scope();
       return Object.values(s.sources)
         .filter(ours)
         .map((src) => {
-          const anchors = Object.values(s.anchors).filter((a) => (src.kind === "website" ? a.source === src.id : Boolean(a.args.path) && covers(src, a.args.path) && !skip(a.args.path)));
-          return { ...shownSource(src, cwd), places: anchors.filter((a) => a.status === "fresh").length, gone: anchors.filter((a) => a.status === "gone").length, ...(src.everywhere && { everywhere: true }), ...(src.path && off(src.path) && { off: true }) };
+          const anchors = Object.values(s.anchors).filter((a) => (src.kind === "website" || src.kind === "mcp" ? a.source === src.id : Boolean(a.args.path) && covers(src, a.args.path) && !skip(a.args.path)));
+          return { ...shownSource(src, cwd), places: anchors.filter((a) => a.status === "fresh").length, gone: anchors.filter((a) => a.status === "gone").length, ...(src.everywhere && { everywhere: true }), ...(((src.path && off(src.path)) || (src.kind === "mcp" && offUrl(src.url))) && { off: true }) };
         });
     },
 
@@ -697,9 +879,9 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
     },
 
     // Stops searching a source in this project, by its id, its path or its address; once no project searches it, its
-    // Anchors are dropped, but for those another source still holds (they become that source's). A website kept from
-    // 0.3 is in every project, so it is forgotten in all. { source, removed, elsewhere }: elsewhere counts the
-    // projects that still search it.
+    // Anchors are dropped, but for those another source still holds (they become that source's), and so are an MCP
+    // server's tokens. A website kept from 0.3 is in every project, so it is forgotten in all. { source, removed,
+    // elsewhere, signedOut? }: elsewhere counts the projects that still search it; signedOut: its tokens were dropped.
     forget(target) {
       const s = load();
       let id = ours(s.sources[target]) ? target : null;
@@ -712,9 +894,11 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
       const source = s.sources[id];
       const elsewhere = source.everywhere ? [] : (source.projects ?? []).filter((r) => r !== root);
       let removed = 0;
+      let signedOut = false;
       if (elsewhere.length) s.sources[id] = { ...source, projects: elsewhere };
       else {
         delete s.sources[id];
+        if (source.kind === "mcp") signedOut = remote.forget(source.url);
         const rest = Object.values(s.sources).filter((src) => src.path);
         for (const a of Object.values(s.anchors)) {
           if (a.source !== id) continue;
@@ -728,7 +912,7 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
       }
       dirty = true;
       save();
-      return { source: shownSource(source, cwd), removed, elsewhere: elsewhere.length };
+      return { source: shownSource(source, cwd), removed, elsewhere: elsewhere.length, ...(signedOut && { signedOut }) };
     },
 
     // Keeps a note in the notes file (a heading with the time, then the text). Search finds it with its date.
@@ -746,8 +930,9 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
 
     // The sections that answer a question, read now from this project's sources and the person's notes. With nothing
     // added in this project yet, its folder is added first (never the home folder or the root).
-    // { question, results, changes, searched, late?, semantic, project, added?, ms }; late: the files left out because
-    // their read took longer than readMs.
+    // { question, results, changes, searched, late?, failed?, semantic, project, added?, ms }; late: the files left out
+    // because their read took longer than readMs; failed: the MCP servers that could not be searched, [{ place, url,
+    // error }], each said in the answer.
     async find(question, { limit = 5 } = {}) {
       const started = Date.now();
       const q = String(question ?? "").trim();
@@ -764,7 +949,7 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
       const changes = [];
       const late = new Set(); // files not read in time: left out of this answer, which names them
       for (const source of Object.values(state.sources)) {
-        if (source.kind === "website" || !ours(source)) continue;
+        if (source.kind === "website" || source.kind === "mcp" || !ours(source)) continue;
         const fresh = added && source.id === added.source.id; // just read whole: nothing "changed since" yet
         for (const r of (await readFiles(source, sc.skip)).reads) {
           if (r.late) late.add(shown(r.late, cwd));
@@ -794,7 +979,12 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
           }
         });
       }
-      // Sections are cut once per content; the record they point to is the one read now.
+      // MCP servers, each in a session of its own and all at once: the server's own search with the question, and the
+      // documents it gave before whose kept words fit (LIMITS.webCandidates at most), each read again now. A server that
+      // fails, or whose sign-in expired, is named in the answer (failed), never answered as if it had nothing.
+      const failed = [];
+      const servers = Object.values(state.sources).filter((src) => src.kind === "mcp" && ours(src) && !sc.offUrl(src.url));
+      await Promise.all(servers.map((src) => searchServer(src, q, reads, changes, failed)));
       const sections = reads.flatMap((r) => sectionsOf(r.record, r.text).map((x) => ({ ...x, record: r.record })));
       const lexical = bm25(q, sections.map((x) => x.doc));
       let scores = lexical;
@@ -822,7 +1012,7 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
       save(); // the places' numbers settle (merge) before a result names them
       const byPath = new Map();
       for (const x of sections) {
-        const k = x.record.args.path ?? x.record.args.url;
+        const k = whereOf(x.record);
         if (!byPath.has(k)) byPath.set(k, []);
         byPath.get(k).push(x);
       }
@@ -834,7 +1024,7 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
       const mark = (x) => markOf(x.record, textOf.get(x.record.id), sc.skip, cloned);
       const qTerms = new Set(terms(q));
       const scoreOf = new Map(sections.map((x, i) => [x, scores[i]]));
-      const placeOf = (x) => x.record.args.path ?? x.record.args.url;
+      const placeOf = (x) => whereOf(x.record);
       // The current answer first: a file inside the project's folder that its readers mark as replaced (a decision
       // record's status, a banner at its top, its front matter) by another file inside it, read in this search. What
       // replaces it, or null; any other mark (a place outside the folder on either side, the notes, a page, a mark no
@@ -887,6 +1077,7 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
         changes,
         searched: { sources: Object.values(state.sources).filter(ours).length, places: reads.length, sections: sections.length },
         ...(late.size && { late: [...late] }),
+        ...(failed.length && { failed }),
         semantic,
         project: { root, place: shown(root, cwd), by, ...(sc.refused && { refused: sc.refused }) },
         ...(added && { added }),
@@ -925,7 +1116,7 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
     const a = x.record;
     const clone = cloned(a);
     const passage = passageOf(x, qTerms);
-    const event = changedNow.get(place(a));
+    const event = changedNow.get(named(a));
     const document = documentOf(a.args.path ? texts.get(a.args.path)?.read : null);
     const facts = [];
     if (event === "changed") facts.push("changed since the last look");
@@ -936,9 +1127,10 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
       ref,
       id: a.number,
       kind: kindOf(a),
-      place: a.args.url ? a.args.url : `${shown(a.args.path, cwd)}:${passage.from}-${passage.to}`,
+      place: a.args.path ? `${shown(a.args.path, cwd)}:${passage.from}-${passage.to}` : place(a),
       ...(a.args.path && { path: a.args.path, lines: [passage.from, passage.to] }),
       ...(a.args.url && { url: a.args.url }),
+      ...(a.tool === MCP_READ && { server: a.args.server, ...(a.link && { url: a.link }) }),
       title: a.title,
       headings: x.headings,
       text: passage.text,
@@ -947,7 +1139,7 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
       ...(superseded && { superseded }),
       seen: [...facts],
       facts,
-      signals: { ...(!clone && { source_at: a.source_at, updated_at: a.updated_at }), superseded: superseded && { ...superseded, place: a.args.url ?? shown(a.args.path, cwd) } },
+      signals: { ...(!clone && { source_at: a.source_at, updated_at: a.updated_at }), superseded: superseded && { ...superseded, place: a.tool === MCP_READ ? named(a) : (a.args.url ?? shown(a.args.path, cwd)) } },
     };
   }
 
@@ -961,6 +1153,7 @@ export function findText(out) {
   const what = { changed: "changed", created: "is new", gone: "is gone" };
   if (out.changes?.length) lines.push(`Since the last look: ${out.changes.slice(0, 12).map((c) => `${c.place} ${what[c.event] ?? c.event}`).join("; ")}${out.changes.length > 12 ? `; ${out.changes.length - 12} more` : ""}.`, "");
   if (out.late?.length) lines.push(lateText(out.late), "");
+  if (out.failed?.length) lines.push(failedText(out.failed), "");
   if (out.results.some((r) => r.anchor?.fresh_clone)) lines.push("File dates unknown (fresh clone): the files were written here within seconds of each other, so only the dates documents give themselves are said.", "");
   if (!out.results.length) {
     lines.push(`Nothing in ${out.searched.places} places matches "${out.question}". Add more with: genter add <folder|file|url>`);
@@ -968,13 +1161,16 @@ export function findText(out) {
   }
   for (const r of out.results) {
     const where = [r.headings?.length ? r.headings.join(" › ") : r.title].filter(Boolean).join("");
-    lines.push(`[${r.ref}] ${r.place}${where ? ` · ${where}` : ""}`);
+    lines.push(`[${r.ref}] ${r.place}${r.server && r.url ? ` ${r.url}` : ""}${where ? ` · ${where}` : ""}`);
     const facts = [...(r.replaces ? [`replaces [${r.replaces}]`] : []), ...r.facts];
     if (facts.length) lines.push(`    ${facts.join(" · ")}`);
     lines.push(r.text.trim(), "");
   }
   return lines.join("\n").trimEnd();
 }
+
+// The MCP servers a search could not ask, as a line of its answer (search's and ask's): each by name and address, with why.
+export const failedText = (failed) => `Not searched: ${failed.map((f) => `${f.place} (${f.url}): ${f.error}`).join("; ")}.`;
 
 // The files a search left out because their read took too long, as a line of its answer (search's and ask's).
 export const lateText = (late) => `Not read in time, so not in this answer: ${late.slice(0, 12).join(", ")}${late.length > 12 ? ` and ${late.length - 12} more` : ""}; read again at the next search.`;
@@ -993,7 +1189,19 @@ export function shown(path, cwd = process.cwd()) {
   const home = homedir();
   return path.startsWith(home + sep) ? `~/${relative(home, path).split(sep).join("/")}` : path;
 }
-const shownSource = (src, cwd) => src && { id: src.id, kind: src.kind, place: src.url ?? shown(src.path, cwd), added_at: src.added_at };
+const shownSource = (src, cwd) => src && { id: src.id, kind: src.kind, place: src.url ?? shown(src.path, cwd), added_at: src.added_at, ...(src.name && { name: src.name }) };
+
+// Whether an address is the one given or under it: the same origin, and its path that one's or below it.
+function underAddress(url, at) {
+  try {
+    const u = new URL(url);
+    const a = new URL(at);
+    const path = a.pathname.replace(/\/+$/, "");
+    return u.origin === a.origin && (u.pathname.replace(/\/+$/, "") === path || u.pathname.startsWith(`${path}/`));
+  } catch {
+    return false;
+  }
+}
 
 // Whether a path is one of the places given or inside one.
 export function under(path, places = []) {

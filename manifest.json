@@ -4,7 +4,7 @@
   "display_name": "Genter",
   "version": "0.3.1",
   "description": "Decision memory for your AI: it searches a folder of your notes and docs, current answer first, and marks what was replaced.",
-  "long_description": "Genter shows your AI what you decided, where it is written and when, and marks what was replaced since.\n\nPick a folder of notes, docs or code. Genter reads it again at every question, so the answer is what the files say now, with the file and lines it came from. When a document says at its top that a newer one replaced it, the newer one comes first and the old one shows its own notice, quoted.\n\nIt runs on this computer. It needs no account and no key, sends nothing to Genter or anyone, fetches a website only if you approve adding one, never changes your files, and keeps no copy of their text.",
+  "long_description": "Genter shows your AI what you decided, where it is written and when, and marks what was replaced since.\n\nPick a folder of notes, docs or code. Genter reads it again at every question, so the answer is what the files say now, with the file and lines it came from. When a document says at its top that a newer one replaced it, the newer one comes first and the old one shows its own notice, quoted.\n\nIt runs on this computer. It needs no account and no key, sends nothing to Genter or anyone, fetches a website or an MCP server only if you add one, never changes your files, and keeps no copy of their text.",
   "author": {
     "name": "Genterai",
     "url": "https://github.com/Genterai"
