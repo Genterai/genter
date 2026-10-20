@@ -40,12 +40,16 @@ keys), [cloud-own-server] (no token on the person's disk), and the local MCP con
 
 * **[local-mcp]** `genter mcp` is an MCP server over stdio; errors are JSON-RPC errors (unknown tool -32602, unknown
   method -32601, bad request -32600), a tool's failure `isError`.
-* **[local-mcp-tools]** Exactly four tools: `genter_find` (read-only), `genter_remember`, `genter_add`,
-  `genter_sources`; the client's protocol version when supported, else the latest.
+* **[local-mcp-tools]** The contract's two tools first, `search` and `read` (contract/two-tools), then, for one minor
+  release, 0.3's `genter_find` (read-only), `genter_remember`, `genter_add` and `genter_sources`, each answering as in
+  0.3, its description starting "Deprecated: genter-cli 0.5 removes this tool"; adding, remembering and listing
+  sources are the command's (`genter add`, `genter remember`, `genter sources`). The client's protocol version when
+  supported, else the latest.
 * **[local-mcp-stdout]** One JSON message per line on stdout, in order, nothing else; a line that is not JSON gets
   -32700.
 
 ## Proof
 
-* **[ac-mcp-tools]** Given `genter mcp`, when a client initializes and lists tools, then it gets the four tools and
-  instructions that say "Genter finds; you think and write".
+* **[ac-mcp-tools]** Given `genter mcp`, when a client initializes and lists tools, then it gets `search` and `read`,
+  then the four deprecated names, and instructions that name search and read and say "Genter finds; you think and
+  write".

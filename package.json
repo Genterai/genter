@@ -36,7 +36,8 @@
     ".": "./src/local.js",
     "./local": "./src/local.js",
     "./lexical": "./src/lexical.js",
-    "./readers": "./src/readers.js"
+    "./readers": "./src/readers.js",
+    "./conformance": "./src/conformance.js"
   },
   "files": [
     "bin",

@@ -19,8 +19,8 @@ claude                            # approve the "genter" server once
 ```
 
 Then ask the agent what you would ask a colleague who has been here a year: "where do we check who may see an
-invoice?", "why does the import skip archived rows?". It calls `genter_find`, reads the places that answer, and cites
-them. Nothing is indexed ahead: Genter maps the folder in well under a second and reads it again at every question,
+invoice?", "why does the import skip archived rows?". It calls Genter's `search`, reads the places that answer, and
+cites them. Nothing is indexed ahead: Genter maps the folder in well under a second and reads it again at every question,
 so a file edited a minute ago answers in its new form.
 
 **What leaves the computer.** With a key set, the passages Genter ranks go to that provider for embeddings. A person
@@ -40,6 +40,6 @@ finds both by meaning from the first day, and nothing has to be kept in sync: th
 ## The team's apps
 
 Genter Cloud is its own MCP server, not a line in this file: a person who uses it adds `https://genter.ai/api/mcp` to
-their own AI tool once, and the tool signs them in with OAuth. Their agent then asks this repository with
-`genter_find` and the team's tickets, chats, mail and docs with Genter Cloud's `search` and `read`. Nothing about it
-is committed here or kept on anyone's disk ([Genter Cloud](../../README.md#genter-cloud-your-teams-apps)).
+their own AI tool once, and the tool signs them in with OAuth. Their agent then has the same two tools, `search` and
+`read`, for this repository and for the team's tickets, chats, mail and docs. Nothing about it is committed here or
+kept on anyone's disk ([Genter Cloud](../../README.md#genter-cloud-your-teams-apps)).

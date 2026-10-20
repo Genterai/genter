@@ -70,8 +70,9 @@ safe.
   made by an earlier version shows them without the file being edited. A result shows the date and status the file gives
   itself as its readers read them (`anchor.document`: `readers`, `date`, `status`), read again with the file and never
   kept in the store.
-* **[no-text-stored]** The store keeps which places there are, their digests, headings and dates, sealed; never a
-  line of their text, and no place name in the clear.
+* **[no-text-stored]** The store keeps which places there are, their numbers, digests, headings and dates, sealed;
+  never a line of their text (a replaced mark's notice is quoted from the text read now), and no place name in the
+  clear.
 
 ### Ranking
 

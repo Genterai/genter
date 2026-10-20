@@ -62,7 +62,7 @@ jobs:
           mkdir "$RUNNER_TEMP/clean" && cd "$RUNNER_TEMP/clean" && npm init -y >/dev/null
           npm i "$RUNNER_TEMP"/genter-cli-*.tgz
           test "$(ls node_modules)" = genter-cli
-          node --input-type=module -e 'for (const m of ["genter-cli", "genter-cli/local", "genter-cli/lexical", "genter-cli/readers"]) await import(m)'
+          node --input-type=module -e 'for (const m of ["genter-cli", "genter-cli/local", "genter-cli/lexical", "genter-cli/readers", "genter-cli/conformance"]) await import(m)'
           # The readers and language rules ship with it, and load whole.
           node --input-type=module -e 'const { loadReaders, loadRules } = await import("genter-cli/readers"); const r = loadReaders(); const l = loadRules(); if (r.problems.length || l.problems.length || r.readers.length < 6 || !l.phrases.length) { console.error(r.problems, l.problems); process.exit(1) }'
           npx --no-install genter --version
