@@ -42,8 +42,9 @@ Config to paste where a site asks for one:
    gh release view v<version> --json assets --jq '.assets[].name'      # includes genter.mcpb
    ```
 
-   The registry reads `mcpName` from the package it names, so `0.3.1` (published before this field) cannot be listed;
-   the first listable version is the first one released after `mcpName` was added.
+   The registry reads `mcpName` from the package it names, so `0.3.0` (published before this field) cannot be listed;
+   the first listable version is `0.4.0`, the first one released after `mcpName` was added (`0.3.1` was never
+   published).
 2. **Genter Cloud answers a client with no token the way listings expect:** `401` with OAuth discovery, not `403`.
    Smithery says a scan that gets `403` fails.
 3. **`genter.mcpb` installs on a Mac and on a Windows PC** (the plan's proof for step 1.8, recorded): open the file in

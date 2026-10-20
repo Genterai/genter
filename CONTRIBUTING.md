@@ -82,8 +82,9 @@ git push --force-with-lease
 
 - **Releases:** raise `version` in `package.json` (semver) in the pull request, then run
   `node .github/scripts/versions.mjs`, which writes it into `server.json` and `manifest.json` (a test keeps the three
-  equal). Merging it into `main` publishes it to npm, makes the GitHub release and attaches `genter.mcpb`; a pull
-  request that keeps the version releases nothing.
+  equal), and add the version's section to `CHANGELOG.md`: what it brings in plain words, what can break first (a test
+  fails without it). Merging it into `main` publishes it to npm, makes the GitHub release, whose notes start with that
+  section, and attaches `genter.mcpb`; a pull request that keeps the version releases nothing.
 
 ## Readers and language rules
 
