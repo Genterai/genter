@@ -17,25 +17,27 @@ reaches a place of another project), and [conformance] ("works with Genter" mean
   `genter serve` over HTTP, Genter Cloud), as Genter Cloud's public MCP contract does: tools/list gives each a title and `annotations: { readOnlyHint: true }`; `query` is a required
   string, `limit` a number (locally 5 by default, 20 at most); `ids` a required array of numbers, 10 read per call.
   Other tools a form lists are not part of the contract.
-* **[place-ids]** Places are named by number: each place (a file, a page, the notes file) has a positive whole number,
-  given once and kept with its anchor in the sealed store, the same across searches, re-reads, edits and restarts, and
-  never given to another place (one forgotten and added again is a new place, with a new number). Two processes that
-  share the store (the command while the MCP server runs, two clients) keep what the other wrote since, and a place
-  one numbered meanwhile takes a number above all the store gave before an answer names it. A store made before
-  numbers gets them at its first open, oldest place first, its anchor ids and digests unchanged.
+* **[place-ids]** Places are named by number: each place (a file, a page, the notes file, an MCP server's document)
+  has a positive whole number, given once and kept with its anchor in the sealed store, the same across searches,
+  re-reads, edits and restarts, and never given to another place (one forgotten and added again is a new place, with a
+  new number). Two processes that share the store (the command while the MCP server runs, two clients) keep what the
+  other wrote since, and a place one numbered meanwhile takes a number above all the store gave before an answer names
+  it. A store made before numbers gets them at its first open, oldest place first, its anchor ids and digests
+  unchanged.
 
 ### What search and read say
 
 * **[search-shape]** `search` answers with the places that match: each starts `[id] title` (the passage's headings,
-  else the place's title) on a line of its own, then an indented line with where it is (`path:lines` or the link),
-  what it is (file, page, notes), its dates (`dated <day>`, the one its document gives, local-search/document-dates;
-  `updated <day>`, its file's, or `file dates unknown (fresh clone)`, anchor-drift/fresh-clone) and what Genter saw
-  (`replaces [id]`, changed or new since the last look, a note's date), then its marks, then the passage, four spaces
-  in, so no line of it reads as a place or a mark. A place that replaces another comes right before it, or above it
-  when it already ranked higher, as local-search/current-first says. What changed since the last look comes first (a
-  refused `genter.json` before it), then the files left out because their read took too long ("Not read in time, so
-  not in this answer: …", serve/async-reads), and the answer ends saying that read takes the ids. Nothing found is a sentence
-  that names no place.
+  else the place's title) on a line of its own, then an indented line with where it is (`path:lines`, the link, or an
+  MCP server's name and its document's own link, remote/anchors-not-copies), what it is (file, page, notes, mcp), its
+  dates (`dated <day>`, the one its document gives, local-search/document-dates; `updated <day>`, its file's, or `file
+  dates unknown (fresh clone)`, anchor-drift/fresh-clone) and what Genter saw (`replaces [id]`, changed or new since
+  the last look, a note's date), then its marks, then the passage, four spaces in, so no line of it reads as a place or
+  a mark. A place that replaces another comes right before it, or above it when it already ranked higher, as
+  local-search/current-first says. What changed since the last look comes first (a refused `genter.json` before it),
+  then the files left out because their read took too long ("Not read in time, so not in this answer: …",
+  serve/async-reads), then the MCP servers that could not be searched ("Not searched: …", remote/says-when-failing),
+  and the answer ends saying that read takes the ids. Nothing found is a sentence that names no place.
 * **[marks]** A mark is a line of its own, `  ⚠ ` then what it says; a place's marks are the lines right after its
   second line, and no line of a file (a passage four spaces in, a read text after an empty line) can join them or read
   as one. A place that says it was replaced, by a place this project reads whose day is known: `⚠ superseded by [id]

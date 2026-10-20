@@ -23,13 +23,21 @@ What a report can be held against:
   websites you add, and its notes file. Never hidden files, files the folder's `.gitignore` ignores, lockfiles, keys
   and credentials (`id_rsa`, `*.pem`, `*.key`, `credentials.json`, …), or any file holding a private key.
 - **Websites.** Public addresses only: an address that resolves to a private or local network is refused.
+- **MCP servers you add** ([docs/remote.md](docs/remote.md)). The same public-address check at every address on the
+  way (the server, its sign-in metadata, its authorization server), https only. Genter signs in with OAuth as a public
+  client (PKCE with S256, a loopback redirect, no scope that writes) and opens no browser. It calls only tools that
+  read: never one the server marks as not read-only or destructive, never one whose name says it changes something.
+  Their tokens are sealed in `~/.genter/remote.json` (AES-256-GCM, readable by you only), never in a config, never
+  printed or returned, and dropped by `genter forget <address>`. `genter serve` never serves one.
 - **What it stores.** In `~/.genter` (or `GENTER_HOME`): which places there are, their digests, headings and dates, a
-  page's most frequent words and the vectors of `--semantic`, sealed with AES-256-GCM and a secret made on the first
-  run (for `genter serve`, the key in `GENTER_SECRET_FILE`, kept outside that folder). Never the text of a file or a
-  page. Its files there (the config with that secret and your keys, and the sealed
+  page's or an MCP document's most frequent words (and the document's title and link), the vectors of `--semantic`,
+  and the tokens of the MCP servers you signed in to, sealed with AES-256-GCM and a secret made on the first
+  run (for `genter serve`, the key in `GENTER_SECRET_FILE`, kept outside that folder). Never the text of a file, a
+  page or a document. Its files there (the config with that secret and your keys, and the sealed
   stores) are readable by their owner only.
 - **What it sends.** With no key, nothing. With `--semantic`, the passages to rank go to the embeddings provider you
-  chose. It never calls Genter Cloud: the cloud is its own MCP server in your AI tool.
+  chose. To an MCP server you added: your question, to its own search tool, and the reads of its documents. It never
+  calls Genter Cloud: the cloud is its own MCP server in your AI tool.
 - **What it runs.** Nothing it reads.
 - **`genter serve`** ([docs/team.md](docs/team.md)). It listens on 127.0.0.1 unless told otherwise, and away from
   loopback only with one token per person (`GENTER_TOKENS_FILE`, compared in constant time, revoked by removing its

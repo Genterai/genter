@@ -18,8 +18,9 @@ keys), [cloud-own-server] (no token on the person's disk), and the local MCP con
   `install`'s and `decisions`' own flags, are refused by the other commands.
 * **[help]** No command prints the help, its last line Genter Cloud's MCP address `https://genter.ai/api/mcp`; an
   unknown command, or `ask` with no question, exits 1.
-* **[output-local]** `ask` prints each passage under `[n] place:lines · headings`, what Genter did on stderr;
-  `--json` prints the same as JSON.
+* **[output-local]** `ask` prints each passage under `[n] place:lines · headings` (an MCP server's document: `[n]
+  <server> <its link> · headings`, remote/anchors-not-copies), what Genter did on stderr (for `add`, where to sign in to
+  an MCP server, remote/sign-in); `--json` prints the same as JSON.
 * **[config-private]** The config and the store are readable by their owner only (0600).
 * **[demo]** `genter demo` runs offline on a temp folder it removes after, with no key and no model, and reads nothing
   of the person's, not even when that temp folder sits inside their repository (the demo's folder is a project of its

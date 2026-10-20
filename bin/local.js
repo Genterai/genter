@@ -29,6 +29,9 @@ reads it there again, so the answer is what your docs say now.
   genter demo                        see it in a second, on a temp folder
   genter ask <question>              the passages that answer, read now, with path:lines (this project's folder at first)
   genter add <folder|file|url> ...   search these from now on, in this project
+  genter add <https://…/mcp>         an MCP server (Notion, Linear, Atlassian…), in this project: you sign in once in
+                                     your browser; only its read-only tools are called, at every question, and its
+                                     sign-in is kept sealed until you forget it (docs/remote.md)
   genter remember <text>             keep a note (~/.genter/notes.md); ask finds it with its date, in every project
   genter sources                     what ask searches here
   genter forget <folder|file|url>    stop searching it here
@@ -52,7 +55,8 @@ reads it there again, so the answer is what your docs say now.
 
   A project is the nearest folder up from here (for mcp, from its first folder) with a genter.json or a .git, else
   that folder; ask reads only its sources and your notes. Its genter.json can only narrow that: {"include": [...],
-  "exclude": [...], "off": [...]}, paths inside it. "off" in ~/.genter/config.json switches places off everywhere.
+  "exclude": [...], "off": [...]}, paths inside it. "off" in ~/.genter/config.json switches places off everywhere,
+  and MCP servers by their address.
 
   --json             JSON
   --limit N          passages (default 5)
@@ -113,6 +117,9 @@ function dropCloudToken(home, c) {
 }
 
 const say = (flags, data, text) => console.log(flags.json ? JSON.stringify(data, null, 2) : text);
+
+// Where the person signs in to an MCP server, printed (on stderr, so --json stays clean): Genter opens no browser.
+const signIn = (url, { server }) => console.error(`genter: ${server} asks you to sign in. Open this address in your browser; Genter waits 5 minutes for it to come back:\n\n  ${url}\n`);
 
 // The folder whose project `genter mcp <folder>` searches: the first folder (or a file's folder) given, written as it
 // is added, so a server an MCP client starts elsewhere still searches that project; with none given, the current folder.
@@ -237,9 +244,12 @@ export async function local(argv) {
     if (command === "add") {
       if (!words.length) throw new Error("genter add <folder|file|url> ...");
       for (const target of words) {
-        const out = await g.add(target, { depth: flags.depth });
+        const out = await g.add(target, { depth: flags.depth, signIn });
         if (out.refused) console.error(`genter: ${out.refused}`);
-        say(flags, out, `${out.new ? "Added" : "Read again"} ${out.source.place}: ${out.places} ${out.source.kind === "website" ? "pages" : "files"} (${out.created} new, ${out.changed} changed, ${out.gone} gone)${out.complete === false ? ", the listing stopped at its limit" : ""}`);
+        for (const problem of out.problems ?? []) console.error(`genter: ${out.name}: ${problem}`);
+        const kind = out.source.kind === "website" ? "pages" : out.source.kind === "mcp" ? "documents" : "files";
+        const tools = out.source.kind === "mcp" ? `; it calls ${out.calls.length ? out.calls.join(", ") : "no tool"} and never its ${out.others} other tools` : "";
+        say(flags, out, `${out.new ? "Added" : "Read again"} ${out.source.place}${out.name ? ` (${out.name})` : ""}: ${out.places} ${kind} (${out.created} new, ${out.changed} changed, ${out.gone} gone)${out.complete === false ? ", the listing stopped at its limit" : ""}${tools}`);
       }
     } else if (command === "ask") {
       const question = words.join(" ");
@@ -255,7 +265,7 @@ export async function local(argv) {
     } else if (command === "forget") {
       if (!words[0]) throw new Error("genter forget <folder|file|url>");
       const out = g.forget(words[0]);
-      say(flags, out, out.elsewhere ? `Forgot ${out.source.place} here; ${out.elsewhere === 1 ? "another project still searches" : `${out.elsewhere} other projects still search`} it` : `Forgot ${out.source.place} (${out.removed} anchors)`);
+      say(flags, out, out.elsewhere ? `Forgot ${out.source.place} here; ${out.elsewhere === 1 ? "another project still searches" : `${out.elsewhere} other projects still search`} it${out.source.kind === "mcp" ? ", so its sign-in is kept" : ""}` : `Forgot ${out.source.place} (${out.removed} anchors)${out.signedOut ? " and dropped its sign-in" : ""}`);
     } else if (command === "sources") {
       const list = g.sources();
       const project = g.project();
