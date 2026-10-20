@@ -74,3 +74,20 @@ jobs:
           tail -n 1 demo.txt | grep -F "Next: npx genter-cli install"
       - name: The command starts
         run: node bin/genter.js
+
+  serve:
+    # genter serve as a small team runs it (docs/team.md): the image built from the Dockerfile and started by
+    # docker-compose.yml, then health, 401 without a token, conformance over HTTP, search and read, /health while 20
+    # searches run, the served folder unchanged, and a private address refused (test/serve-compose.test.js, with
+    # test/serve-smoke.mjs). Docker and Compose come with the runner; genter-cli needs no npm ci.
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with: { node-version: 22 }
+      - run: docker version && docker compose version
+      - name: docker compose smoke test
+        run: node --test test/serve-compose.test.js
+        env:
+          GENTER_COMPOSE: "1"

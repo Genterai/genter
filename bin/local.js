@@ -1,5 +1,6 @@
 // The genter command, with no keys and no packages: folders, files, websites and notes (src/local.js), and the same as
 // an MCP server over stdio (src/mcp-server.js). Each searches the project of the folder it runs in (mcp: its first folder).
+// `genter serve` is the same two tools over HTTP for a small team (src/http.js), with one token per person.
 // `genter decisions` writes the project's decisions page (src/page.js), stamped with its commit (src/git.js).
 import { chmodSync, mkdirSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
@@ -7,6 +8,7 @@ import { basename, dirname, join, resolve } from "node:path";
 import { runDemo } from "../src/demo.js";
 import { headOf } from "../src/git.js";
 import { install, terminalAsk } from "../src/install/index.js";
+import { SERVE, serveHttp, serveSetup } from "../src/http.js";
 import { createLocal, embedderFor, embeddingProvider, findText, genterHome, LIMITS, realOf, shown, under } from "../src/local.js";
 import { serveMcp, sourcesText } from "../src/mcp-server.js";
 import { cutText, decisionsOf, decisionsPage } from "../src/page.js";
@@ -32,6 +34,10 @@ reads it there again, so the answer is what your docs say now.
   genter forget <folder|file|url>    stop searching it here
   genter mcp [folder|url ...]        all of it for your agent (MCP over stdio), in the first folder's project:
                                      claude mcp add genter -- npx -y genter-cli mcp
+  genter serve <folder|url> ...      search and read for a small team, MCP over HTTP at http://127.0.0.1:${SERVE.port}/mcp:
+                                     one token per person (GENTER_TOKENS_FILE), read-only, no notes; every token
+                                     holder reads all of it. --host 0.0.0.0 leaves this computer (tokens and
+                                     GENTER_SECRET_FILE needed, TLS in front), --port N (docs/team.md)
   genter install [tool ...]          add genter mcp to the AI tools on this computer (Claude Code, Claude Desktop,
                                      Cursor, VS Code, Codex, Gemini CLI, Zed, goose), in your own settings for each:
                                      shows each change, then asks. --cloud adds Genter Cloud too, --semantic sets
@@ -73,6 +79,10 @@ function parse(argv) {
     else if (a.startsWith("--folder=")) flags.folder = a.slice(9);
     else if (a === "--out") flags.out = argv[++i] ?? "";
     else if (a.startsWith("--out=")) flags.out = a.slice(6);
+    else if (a === "--host") flags.host = argv[++i] ?? "";
+    else if (a.startsWith("--host=")) flags.host = a.slice(7);
+    else if (a === "--port") flags.port = Number(argv[++i]);
+    else if (a.startsWith("--port=")) flags.port = Number(a.slice(7));
     else if (a !== "--local") words.push(a); // 0.3's --local: this computer is the only place now
   }
   return { flags, words };
@@ -184,6 +194,11 @@ export async function local(argv) {
     process.exitCode = 1;
     return;
   }
+  if ((flags.host !== undefined || flags.port !== undefined) && command !== "serve") {
+    console.error(`${flags.host !== undefined ? "--host" : "--port"} is for genter serve`);
+    process.exitCode = 1;
+    return;
+  }
   if (command === "demo") return runDemo();
   // Readers are data in readers/: making and checking them touches no store and needs no key.
   if (command === "reader") {
@@ -200,7 +215,7 @@ export async function local(argv) {
     }
     return;
   }
-  if (!["add", "ask", "remember", "forget", "sources", "mcp", "decisions", "login", "logout"].includes(command)) {
+  if (!["add", "ask", "remember", "forget", "sources", "mcp", "serve", "decisions", "login", "logout"].includes(command)) {
     console.error(`Unknown command: ${command}\n\n${HELP}`);
     process.exitCode = 1;
     return;
@@ -209,11 +224,15 @@ export async function local(argv) {
   const gone = command === "login" || command === "logout" ? `genter ${command}` : flags.cloud ? "--cloud" : null;
   try {
     const home = genterHome();
+    // genter serve: its home, tokens, address and seal key are checked before anything is read or written; it serves
+    // what its command names and nothing else of the project, and no one's notes.
+    if (command === "serve" && !words.length) throw new Error("genter serve <folder|url> ...: the folders to serve, read-only (docs/team.md)");
+    const served = command === "serve" ? serveSetup({ env: process.env, home, host: flags.host, port: flags.port, log: console.error }) : null;
     const c = dropCloudToken(home, config(home));
     if (gone) throw new Error(`${gone} is gone.\n${CLOUD_LINE}`);
     const semantic = flags.semantic || Boolean(flags.provider) || process.env.GENTER_SEMANTIC === "1" || c.semantic === true;
     const embed = semantic ? embedderFor(embeddingProvider({ env: process.env, config: c, name: flags.provider })) : undefined;
-    const g = createLocal({ home, userId: process.env.GENTER_USER_ID || c.user_id || "default", embed, ...(command === "mcp" && { project: projectFolder(words) }) });
+    const g = createLocal({ home, userId: process.env.GENTER_USER_ID || c.user_id || "default", embed, ...((command === "mcp" || served) && { project: projectFolder(words) }), ...(served && { secret: served.secret, notes: false, only: true }) });
 
     if (command === "add") {
       if (!words.length) throw new Error("genter add <folder|file|url> ...");
@@ -250,6 +269,16 @@ export async function local(argv) {
       console.error(`genter: searching the project ${place} and your notes`);
       if (refused) console.error(`genter: ${refused}`);
       await serveMcp(g, { version });
+    } else if (command === "serve") {
+      for (const target of words) {
+        const out = await g.add(target, { depth: flags.depth });
+        if (out.refused) console.error(`genter: ${out.refused}`);
+        console.error(`genter: ${out.source.place}, ${out.places} places`);
+      }
+      if (semantic) console.error("genter: ranking by meaning too: the passages a search ranks go to the embeddings provider");
+      const server = await serveHttp(g, { host: served.host, port: served.port, tokens: served.tokens, version });
+      for (const signal of ["SIGINT", "SIGTERM"]) process.once(signal, () => server.close());
+      await server.closed;
     } else if (command === "decisions") {
       const out = decisions(g, home, flags, words);
       say(flags, out, `${shown(out.path)} holds quotes from ${out.project}: check before sharing`);

@@ -25,8 +25,15 @@ What a report can be held against:
 - **Websites.** Public addresses only: an address that resolves to a private or local network is refused.
 - **What it stores.** In `~/.genter` (or `GENTER_HOME`): which places there are, their digests, headings and dates, a
   page's most frequent words and the vectors of `--semantic`, sealed with AES-256-GCM and a secret made on the first
-  run. Never the text of a file or a page. Its files there (the config with that secret and your keys, and the sealed
+  run (for `genter serve`, the key in `GENTER_SECRET_FILE`, kept outside that folder). Never the text of a file or a
+  page. Its files there (the config with that secret and your keys, and the sealed
   stores) are readable by their owner only.
 - **What it sends.** With no key, nothing. With `--semantic`, the passages to rank go to the embeddings provider you
   chose. It never calls Genter Cloud: the cloud is its own MCP server in your AI tool.
 - **What it runs.** Nothing it reads.
+- **`genter serve`** ([docs/team.md](docs/team.md)). It listens on 127.0.0.1 unless told otherwise, and away from
+  loopback only with one token per person (`GENTER_TOKENS_FILE`, compared in constant time, revoked by removing its
+  line) and the seal key outside its data, saying that TLS must sit in front. It serves `search` and `read` alone: no
+  client can add a source, keep a note, write, or make it fetch an address; a request from a web page is refused.
+  Every token holder reads everything it serves: exactly the folders and websites its command names, from a store of
+  its own (`GENTER_HOME`, never your `~/.genter`).
