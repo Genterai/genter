@@ -66,7 +66,7 @@ safe.
   stays: nothing is moved up or brought in for it.
 * **[current-first]** The current answer first: when a file inside the project's folder is marked as replaced by what
   its readers read (a decision record's status, a banner at its top, its front matter) and what replaces it is a file
-  inside that folder this search reads, what replaces it takes the replaced file's rank (its section among those found,
+  inside that folder this search reads (a link beside the mark, or the file its id names: readers/by-id), what replaces it takes the replaced file's rank (its section among those found,
   moved up, else its best section of all) and the replaced file follows right after it, its notice quoted; when what
   replaces it already ranks above, nothing moves and it says "replaces [n]". A place brought in from outside the
   sections found brings nothing more (its own mark shows), and two places that name each other end. A place outside the

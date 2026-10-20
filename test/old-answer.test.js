@@ -5,11 +5,13 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
-import { genterArm, guard, LEAD, losses, plainArm, resultsMd, run, score, sectionsOf, tally } from "../bench/old-answer/run.mjs";
-import { countFolder, GATE, resultsMd as reposMd, verdict } from "../bench/repos/run.mjs";
+import { beforeOf, genterArm, guard, LEAD, losses, plainArm, resultsMd, run, score, sectionsOf, tally } from "../bench/old-answer/run.mjs";
+import { countFolder, GATE, pick, resultsMd as reposMd, verdict } from "../bench/repos/run.mjs";
 
 const bench = fileURLToPath(new URL("../bench/", import.meta.url));
 const json = (path) => JSON.parse(readFileSync(join(bench, path), "utf8"));
+// The results file a published RESULTS.md names.
+const resultsOf = (dir) => readFileSync(join(bench, dir, "RESULTS.md"), "utf8").match(/\((results\/[\w-]+\.json)\)/)[1];
 const fixture = join(bench, "old-answer", "fixtures", "decisions");
 const OLD = "docs/adr/0003-run-background-jobs-on-postgres.md";
 const NEW = "docs/adr/0011-run-background-jobs-on-redis.md";
@@ -99,7 +101,7 @@ describe("the old-answer test", () => {
   it("[rl:old-answer/one-command] [rl:old-answer/losses-published] the published RESULTS.md is what the published results give, and --offline leaves both alone", () => {
     const md = join(bench, "old-answer", "RESULTS.md");
     const before = readFileSync(md, "utf8");
-    const file = before.match(/\((results\/[\d-]+\.json)\)/)[1];
+    const file = resultsOf("old-answer");
     const published = readFileSync(join(bench, "old-answer", file), "utf8");
     assert.equal(before, resultsMd(JSON.parse(published), file));
     const offline = spawnSync(process.execPath, [join(bench, "old-answer", "run.mjs"), "--offline"], { encoding: "utf8" });
@@ -118,7 +120,8 @@ describe("the old-answer test", () => {
   it("[rl:old-answer/questions-reviewed] every question names a public archive at a commit, its replaced and current documents, the mark that pairs them and who reviewed it", () => {
     const spec = json("old-answer/questions.json");
     const repos = new Map(json("repos/repos.json").repos.map((r) => [r.repo, r]));
-    const picks = json(`repos/${readFileSync(join(bench, "repos", "RESULTS.md"), "utf8").match(/\((results\/[\d-]+\.json)\)/)[1]}`).verdict.picks;
+    // The three archives step 1.10's run picked (the run the gate's RESULTS.md shows as "before").
+    const picks = json(`repos/${json(`repos/${resultsOf("repos")}`).before.file}`).verdict.picks;
     assert.deepEqual(spec.sources.map((s) => s.repo).sort(), [...picks].sort(), "the archives are the three bench/repos picked");
     for (const s of spec.sources) {
       assert.match(s.repo, /^[\w.-]+\/[\w.-]+$/);
@@ -169,10 +172,61 @@ describe("the old-answer test", () => {
     assert.equal(repos.length, 50);
     for (const g of candidates.groups) assert.equal(repos.filter((r) => r.group === g.id).length, g.take, g.id);
     for (const r of repos) assert.match(r.commit, /^[0-9a-f]{40}$/);
-    // The published run: every repository at its pinned commit, and RESULTS.md written from it.
-    const file = readFileSync(join(bench, "repos", "RESULTS.md"), "utf8").match(/\((results\/[\d-]+\.json)\)/)[1];
-    const published = json(`repos/${file}`);
-    assert.deepEqual(published.repos.map((r) => [r.repo, r.commit]), repos.map((r) => [r.repo, r.commit]));
-    assert.equal(readFileSync(join(bench, "repos", "RESULTS.md"), "utf8"), reposMd(published));
+    // The held-out sample: the same groups and takes, none of the first 50, each group most stars first and at most its
+    // take, every repository pinned and none twice.
+    const held = json("repos/heldout.json");
+    assert.deepEqual(candidates.heldout.groups.map((g) => [g.id, g.take]), candidates.groups.map((g) => [g.id, g.take]));
+    for (const g of candidates.heldout.groups) {
+      assert.deepEqual(g.candidates.map((c) => c.stars), [...g.candidates.map((c) => c.stars)].sort((a, b) => b - a), g.id);
+      assert.ok(held.repos.filter((r) => r.group === g.id).length <= g.take, g.id);
+    }
+    const first = new Set(repos.map((r) => r.repo));
+    assert.ok(held.repos.every((r) => !first.has(r.repo) && /^[0-9a-f]{40}$/.test(r.commit)));
+    assert.equal(new Set(held.repos.map((r) => r.repo)).size, held.repos.length);
+    // The published run: both samples, every repository at its pinned commit, the verdict on the held-out sample, and
+    // RESULTS.md written from it.
+    const published = json(`repos/${resultsOf("repos")}`);
+    const sample = (id) => published.samples.find((x) => x.id === id);
+    assert.deepEqual(sample("first").repos.map((r) => [r.repo, r.commit]), repos.map((r) => [r.repo, r.commit]));
+    assert.deepEqual(sample("heldout").repos.map((r) => [r.repo, r.commit]), held.repos.map((r) => [r.repo, r.commit]));
+    const md = readFileSync(join(bench, "repos", "RESULTS.md"), "utf8");
+    assert.equal(md, reposMd(published));
+    assert.match(md, new RegExp(`## The gate, on the ${held.repos.length} held out\\n\\n\\*\\*${sample("heldout").verdict.passes ? "Passes" : "Does not pass"}\\.\\*\\*`));
+    assert.match(md, /## The first 50, after the readers were widened\n\n\*\*Would (not )?pass\*\* on the first 50 .*a biased number/);
+  });
+
+  it("[rl:old-answer/repos-gate] a sample is picked by the check alone, most stars first, the first `take` that pass, none of the first 50 and none twice; a group short of candidates takes fewer", () => {
+    const trees = {
+      "o/a": ["proposals/0001-x.md"],
+      "o/b": ["README.md"],
+      "o/c": ["proposals/0002-y.md"],
+      "o/d": ["proposals/0003-z.md"],
+      "o/log": ["CHANGELOG.md"],
+      "o/quiet": ["docs/CHANGES.txt"],
+    };
+    const text = { "o/log": "## 2.0\n- `old()` is deprecated\n", "o/quiet": "## 2.0\n- faster\n" };
+    const tree = (_, repo) => ({ dir: repo, commit: "a".repeat(40), committed: "2026-10-20T00:00:00Z", tree: trees[repo] ?? [] });
+    const read = (dir) => text[dir] ?? "";
+    const groups = [
+      { id: "archives", take: 2, candidates: ["o/a", "o/b", "o/c", "o/d"].map((repo, i) => ({ repo, stars: 10 - i, records: "^proposals/.+\\.md$", what: "proposals" })) },
+      { id: "changelogs", take: 3, changelog: true, candidates: ["o/c", "o/quiet", "o/log"].map((repo, i) => ({ repo, stars: 5 - i })) },
+    ];
+    const { picked, skipped } = pick("cache", groups, new Set(["o/a"]), { tree, read });
+    assert.deepEqual(picked.map((p) => [p.group, p.repo]), [["archives", "o/c"], ["archives", "o/d"], ["changelogs", "o/log"]]);
+    assert.deepEqual(skipped.map((x) => [x.repo, x.why]), [["o/a", "in the first 50"], ["o/b", "no proposals (^proposals/.+\\.md$)"], ["o/c", "taken by an earlier group"], ["o/quiet", "no changelog that says deprecat"]]);
+    for (const p of picked) assert.match(p.commit, /^[0-9a-f]{40}$/);
+  });
+
+  it("[rl:old-answer/one-command] an earlier run beside this one: what each arm put first then and now, and a question whose current answer was corrected says how this run scores with its first one", () => {
+    const now = results([row("a", won, won), { ...row("b", won, won), current: [OLD.replace("0003", "0012")], note: "Corrected: ADR 11 is itself replaced." }]);
+    now.questions[1].genter.first = OLD.replace("0003", "0012");
+    now.questions[1].plain.first = NEW;
+    const then = results([row("a", lost, lost), row("b", won, won)]);
+    now.before = beforeOf({ ...then, date: "2026-10-19", version: "0" }, "results/then.json");
+    const md = resultsMd(now, "results/now.json");
+    assert.match(md, /## Before and after\n\nThe same questions in the run of 2026-10-19 \(genter-cli 0, \[results\/then\.json\]\(results\/then\.json\)\)/);
+    assert.match(md, /\| \*\*a\*\* \| old \| current \| old \| current \|/);
+    assert.match(md, /\| \*\*b\*\* \(its current answer corrected: below\) \| current \| docs\/adr\/0011-run-background-jobs-on-redis\.md \| current \| current \|/);
+    assert.match(md, /\* \*\*b\*\*: Corrected: ADR 11 is itself replaced\. Scored with its first current answer \(docs\/adr\/0011-run-background-jobs-on-redis\.md\), this run's plain ranking puts it first and Genter does not \(Genter's first: docs\/adr\/0012-run-background-jobs-on-postgres\.md\): by that scoring Genter would do worse than plain ranking on this question, a loss\./);
   });
 });

@@ -59,7 +59,8 @@ archives, and whether Genter's gain there is the order or the marks.
 node bench/old-answer/run.mjs              # results/<date>.json and RESULTS.md (~15 s once the archives are fetched)
 node bench/old-answer/run.mjs --offline    # DriftBench's deprecated kind only, no network; prints the counts, writes only --out / --md
 node bench/old-answer/run.mjs --guard      # fails if Genter leaves the old answer unmarked or does worse than plain ranking
-node bench/old-answer/run.mjs --from bench/old-answer/results/2026-10-20.json   # RESULTS.md again, no run
+node bench/old-answer/run.mjs --from bench/old-answer/results/2026-10-20-by-id.json   # RESULTS.md again, no run
+node bench/old-answer/run.mjs --before bench/old-answer/results/2026-10-20.json   # a run with the first run's results beside it
 ```
 
 The archives are fetched once with `git` from github.com, at the commits in questions.json, into `--cache <dir>` (the
@@ -74,8 +75,14 @@ no key and no clock in the ranking, so the same commits give the same numbers. T
   ones it was picked on included, are such partial status lines (ADR-002 among them, the current home of its MCP
   decision); [the gate's RESULTS.md](../repos/RESULTS.md) quotes them, and a Jaeger launch page waits for the owner's
   review.
-- **A mark that names a number.** A PEP's `Superseded-By: 470` names PEP 470, not its file. Genter shows the mark,
-  quoted, but cannot bring PEP 470 first; those are its "old answer first" losses.
+- **A mark that names a number.** A PEP's `Superseded-By: 470` names PEP 470, not its file. Until the readers could turn
+  an id into a place (readers/by-id: the pep reader's `pep-{id:04}.*` beside the document), Genter showed the mark but
+  could not bring PEP 470 first: its 7 "old answer first" losses of the first run. RESULTS.md's "Before and after" shows
+  that run's first results beside this one's, question by question.
+- **A chain of replacements.** Genter brings what replaces a document first, one step: PEP 241's replacement, PEP 314,
+  is itself replaced by PEP 345, and PEP 345 by PEP 566. One question's current answer (peps/0241) was corrected after
+  the run that brought replacements named by number showed it (questions.json says why); RESULTS.md shows how that run
+  scores it with its first current answer too, a loss by that scoring.
 - **One agent wrote the questions.** Until they are reviewed, read the numbers with that in mind; the pairs come from the
   documents' own marks, not from a judgment.
 - **Out of scope here:** memory layers (mem0 and the others) and a real agent with its own grep, with and without Genter.

@@ -1,8 +1,8 @@
 # Readers
 
-Intent: anyone adds a reader for a text format (ADR, CHANGELOG, banners, RFC folders, a decision log, front matter) as
-data: a manifest, fixtures and the output expected of them, which turns a document's text into its own date, status and
-explicit marks without touching the engine — success: `genter reader new <name>`, a few edits and
+Intent: anyone adds a reader for a text format (ADR, CHANGELOG, banners, RFC folders, improvement proposals, a decision
+log, front matter) as data: a manifest, fixtures and the output expected of them, which turns a document's text into its
+own date, status and explicit marks without touching the engine — success: `genter reader new <name>`, a few edits and
 `genter reader check` give a reader CI accepts with no brief, and `genter ask` then shows the marks and dates it reads;
 nothing in a reader is ever run as code.
 Sources: `src/readers.js`, `readers/reader.schema.json`
@@ -30,6 +30,18 @@ and the language rules (`rules/`) are outside Sources on purpose: CI is their br
 * **[secrets-never-read]** A reader never reads a secret-looking file: a manifest whose glob could match a key,
   credentials or an environment file (`*.pem`, `*.key`, `id_rsa`, `credentials.json`, `.env`) is refused, no wildcard
   reaches a name that starts with ".", and the interpreter refuses such a path or a hidden one whatever a glob says.
+* **[by-id]** A mark may name what replaces its document by an id ("Superseded-By: 470") and say, with `place`, where
+  that document is: a template from the marked document's folder (`..` only at its start, at most 3, then folders and a
+  file's name holding `{id}` or `{id:0N}` once and at most two `*`), never an address, an absolute or home path, a
+  backslash, a hidden or a secret-looking name (refused at lint, saying why). An id is letters, digits and `-`, at most
+  32 characters (`{id:0N}` digits only), so it cannot climb out of the folder; anything else names no place. A reader
+  gives the place it made and never looks for it: the engine takes the one file there, inside the project and not
+  through a link, that it reads (readable, not hidden, not switched off, not narrowed out by a genter.json), never the
+  document itself; none or more than one, and the mark names no place. That file is then what replaces the document,
+  as a link beside the mark is (local-search/current-first), on the decisions page and in bench/repos alike.
+* **[records]** A manifest says whether the documents it reads are decision records (`records: true`, never with
+  `fallback`): a document such a reader reads a date, a status or a mark in, or each entry of one that reads entries,
+  is a decision record for the decisions page and bench/repos, and no reader's name is written in the engine for it.
 * **[off-honoured]** A place the person switched off (local-search/person-off-wins) is never given to a reader.
 * **[language-rules]** The phrases that mark a document as replaced ("superseded by", "deprecated", "replaced by",
   "заменён", "устарело" and the rest) are data in `rules/<lang>.json`, under the same pattern limits, each with the

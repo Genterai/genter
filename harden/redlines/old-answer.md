@@ -34,15 +34,21 @@ left out, proves nothing.
   Memory layers and a real agent are not arms here (step 3.5 of the plan), and RESULTS.md says so.
 * **[one-command]** `node bench/old-answer/run.mjs` writes RESULTS.md and results/<date>.json from the sources alone; the
   same commits give the same numbers (no model, no key, no clock in the ranking); `--offline` writes only the files it
-  is given (`--out`, `--md`), never the published ones. Only public repositories are fetched,
-  from github.com with git, nothing fetched is run, and the bench uses Node's built-ins only.
+  is given (`--out`, `--md`), never the published ones; `--before <an earlier run>` puts that run's totals and what each
+  arm put first on each question beside this run's, a question whose current answer was corrected since said so. Only
+  public repositories are fetched, from github.com with git, nothing fetched is run, and the bench uses Node's built-ins
+  only.
 * **[never-worse]** Genter never leaves the old answer unmarked in its first five and is worse than plain ranking on no
   question; with `--guard`, the weekly run (`bench.yml`) fails otherwise.
-* **[repos-gate]** The 50-repository gate runs the readers over 50 public repositories picked by the rule in
+* **[repos-gate]** The 50-repository gate runs the readers over public repositories picked by the rule in
   `bench/repos/candidates.json`, written before any count and checked only for whether the records named are in the
-  tree, each pinned at a commit (`repos.json`); its RESULTS.md gives, per repository, the decision records read, the
-  records in the tree, the replaced, named and linked marks and the dated documents, the gate's verdict (the median
-  repository has 5 or more decision records, and 15 of the 50 an explicit replaced mark), the repositories with a mark
-  of each kind (the gate counts every kind, from every reader, as the readers read it), what the readers miss, and the
-  three archives picked by the stated rule, with each picked archive's documents that a fallback reader alone marked,
-  quoted.
+  tree, each pinned at a commit, in two samples: the first 50 (`repos.json`), which the readers were widened looking
+  at, and a held-out sample (`heldout.json`) picked by the same rule (the same groups, kinds, minimum stars, takes and
+  checks) from repositories none of the first 50, committed with its commits before any reader ran on it; a group whose
+  candidates pass fewer times than its take takes fewer, and RESULTS.md says how many. The gate's verdict (the median
+  repository has 5 or more decision records, and 15 repositories an explicit replaced mark) is judged on the held-out
+  sample alone; the first 50 are shown beside it, said to be biased. RESULTS.md gives, for each sample and per
+  repository, the decision records read, the records in the tree, the replaced, named and linked marks and the dated
+  documents, the repositories with a mark of each kind (the gate counts every kind, from every reader, as the readers
+  read it), what the readers miss, and the three archives the stated rule picks, with each picked archive's documents
+  that a fallback reader alone marked, quoted.

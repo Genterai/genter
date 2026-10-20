@@ -9,10 +9,11 @@
 // Inputs: DriftBench's deprecated kind (bench/drift, the docs after its edits, offline) and the public archives of
 // questions.json, each at the commit it names (fetched once with git into --cache, the same checkout as bench/repos).
 // Usage: node bench/old-answer/run.mjs [--offline] [--cache dir] [--out results.json] [--md report.md] [--from results.json]
-//          [--guard]
+//          [--before results.json] [--guard]
 // With no --out and no --md it writes results/<date>.json and RESULTS.md beside this file; with --offline it writes only
 // what --out and --md name (the published files hold the archives too). --guard fails the run when Genter leaves the old
-// answer unmarked in its first five or does worse than plain ranking on any question.
+// answer unmarked in its first five or does worse than plain ranking on any question. --before names an earlier run,
+// whose first results RESULTS.md shows beside this run's, question by question.
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, dirname, join, relative, sep } from "node:path";
@@ -221,6 +222,48 @@ export function guard(results) {
   return out;
 }
 
+// An earlier run, as a run keeps it to show beside its own: its totals and what each arm put first on each question.
+export function beforeOf(earlier, file) {
+  return { file, date: earlier.date, version: earlier.version, totals: earlier.totals, questions: earlier.questions.map((q) => ({ id: q.id, replaced: q.replaced, current: q.current, plain: { first: q.plain.first }, genter: { first: q.genter.first } })) };
+}
+
+// The earlier run beside this one: the totals, then every question, what each arm put first then and now.
+function beforeLines(results) {
+  const b = results.before;
+  if (!b) return [];
+  const was = new Map(b.questions.map((q) => [q.id, q]));
+  const t = (x) => `${x.old_first} old first, ${x.old_unmarked} old unmarked in five, ${x.current_first} current first, ${x.current_top5} current in five`;
+  const changed = results.questions.filter((q) => {
+    const w = was.get(q.id);
+    return !w || w.plain.first !== q.plain.first || w.genter.first !== q.genter.first || JSON.stringify(w.current) !== JSON.stringify(q.current);
+  });
+  return [
+    "## Before and after",
+    "",
+    `The same questions in the run of ${b.date} (genter-cli ${b.version}, [${b.file}](${b.file})): plain ranking ${t(b.totals.plain)}, then; now ${t(results.totals.plain)}. Genter ${t(b.totals.genter)}, then; now ${t(results.totals.genter)}. ${changed.length} of ${results.questions.length} questions changed what an arm puts first, or their current answer (in bold); the rest put first what they did. Old: the replaced document; current: the replacing one; else the document an arm put first.`,
+    "",
+    "| question | plain first, then | plain first, now | Genter first, then | Genter first, now |",
+    "| -- | -- | -- | -- | -- |",
+    ...results.questions.map((q) => {
+      const w = was.get(q.id);
+      const id = changed.includes(q) ? `**${q.id}**` : q.id;
+      return `| ${id}${w && corrected(w, q) ? " (its current answer corrected: below)" : ""} | ${w ? firstOf(w, w.plain) : "–"} | ${firstOf(q, q.plain)} | ${w ? firstOf(w, w.genter) : "–"} | ${firstOf(q, q.genter)} |`;
+    }),
+    "",
+    // A question whose current answer was corrected since: why, and how this run scores with its first current answer.
+    ...results.questions
+      .filter((q) => was.has(q.id) && corrected(was.get(q.id), q))
+      .map((q) => {
+        const then = currents(was.get(q.id));
+        const p = then.includes(q.plain.first);
+        const g = then.includes(q.genter.first);
+        return `* **${q.id}**: ${q.note ?? "its current answer was corrected."} Scored with its first current answer (${then.join(", ")}), this run's plain ranking ${p ? "puts it first" : "does not put it first"} and Genter ${g ? "puts it first" : `does not (Genter's first: ${q.genter.first ?? "nothing"})`}${p && !g ? ": by that scoring Genter would do worse than plain ranking on this question, a loss" : ""}.`;
+      }),
+    ...(results.questions.some((q) => was.has(q.id) && corrected(was.get(q.id), q)) ? [""] : []),
+  ];
+}
+const corrected = (w, q) => JSON.stringify(w.current) !== JSON.stringify(q.current);
+
 export function resultsMd(results, file) {
   const { plain, genter } = results.totals;
   const srcOf = Object.fromEntries(results.sources.map((s) => [s.id, s]));
@@ -251,10 +294,11 @@ export function resultsMd(results, file) {
     "| -- | --: | --: | --: | --: | --: | --: | --: | --: |",
     ...results.sources.map((s) => `| [${s.title}](${s.url})${s.commit ? ` at ${s.commit.slice(0, 7)} (${s.committed.slice(0, 10)})` : ""} | ${s.plain.n} | ${s.sections ?? "–"} | ${s.plain.old_first} | ${s.plain.old_unmarked} | ${s.genter.old_first} | ${s.genter.old_unmarked} | ${s.plain.current_first} | ${s.genter.current_first} |`),
     "",
+    ...beforeLines(results),
     "## Losses",
     "",
     lost.length ? `${lost.length} questions where Genter puts the old answer first, leaves it unmarked in the first five, or does worse than plain ranking:` : "None: Genter never puts the old answer first, never leaves it unmarked in the first five, and is nowhere worse than plain ranking.",
-    "",
+    ...(lost.length ? [""] : []),
     ...lost.map((q) => `* **${q.id}** "${q.question}" — ${[q.genter.old_first && "Genter puts the old answer first", q.genter.old_unmarked && "the old answer is unmarked in Genter's first five", q.worse && "worse than plain ranking"].filter(Boolean).join("; ")}: ${q.why}. ${q.pair ? `The pair: ${q.pair}. ` : ""}Replaced: ${link(srcOf[q.source], q.replaced)}; current: ${link(srcOf[q.source], q.current)}. Genter's first five: ${q.genter.top.join(", ") || "nothing"}.${q.note ? ` ${q.note}` : ""}`),
     "",
     "## Every question",
@@ -275,6 +319,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const option = (name) => (args.includes(name) ? args[args.indexOf(name) + 1] : null);
   const from = option("--from");
   const results = from ? JSON.parse(readFileSync(from, "utf8")) : await run({ offline: args.includes("--offline"), ...(option("--cache") && { cache: option("--cache") }) });
+  if (option("--before") && !from) results.before = beforeOf(JSON.parse(readFileSync(option("--before"), "utf8")), relative(here, option("--before")).split(sep).join("/"));
   const defaults = !option("--out") && !option("--md") && !from && !results.offline;
   const out = option("--out") ?? (defaults ? join(here, "results", `${results.date}.json`) : null);
   const md = option("--md") ?? (defaults || from ? join(here, "RESULTS.md") : null);

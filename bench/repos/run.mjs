@@ -2,8 +2,9 @@
 // samples of 50 public repositories that keep decision records or deprecation notices, each at a pinned commit, and per
 // repository how many decision records they find, how many documents say of themselves that they are replaced, and how
 // many documents carry a date of their own. The gate passes when the median repository has 5 or more decision records
-// and 15 of the 50 have an explicit replaced mark, and it is judged on the held-out sample: the first 50 (repos.json)
-// are the ones the readers were widened looking at; the held-out 50 (heldout.json) were picked by the same rule from
+// and 15 repositories have an explicit replaced mark, and it is judged on the held-out sample: the first 50
+// (repos.json) are the ones the readers were widened looking at; the held-out sample (heldout.json) was picked by the
+// same rule from
 // other repositories and committed before the readers ran on them.
 //   node bench/repos/run.mjs --pick     checks candidates.json at each repository's HEAD and writes repos.json: the
 //                                       first `take` of each group that pass its check, with the commit they were at
@@ -200,7 +201,7 @@ export function verdict(rows) {
 }
 
 const n = (x) => (x == null ? "–" : String(x));
-const SAMPLES = { heldout: { title: "the held-out 50", list: "heldout.json" }, first: { title: "the first 50", list: "repos.json" } };
+const SAMPLES = { heldout: { title: "the held-out sample", list: "heldout.json" }, first: { title: "the first 50", list: "repos.json" } };
 
 // The marked documents of a picked archive that only a fallback reader marked (a status line or a banner, no record's
 // own status field), each with its first mark quoted: Genter applies a mark to its whole document, so a line that
@@ -222,7 +223,7 @@ function picksRead(sample, records) {
 function gateLines(sample, groups) {
   const v = sample.verdict;
   return [
-    `* The median repository has **${n(v.median_records)}** decision records the readers read (${v.records_ok ? "at least" : "below"} ${GATE.records}). By each group's own pattern for its records (candidates.json), whatever their format, the median repository holds ${n(v.median_present)} (the changelog group holds none by definition).`,
+    `* The median repository has **${n(v.median_records)}** decision records the readers read (${v.records_ok ? "at least" : "below"} ${GATE.records}); ${v.with_records} of the ${v.repos} have ${GATE.records} or more read, and the median needs half of them to. By each group's own pattern for its records (candidates.json), whatever their format, the median repository holds ${n(v.median_present)} (the changelog group holds none by definition).`,
     `* **${v.with_marks} of ${v.repos}** have at least one document that carries a mark the readers read (${v.marks_ok ? "at least" : "below"} ${GATE.marked}); in ${v.with_placed_marks} of them a mark names a replacing document that is in the repository (where Genter puts the current answer first).`,
     `* The gate counts a mark of any kind, from any reader, the fallback ones (banners, front matter) included, as the readers read it: a heading or a sentence a fallback reader takes for a document's own mark counts too. By kind, the repositories with a mark: ${KINDS.filter((k) => v.with_kind[k]).map((k) => `${k} ${v.with_kind[k]}`).join(", ") || "none"}; with a superseded or moved mark (one that names a replacement or a new place) ${v.with_replaced}, ${v.with_replaced >= GATE.marked ? "at least" : "below"} ${GATE.marked}; with a superseded mark alone ${v.with_kind.superseded}, ${v.with_kind.superseded >= GATE.marked ? "at least" : "below"} ${GATE.marked}.`,
     ...(v.ran < v.repos ? [`* ${v.repos - v.ran} repositories could not be read: ${sample.repos.filter((r) => r.error).map((r) => `${r.repo} (${r.error})`).join("; ")}.`] : []),
@@ -283,14 +284,17 @@ export function resultsMd(results) {
   const before = results.before;
   const records = new Set(results.record_readers);
   const v = held.verdict;
+  const H = held.repos.length;
+  // A group of the held-out sample that took fewer than its take: the sample is smaller than the first 50.
+  const short = results.groups.filter((g) => (v.by_group[g.id]?.repos ?? 0) < g.take).map((g) => `${v.by_group[g.id]?.repos ?? 0} of the ${g.take} ${g.title.toLowerCase()} the rule takes`);
   const lines = [
-    "# 50 repositories, and 50 held out: what the readers find",
+    `# 50 repositories, and ${H} held out: what the readers find`,
     "",
     `Written by \`node bench/repos/run.mjs\` on ${results.date} with genter-cli ${results.version} and the readers ${results.readers.join(", ")} (those of decision records: ${results.record_readers.join(", ")}). The method is in [README.md](README.md); the numbers are in [${results.file}](${results.file}).`,
     "",
-    "## The gate, on the held-out 50",
+    `## The gate, on the ${H} held out`,
     "",
-    `**${v.passes ? "Passes" : "Does not pass"}.** The gate (step 1.10 of Genter's open-source plan) passes when the median repository has ${GATE.records} or more decision records and ${GATE.marked} of the 50 have an explicit replaced mark. It is judged on the held-out 50 ([${held.list}](${held.list}), picked on ${held.picked_on}): the same rule and groups as the first 50 (candidates.json), over repositories not among them, picked and committed before the readers ran on any of them. The first 50 are not a fair test any more: the readers were widened looking at them (below).`,
+    `**${v.passes ? "Passes" : "Does not pass"}.** The gate (step 1.10 of Genter's open-source plan) passes when the median repository has ${GATE.records} or more decision records and ${GATE.marked} of the 50 have an explicit replaced mark. It is judged on the held-out sample ([${held.list}](${held.list}), picked on ${held.picked_on}): the same rule and groups as the first 50 (candidates.json), over repositories not among them, picked and committed before the readers ran on any of them. The first 50 are not a fair test any more: the readers were widened looking at them (below).${short.length ? ` The held-out sample holds ${H} repositories, not 50: only ${short.join(" and ")} passed the check outside the first 50 (candidates.json lists every one named, and those left out as not of the kind). The thresholds are applied as written: the median of the ${H}, and ${GATE.marked} repositories with a mark.` : ""}`,
     "",
     ...gateLines(held, groups),
     "## The first 50, after the readers were widened",
@@ -300,7 +304,7 @@ export function resultsMd(results) {
     ...gateLines(first, groups),
     "## The three archives",
     "",
-    `The old-answer test (bench/old-answer) keeps the three archives step 1.10 picked, at the commits it read them at: its questions are written per pair and wait for a person's review. With the readers as they are now, the same rule (among the repositories with ${GATE.records} or more decision records, the most documents whose mark names a replacing document that is there, then the most that name what replaces them, then the most marked, then the most stars) picks ${first.verdict.picks.map((r) => `[${r}](https://github.com/${r})`).join(", ") || "none"} among the first 50, and ${held.verdict.picks.map((r) => `[${r}](https://github.com/${r})`).join(", ") || "none"} among the held-out 50.`,
+    `The old-answer test (bench/old-answer) keeps the three archives step 1.10 picked, at the commits it read them at: its questions are written per pair and wait for a person's review. With the readers as they are now, the same rule (among the repositories with ${GATE.records} or more decision records, the most documents whose mark names a replacing document that is there, then the most that name what replaces them, then the most marked, then the most stars) picks ${first.verdict.picks.map((r) => `[${r}](https://github.com/${r})`).join(", ") || "none"} among the first 50, and ${held.verdict.picks.map((r) => `[${r}](https://github.com/${r})`).join(", ") || "none"} among the held-out sample.`,
     "",
     ...picksRead(first, records),
     ...picksRead(held, records),
@@ -308,7 +312,7 @@ export function resultsMd(results) {
     "",
     "Decision records: documents a reader of decision records (its manifest says `records: true`) reads a date, a status or a mark in, and entries of a decision log; in the tree: the files that match the group's own pattern for the repository's records (candidates.json), read or not. Replaced: documents that carry a mark the readers read (superseded, deprecated, obsolete, archived, moved, removed, unmaintained), from any reader; named: the mark names what replaces it; there: the replacing document it links, or its id names, is in the repository. Dated: documents a reader reads a date in. Changelog deprecations: entries' deprecated and removed items, not marks of a document.",
     "",
-    "### The held-out 50",
+    `### The ${H} held out`,
     "",
     ...tableLines(held, results.groups),
     `### The first 50${before ? ", with the decision records step 1.10's readers read" : ""}`,
@@ -318,7 +322,7 @@ export function resultsMd(results) {
     "",
     "## What the readers miss",
     "",
-    "### The held-out 50",
+    `### The ${H} held out`,
     "",
     ...missedLines(held),
     "### The first 50",
@@ -326,7 +330,7 @@ export function resultsMd(results) {
     ...missedLines(first),
     "## Replaced documents whose mark names a replacing document there",
     "",
-    "### The held-out 50",
+    `### The ${H} held out`,
     "",
     ...pairLines(held),
     "### The first 50",
@@ -437,6 +441,6 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     writeFileSync(out, `${JSON.stringify(results, null, 2)}\n`);
     writeFileSync(join(here, "RESULTS.md"), resultsMd(results));
     const v = samples[0].verdict;
-    console.log(`${file} and RESULTS.md written; on the held-out 50 the gate ${v.passes ? "passes" : "does not pass"} (median ${v.median_records}, ${v.with_marks} with a mark); on the first 50: median ${samples[1].verdict.median_records}, ${samples[1].verdict.with_marks} with a mark`);
+    console.log(`${file} and RESULTS.md written; on the ${samples[0].repos.length} held out the gate ${v.passes ? "passes" : "does not pass"} (median ${v.median_records}, ${v.with_marks} with a mark); on the first 50: median ${samples[1].verdict.median_records}, ${samples[1].verdict.with_marks} with a mark`);
   }
 }
