@@ -75,6 +75,23 @@ Your agent now has four tools:
 | `genter_remember` | keeps a note (a decision, a convention) that it finds later, with the note's date |
 | `genter_sources` | lists what this project searches |
 
+## Add it to your AI tools
+
+```bash
+npx genter-cli install          # shows what it would add to each AI tool on this computer, then asks
+npx genter-cli install --undo   # puts every file it changed back as it was
+```
+
+It finds Claude Code, Claude Desktop, Cursor, VS Code, Codex, Gemini CLI, Zed and goose, and adds
+`npx -y genter-cli mcp` to each one's own settings for you, never to a project's files. Nothing is written until you
+say yes, and nothing it writes is a token or a key. Genter searches the project of the folder a tool starts it in:
+for VS Code the workspace, for Claude Code, Codex and Gemini CLI the folder you run them in (Cursor, Zed and goose do
+not say which folder they use). Claude Desktop, which opens no project, searches your notes, or the folder you name
+with `--folder`. `--cloud` also adds [Genter Cloud](#genter-cloud-your-teams-apps) where the tool takes a remote
+server, `--semantic` turns on ranking by meaning, and `--dry-run` only shows. A copy of every file it changes is kept
+in `~/.genter/install/`; `--undo` puts it back, or, if the tool has saved the file since, takes only Genter's entries
+out of it.
+
 ## Choose how you run it
 
 | | Words | **Meaning** (recommended) | Genter Cloud |
@@ -290,6 +307,7 @@ memory layers publish), run `node bench/convo/run.mjs --answer` with a key. [Res
 | `genter remember <text>` | keep a note in `~/.genter/notes.md`, found in every project; edit it as you like |
 | `genter sources` · `genter forget <...>` | list what this project searches; stop searching one here |
 | `genter mcp [folder\|url ...]` | all of it for your agent, over stdio |
+| `genter install [tool ...]` | add Genter to the AI tools on this computer; `--undo` puts their files back |
 
 `--semantic` ranks by meaning too (or set `GENTER_SEMANTIC=1`); `--json` prints JSON; `--limit N` sets the number of
 passages. Genter never reads hidden files, `.gitignore`d files, lockfiles, keys, or anything that holds a private key.

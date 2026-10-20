@@ -39,6 +39,7 @@ and the app takes it.
 | -- | -- | -- |
 | `src/local.js`, `src/anchor.js`, `src/lexical.js`, `src/seal.js` | local search: folders, files, websites, notes; an Anchor's id, digest and sections | `local-search` |
 | `bin/`, `src/demo.js`, `src/mcp-server.js` | the `genter` command, the local MCP server | `cli` |
+| `src/install/` | `genter install`: Genter added to the AI tools on this computer, one file per tool | `install` |
 | `src/web.js`, `src/net.js` | websites, public-address checks | `security` |
 | `bench/drift/` | DriftBench | `driftbench` |
 | `src/drift.js` | freshness facts | not mapped yet (`harden/README.md`) |

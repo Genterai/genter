@@ -731,8 +731,11 @@ describe("the genter command", () => {
       const help = pkg.run();
       assert.equal(help.status, 0);
       assert.match(help.stdout, /genter ask <question>/);
+      assert.match(help.stdout, /genter install \[tool \.\.\.\]/);
       assert.match(help.stdout.trim().split("\n").at(-1), /https:\/\/genter\.ai\/api\/mcp$/);
-      assert.doesNotMatch(help.stdout, /login|logout|--cloud|--local|token|dashboard|composio/i);
+      assert.doesNotMatch(help.stdout, /login|logout|--local|token|dashboard|composio/i);
+      // --cloud is genter install's alone: it adds Genter Cloud's address to the AI tools.
+      assert.doesNotMatch(help.stdout.replace(/ {2}genter install[\s\S]*?\n\n/, ""), /--cloud/);
       const bad = pkg.run("nope");
       assert.equal(bad.status, 1);
       assert.match(bad.stderr, /Unknown command: nope/);
