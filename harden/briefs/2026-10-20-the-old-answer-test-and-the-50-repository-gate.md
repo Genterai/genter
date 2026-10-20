@@ -88,7 +88,7 @@ exactly what the published results give. / The runs: `node bench/repos/run.mjs` 
 0 decision records read, 33 in the tree; 28 of 50 with a replaced mark, 7 with one naming a document there; picks
 jaegertracing/jaeger, python/peps, kubernetes/enhancements); `node bench/old-answer/run.mjs --guard` (39 questions;
 old answer first: plain 8, Genter 7; old answer unmarked in the first five: plain 31, Genter 0; current answer first:
-plain 19, Genter 20; guard green). `npm test` (163 pass, 0 fail), `npm run lint` (exit 0; the one warning is the size
+plain 19, Genter 20; guard green). `npm test` (173 pass, 0 fail, on main with #87 merged in), `npm run lint` (exit 0; the one warning is the size
 of `bench/drift/results/2026-10-10.json`, as on main), `node --test .github/scripts/test-report.test.mjs` (5 pass),
 every export imports, the packed package installs alone and imports in a clean folder, `node bench/drift/check.mjs`,
 `node bench/drift/run.mjs --no-takes --guard README.md` (green, the same numbers: genter 50 of 65 current and 0 stale
