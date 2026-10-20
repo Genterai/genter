@@ -165,6 +165,31 @@ describe("local search", () => {
     }
   });
 
+  it("[rl:local-search/current-first] [rl:local-search/sections] a chain of replaced files brings one place per section found, and two files that name each other end", async () => {
+    const files = {};
+    for (let i = 0; i < 30; i++) files[`docs/d${i}.md`] = `${i < 29 ? `> Superseded by [Doc ${i + 1}](d${i + 1}.md)\n\n` : ""}# Doc ${i}\n\nSome text ${i === 0 ? "zebra quokka" : "filler"}.\n`;
+    files["loop/a.md"] = "> Superseded by [B](b.md)\n\n# A\n\nThe heron migrates in spring.\n";
+    files["loop/b.md"] = "> Superseded by [A](a.md)\n\n# B\n\nThe heron migrates in autumn.\n";
+    const box = sandbox(files);
+    try {
+      const g = createLocal({ home: box.home, secret: "s", cwd: box.dir });
+      await g.add(".");
+      // limit 1: the place found and what it says replaces it, no more; that place's own mark shows on it.
+      const one = await g.find("zebra quokka", { limit: 1 });
+      assert.deepEqual(one.results.map((r) => r.path), [join(box.dir, "docs/d1.md"), join(box.dir, "docs/d0.md")]);
+      assert.equal(one.results[0].replaces, 2);
+      assert.equal(one.results[0].superseded.by, "docs/d2.md");
+      // Two files that each say the other replaces them: both answer once, and the search ends.
+      for (const limit of [1, 5]) {
+        const loop = await g.find("heron migrates", { limit });
+        assert.deepEqual(loop.results.map((r) => r.path).sort(), [join(box.dir, "loop/a.md"), join(box.dir, "loop/b.md")], `limit ${limit}`);
+        assert.equal(loop.results.filter((r) => r.replaces).length, 1, `limit ${limit}`);
+      }
+    } finally {
+      box.done();
+    }
+  });
+
   it("[rl:local-search/document-dates] [rl:anchor-drift/fresh-clone] a fresh clone: dates are the documents' own, file dates unknown, no age fact", async () => {
     const ADR_OLD = "# 3. Run background jobs on Postgres\n\nDate: 2026-03-03\n\n## Context\n\nMonth-end exports.\n\n## Status\n\nSuperseded by [11. Run background jobs on Redis](0011-run-jobs-on-redis.md)\n\n## Decision\n\nBackground jobs run on Postgres with SKIP LOCKED.\n";
     const ADR_NEW = "# 11. Run background jobs on Redis\n\nDate: 2026-09-24\n\n## Status\n\nAccepted\n\n## Decision\n\nBackground jobs run on Redis streams.\n";

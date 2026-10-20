@@ -780,21 +780,22 @@ export function createLocal({ home = genterHome(), secret, userId = "default", o
       };
       // Each picked section in order. One whose place is replaced that way has what replaces it come first, in its rank:
       // that place's section among the picked ones (moved up), else its best section of all; it follows right after.
-      // chain: the places on the way, so two places that name each other end.
+      // chain: the places on the way, so two places that name each other end. A place brought from outside the picked
+      // ones brings nothing more (follow false): its own mark shows, so a picked section adds one place at most and a
+      // chain of replaced files does not grow the answer past the limit.
       const queue = [...picked];
-      const emit = ([x, score], chain) => {
-        const by = replacerOf(x.record);
+      const emit = ([x, score], chain, follow = true) => {
+        const by = follow ? replacerOf(x.record) : null;
         let first = null;
         if (by && !chain.has(by.args.path)) {
           first = results.find((r) => r.path === by.args.path) ?? null;
           if (!first) {
             const at = queue.findIndex(([y]) => placeOf(y) === by.args.path);
-            let next = at >= 0 ? queue.splice(at, 1)[0] : null;
-            if (!next) {
+            if (at >= 0) first = emit(queue.splice(at, 1)[0], new Set([...chain, placeOf(x)]));
+            else {
               const best = [...byPath.get(by.args.path)].sort((a, b) => (scoreOf.get(b) ?? 0) - (scoreOf.get(a) ?? 0))[0];
-              next = [best, scoreOf.get(best) ?? 0];
+              first = emit([best, scoreOf.get(best) ?? 0], chain, false);
             }
-            first = emit(next, new Set([...chain, placeOf(x)]));
           }
         }
         const r = result(x, score, results.length + 1, qTerms, changedNow, mark, cloned);

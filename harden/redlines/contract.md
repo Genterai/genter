@@ -31,9 +31,10 @@ reaches a place of another project), and [conformance] ("works with Genter" mean
   what it is (file, page, notes), its dates (`dated <day>`, the one its document gives, local-search/document-dates;
   `updated <day>`, its file's, or `file dates unknown (fresh clone)`, anchor-drift/fresh-clone) and what Genter saw
   (`replaces [id]`, changed or new since the last look, a note's date), then its marks, then the passage, four spaces
-  in, so no line of it reads as a place or a mark. A place that replaces another comes right before it as
-  local-search/current-first says. What changed since the last look comes first (a refused `genter.json` before it),
-  and the answer ends saying that read takes the ids. Nothing found is a sentence that names no place.
+  in, so no line of it reads as a place or a mark. A place that replaces another comes right before it, or above it
+  when it already ranked higher, as local-search/current-first says. What changed since the last look comes first (a
+  refused `genter.json` before it), and the answer ends saying that read takes the ids. Nothing found is a sentence
+  that names no place.
 * **[marks]** A mark is a line of its own, `  ⚠ ` then what it says; a place's marks are the lines right after its
   second line, and no line of a file (a passage four spaces in, a read text after an empty line) can join them or read
   as one. A place that says it was replaced, by a place this project reads whose day is known: `⚠ superseded by [id]

@@ -67,9 +67,11 @@ safe.
 * **[current-first]** The current answer first: when a file inside the project's folder is marked as replaced by what
   its readers read (a decision record's status, a banner at its top, its front matter) and what replaces it is a file
   inside that folder this search reads, what replaces it takes the replaced file's rank (its section among those found,
-  moved up, else its best section of all) and the replaced file follows right after it, its notice quoted. A place
-  outside the project's folder on either side (a source added from elsewhere, the notes, a website), or a mark no reader
-  read (the language rules' phrases at the top of a file no reader takes), changes no order.
+  moved up, else its best section of all) and the replaced file follows right after it, its notice quoted; when what
+  replaces it already ranks above, nothing moves and it says "replaces [n]". A place brought in from outside the
+  sections found brings nothing more (its own mark shows), and two places that name each other end. A place outside the
+  project's folder on either side (a source added from elsewhere, the notes, a website), or a mark no reader read (the
+  language rules' phrases at the top of a file no reader takes), changes no order.
 * **[reader-marks]** A file a reader in `readers/` takes is marked as replaced where the reader says (an ADR's Status
   section, a banner at its top, its front matter), the mark that names what replaces it first; what replaces it is the
   place the reader read beside the mark, when that place is there, and a link elsewhere in the file is taken only for a
@@ -90,7 +92,8 @@ safe.
 
 * **[ranking-words]** Sections are ranked by BM25 over their words (English and Russian stems); a word in the
   headings counts more than one in the text.
-* **[sections]** At most two sections of one place, and the limit asked (5 by default, 20 at most).
+* **[sections]** At most two sections of one place, and the limit asked (5 by default, 20 at most); a section found
+  brings at most one place more, what replaces it ([current-first]).
 * **[semantic-opt-in]** Given embeddings, a ranking by vectors is fused with the words'; without, words alone.
 * **[semantic-providers]** Embeddings come from `GENTER_EMBED_URL` when set, else the provider named, else the first
   whose key is set, else Ollama on localhost; any OpenAI-compatible `/embeddings` works; when none answers the error

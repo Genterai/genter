@@ -53,18 +53,24 @@ Open:
   the document's own status too). The language rules' phrases at the top of a file no reader takes (code files) and
   pages never change it. [non-blocking, decided here]
 * "Becomes [1]": what replaces a place takes that place's rank, which is [1] when the replaced place ranked first;
-  when it already ranks above, nothing moves and it says `replaces [n]`. Two places that name each other end after one
-  step. [non-blocking, decided here]
-* A fresh clone, read file by file: the largest run of a source's file times each within 2 seconds of the one before,
-  holding at least 5 files and at least half of them. A folder of fewer than five files keeps its file times (two files
-  saved at once are no evidence); a file changed after the clone keeps its own; a `git pull` that rewrites most files is
-  read the same way, since its times are the pull's. Nothing new is stored: the window is worked out from the stored
-  times at each answer. [non-blocking, decided here]
+  when it already ranks above, nothing moves and it says `replaces [n]` (the red lines say so too). Two places that
+  name each other end after one step. A place brought in from outside the sections found brings nothing more: its own
+  mark shows, so a chain of files that each name the next adds one place per section found, as before this step, and
+  `limit` still bounds the answer (local-search/sections); following such a chain to its end would also say "replaces"
+  of a file that does not say so. [non-blocking, decided here]
+* A fresh clone, read file by file: the run of a source's file times from the oldest, each within 2 seconds of the one
+  before, holding at least 5 files and at least half of them. A clone writes every file first, so only that run can be
+  the clone: a later run (a `git pull`, a branch switch, a formatter rewriting most of the folder) is edits and keeps
+  its times, and when it leaves fewer than five or less than half of the files in the first run, no file is a clone's
+  (as before this step). A folder of fewer than five files keeps its file times (two files saved at once are no
+  evidence); a file changed after the clone keeps its own. Nothing new is stored: the window is worked out from the
+  stored times at each answer. [non-blocking, decided here]
 * Age facts stay on file times: a document's date is when it was decided, not when it last changed, so it is shown
   (`dated <day>`) but says no age. [non-blocking, decided here]
 * The notice is quoted in plain words, in the CLI and over MCP (`Deprecated: replaced by Release process v2`, not
   `> **Deprecated:** replaced by [Release process v2](release-process-v2.md)`), as the plan's own example reads; the
-  MCP mark keeps its form. A line that is only signs stays as written. [non-blocking]
+  MCP mark keeps its form. A code span is quoted word for word without its ticks (`Map<string, Job>` stays), and only
+  HTML's own element names count as tags. A line that is only signs stays as written. [non-blocking]
 * `genter ask` says "File dates unknown (fresh clone)" once, above the places (it shows no file dates per place); MCP
   says it per place on the second line, where `updated <day>` would be. [non-blocking]
 * A page's mark day is the replacing page's Last-Modified, else when Genter saw it change; before, the replaced
@@ -80,6 +86,9 @@ plain words, and no fact says old, replaced or current outside the quote / "[rl:
 promotes nothing": a planted "Superseded by" in a folder outside the project naming a place inside it, a project file
 whose replacement is outside the folder, and a code file's top notice no reader reads each show their mark, nothing
 replaces anything and the answer stays in score order; the same notice inside the project then moves v2 first /
+"[rl:local-search/current-first] [rl:local-search/sections] a chain of replaced files": 30 files that each name the
+next, asked with limit 1, answer two places (the one found and what it names, whose own mark shows), and two files
+that name each other answer once each and end /
 "[rl:local-search/document-dates] [rl:anchor-drift/fresh-clone]": a repository cloned in 2019 within a second, one file
 edited today: the ADR shows its `Date:`, a CHANGELOG its latest heading, front matter its `date:`, the clone's files no
 file date, the edited one today's, no age fact, the CLI's line, and over MCP `dated 2026-09-24 · file dates unknown
@@ -87,12 +96,14 @@ file date, the edited one today's, no age fact, the CLI's line, and over MCP `da
 [rl:anchor-drift/facts-on-deviation]": files written a day apart keep their dates and an old one beside today's says
 its age / `test/contract.test.js` "a fresh clone": conformance passes, the free form when the replacing file has no
 day, `at line 9` for an ADR's Status, `dated` on search and read; the conformance test sees v2 right before the
-runbook and the plain quote / `test/drift.test.js`: `cloneWindow` (five files, half, the gap, a later edit outside),
-`noticeWords`, the quote form / `test/driftbench.test.js` "[rl:driftbench/old-first]": genter 0 old first on the
-deprecated kind and overall, an index built once more, and the guard fails a run with one / `test/readers.test.js`:
+runbook and the plain quote / `test/drift.test.js`: `cloneWindow` (five files, half, the gap, a later edit outside,
+a later run of edits never the clone), `noticeWords` (code spans word for word, a type's angle brackets kept), the
+quote form / `test/driftbench.test.js` "[rl:driftbench/old-first]": genter 0 old first on the deprecated kind and
+overall, an index built once more, and the guard fails a run with one / `test/readers.test.js`:
 ADR 11 right before ADR 3 / the demo shows the new runbook first. Each fails when its part is undone (checked by
 hand: no project-folder check, no reader check, no clone check, the file time instead of the document's date for a
-mark's day, the old order, raw quotes). / `npm test` (148 pass, 0 fail), `npm run lint` (exit 0; the one warning is
+mark's day, the old order, raw quotes, a chain followed past the sections found, the largest run as the clone, tags
+stripped inside code spans). / `npm test` (149 pass, 0 fail), `npm run lint` (exit 0; the one warning is
 the size of `bench/drift/results/2026-10-10.json`, as on main), `node bin/genter.js reader check` (6 readers and the
 rules ok), `node bench/drift/run.mjs --no-takes --guard README.md` (green; the same tables: 77% current and 0% stale
 after the edits, deprecated 3 fresh · 0 stale · 0 old first, 1 old first before; an index built once 24 of 65 old
@@ -104,6 +115,7 @@ first), the packed package imports every export in a clean folder, `harden check
 - local-search/document-dates (new)
 - local-search/follow-replaced (changed: what replaces a place comes before it, only as current-first says)
 - local-search/ac-replaced (changed: Deploy v2 first, the doc after it quoting its notice)
+- local-search/sections (changed: a section found brings at most one place more, what replaces it)
 - anchor-drift/quote-not-verdict (new)
 - anchor-drift/fresh-clone (new)
 - anchor-drift/facts-on-deviation (changed: the quote form, dates the sources give, no area clause)

@@ -64,6 +64,12 @@ describe("Anchor Drift: plain words and clone times", () => {
     assert.equal(noticeWords('superseded_by: "[[Release process v2]]"'), 'superseded_by: "Release process v2"');
     assert.equal(noticeWords("snake_case_name is deprecated"), "snake_case_name is deprecated", "a word's own signs stay");
     assert.equal(noticeWords('<div class="deprecated">'), '<div class="deprecated">', "a line that is all signs stays as it is");
+    // A code span is quoted word for word, only its ticks gone; a type's angle brackets are no HTML tag.
+    assert.equal(noticeWords("> **Deprecated:** use `Map<string, Job>` instead"), "Deprecated: use Map<string, Job> instead");
+    assert.equal(noticeWords("Deprecated: replaced by `useQuery<T>()`"), "Deprecated: replaced by useQuery<T>()");
+    assert.equal(noticeWords("> Superseded by `__init__.py`, see `a*b*c`"), "Superseded by __init__.py, see a*b*c");
+    assert.equal(noticeWords("Deprecated: replaced by List<Item> now"), "Deprecated: replaced by List<Item> now");
+    assert.equal(noticeWords('<p align="center"><b>Deprecated</b>: see v2</p>'), "Deprecated: see v2");
   });
   it("[rl:anchor-drift/fresh-clone] the files of a folder written at one moment: at least five, at least half of them, each within seconds of the one before", () => {
     const at = Date.parse("2026-10-20T10:00:00Z");
@@ -77,6 +83,11 @@ describe("Anchor Drift: plain words and clone times", () => {
     assert.equal(cloneWindow(clone.slice(0, CLONE_MIN_FILES - 1)), null);
     assert.equal(cloneWindow(Array.from({ length: 8 }, (_, i) => at + i * 60_000)), null);
     assert.equal(cloneWindow([...clone.slice(0, 5), ...Array.from({ length: 6 }, (_, i) => at + (i + 1) * 3_600_000)]), null);
+    // A clone writes every file first: only the run from the oldest time is the clone, and a later run (a pull, a branch
+    // switch, a formatter rewriting most of the folder) is edits, whose files keep their own times.
+    const later = (n) => Array.from({ length: n }, (_, i) => at + 3_600_000 + i * 100);
+    assert.equal(cloneWindow([...clone.slice(0, 4), ...later(6)]), null);
+    assert.deepEqual(cloneWindow([...clone, ...later(3)]), [at, at + 280]);
     assert.equal(cloneWindow([]), null);
   });
 });

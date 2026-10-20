@@ -60,30 +60,31 @@ const pageKey = (u) => String(u).replace(/#.*$/, "").replace(/^https?:\/\/(www\.
 export const redirectOf = (requested, final) => (requested && final && pageKey(requested) !== pageKey(final) ? { marker: "redirect", by: final } : null);
 
 // The files of a folder written here at one moment (a fresh clone, a copy, an unpacked archive): their times say when
-// they were written here, not when anyone changed them. The largest run of times each within CLONE_GAP_MS of the one
-// before, when it holds at least CLONE_MIN_FILES files and at least half of them: [first, last] in ms; else null. A file
+// they were written here, not when anyone changed them. The run of times from the oldest, each within CLONE_GAP_MS of
+// the one before, when it holds at least CLONE_MIN_FILES files and at least half of them: [first, last] in ms; else
+// null. A clone writes every file first, so a later run (a pull, a branch switch, a formatter) is edits, and a file
 // changed after the clone has a time of its own, outside the run.
 export function cloneWindow(times) {
   const t = times.filter(Number.isFinite).sort((a, b) => a - b);
-  let best = null;
-  for (let i = 0, start = 0; i < t.length; i++) {
-    if (i + 1 < t.length && t[i + 1] - t[i] <= CLONE_GAP_MS) continue;
-    if (!best || i - start > best[1] - best[0]) best = [start, i];
-    start = i + 1;
-  }
-  const n = best ? best[1] - best[0] + 1 : 0;
-  return n >= CLONE_MIN_FILES && n * 2 >= t.length ? [t[best[0]], t[best[1]]] : null;
+  let end = 0;
+  while (end + 1 < t.length && t[end + 1] - t[end] <= CLONE_GAP_MS) end++;
+  const n = t.length ? end + 1 : 0;
+  return n >= CLONE_MIN_FILES && n * 2 >= t.length ? [t[0], t[end]] : null;
 }
 
 // A notice as plain words, the way a person reads it: the line without Markdown's signs (a quote's ">", a heading's "#",
 // a list's "-", emphasis, code ticks, an alert's "[!WARNING]", HTML tags and comments, a code comment's "//"), a link as
-// its text. A line that is all signs stays as it is.
+// its text, and a code span word for word, only its ticks gone. A line that is all signs stays as it is.
+const HTML_TAG = /<\/?(?:a|abbr|aside|b|blockquote|br|center|code|del|details|div|em|font|h[1-6]|hr|i|img|ins|kbd|mark|p|pre|s|section|small|span|strike|strong|sub|summary|sup|u)\b[^>\n]{0,200}>|<!--|-->/gi;
 export function noticeWords(line) {
   const raw = String(line ?? "").trim();
+  const code = [];
   const words = raw
+    .replace(/[\uE000\uE001]/g, "")
+    .replace(/(`+)([^\n]{0,300}?[^`\n])\1(?!`)/g, (_, _ticks, span) => `\uE000${code.push(span.trim()) - 1}\uE001`)
     .replace(/!?\[([^\]\n]{0,200})\]\([^)\n]{0,400}\)/g, "$1")
     .replace(/\[\[([^\]|\n]{1,200})(?:\|([^\]\n]{1,200}))?\]\]/g, (_, page, label) => label ?? page)
-    .replace(/<\/?[a-z][^>\n]{0,200}>|<!--|-->/gi, "")
+    .replace(HTML_TAG, "")
     .replace(/^\s*(?:\/\/+|\/\*+|\*\/)\s*|\s*\*\/\s*$/g, "")
     .replace(/^(?:>\s*)+/, "")
     .replace(/^#{1,6}\s+/, "")
@@ -91,6 +92,7 @@ export function noticeWords(line) {
     .replace(/\[![a-z]{1,20}\]\s*/gi, "")
     .replace(/\*\*|__|`/g, "")
     .replace(/(^|[\s(])[*_](\S(?:[^*_\n]{0,200}\S)?)[*_](?=[\s).,:;!?]|$)/g, "$1$2")
+    .replace(/\uE000(\d+)\uE001/g, (_, i) => code[i])
     .replace(/\s+/g, " ")
     .trim();
   return words || raw;

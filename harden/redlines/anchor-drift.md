@@ -23,10 +23,10 @@ Most weight: [top-marks]: a mark that fires on a word in passing would tell an a
   says nothing, and no fact is a verdict.
 * **[quote-not-verdict]** A replaced mark is worded as what the place says, quoted from its text read now:
   `<place> says at its top: "<notice>"`, or `at line <n>` for a notice a reader found past its top, the notice in its
-  own words without Markdown's signs (a quote's `>`, emphasis, a link's target); Genter never says in its own words
-  that a place is old, wrong, replaced or current.
-* **[fresh-clone]** The files of a folder written here at one moment (at least five, at least half of the folder, each
-  within two seconds of the one before: a fresh clone, a copy, an unpacked archive) have no file date: their times say
-  when they arrived, not when anyone changed them. Genter says "file dates unknown (fresh clone)" instead of a date,
-  says no age of them and counts none of them as a fresher source beside another; a file changed after the clone keeps
-  its own time.
+  own words without Markdown's signs (a quote's `>`, emphasis, a link's target; a code span word for word, only its
+  ticks gone); Genter never says in its own words that a place is old, wrong, replaced or current.
+* **[fresh-clone]** The files of a folder written here at one moment (its oldest times, at least five, at least half
+  of the folder, each within two seconds of the one before: a fresh clone, a copy, an unpacked archive) have no file
+  date: their times say when they arrived, not when anyone changed them; a later run of close times (a pull, a branch
+  switch, a formatter) is edits. Genter says "file dates unknown (fresh clone)" instead of a date, says no age of them
+  and counts none of them as a fresher source beside another; a file changed after the clone keeps its own time.
