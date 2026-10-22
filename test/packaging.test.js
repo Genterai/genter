@@ -146,7 +146,7 @@ describe("the Claude Desktop extension", () => {
       const bundle = join(base, "extension");
       const files = stage(bundle);
       assert.deepEqual(files, [...new Set([...packedFiles(), "manifest.json"])].sort());
-      for (const file of files) assert.match(file, /^(bin\/|src\/|readers\/|rules\/|LICENSE$|README\.md$|package\.json$|manifest\.json$)/, file);
+      for (const file of files) assert.match(file, /^(bin\/|src\/|readers\/|rules\/|LICENSE$|README(\.ru)?\.md$|package\.json$|manifest\.json$)/, file);
       for (const file of ["bin/genter.js", "src/mcp-server.js", "package.json", "manifest.json"]) assert.ok(existsSync(join(bundle, file)), file);
       assert.ok(!existsSync(join(bundle, "node_modules")));
 

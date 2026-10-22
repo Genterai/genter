@@ -1,0 +1,28 @@
+Genter, on a temp folder with one runbook: offline, no key, no model, nothing of yours read.
+
+$ genter ask "Can we deploy on Friday?"
+  [1] RUNBOOK.md:29-31 · Runbook › Deploys
+      dated 2026-03-12
+  ## Deploys
+
+  Yes, deploys go out on Fridays from the release branch.
+
+Then someone adds docs/release-process-v2.md ("No deploys on Fridays", dated 2026-10-03) and puts
+"Superseded by Release process v2" at the top of RUNBOOK.md. Nobody tells Genter.
+
+$ genter ask "Can we deploy on Friday?"
+  Since the last look: RUNBOOK.md changed; docs/release-process-v2.md is new.
+
+  [1] docs/release-process-v2.md:12-14 · Release process v2 › Deploy windows
+      replaces [2] · new since the last look · dated 2026-10-03
+  ## Deploy windows
+
+  No deploys on Fridays. Deploys go out Monday to Thursday, before 15:00.
+
+  [2] RUNBOOK.md:31-33 · Runbook › Deploys
+      changed since the last look · dated 2026-03-12 · RUNBOOK.md says at its top: "Superseded by Release process v2"
+  ## Deploys
+
+  Yes, deploys go out on Fridays from the release branch.
+
+Next: npx genter-cli install   # adds Genter to your AI tools; shows each change and asks first

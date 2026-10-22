@@ -1,0 +1,21 @@
+{
+  "docs/demo.gif": {
+    "sha256": "8db4522b80aa0a1b668a66fb1721670718ca8898656ac38b8867c3993514880a",
+    "from": {
+      "docs/art/demo.txt": "d555953f4ea4962f259fa17682501bd6a7c485390a49a531e501393b275f9151",
+      "docs/art/terminal.html": "e64f5d71a656fe45d7e90be508719711c82a36c2b30403ee3e0707917d6e9510"
+    }
+  },
+  "docs/hero-dark.png": {
+    "sha256": "61e55a0ccd52e03523b59cc0581593b949c35628939bd4e0d36db1023197d20f",
+    "from": {
+      "docs/art/hero.html": "1f5d4d76a8412d334d2097e91bad7a0ab1d127b3d7b9db8f33e858bc53d918e7"
+    }
+  },
+  "docs/hero.png": {
+    "sha256": "81a3492e8a10d0c360a0550ff9cf81f2646a223083a100827e74fe4421b036eb",
+    "from": {
+      "docs/art/hero.html": "1f5d4d76a8412d334d2097e91bad7a0ab1d127b3d7b9db8f33e858bc53d918e7"
+    }
+  }
+}
